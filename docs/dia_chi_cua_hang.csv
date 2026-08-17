@@ -1,0 +1,70 @@
+SHOP_CODE,NAME,ADDRESS,LATITUDE,LONGITUDE
+HCM000079,Cửa Hàng MobiFone Trực Tuyến Tại HCM,"54 Phạm Ngọc Thạch Phường Xuân Hòa, TP.HCM",10.785850,106.692600
+HCM010007,Cửa Hàng Lạc Long Quân Quận 11 (MobiFone TTKD Sài Gòn),"311-313 Lạc Long Quân, P. Bình Thới, TPHCM",10.765750,106.642140
+HCM010008,Cửa Hàng Lãnh Binh Thăng (MobiFone TTKD Sài Gòn),"191-193 Lãnh Binh Thăng, P.Phú Thọ , TPHCM",10.762500,106.652980
+HCM010011,Cửa Hàng Lê Văn Sỹ (MobiFone TTKD Sài Gòn),"400B Lê Văn Sỹ, Phường Nhiêu Lộc, TP.HCM",10.788740,106.676520
+HCM010014,Cửa Hàng Nguyễn Chí Thanh (MobiFone TTKD Sài Gòn),468A Nguyễn Chí Thanh P.Diên Hồng TP.HCM,10.759140,106.663860
+HCM010015,Cửa Hàng Nguyễn Thị Minh Khai (MobiFone TTKD Sài Gòn),"320 Nguyễn Thị Minh Khai, Phường Bàn Cờ, TP.HCM",10.772830,106.688390
+HCM020010,Cửa hàng Tân Kỳ Tân Quý (MobiFone TTKD Gia Định),"721 Tân Kỳ Tân Quý, Phường Bình Hưng Hòa, TPHCM",10.792430,106.606850
+HCM020012,Cửa Hàng Trường Chinh (MobiFone TTKD Gia Định),"314B Trường Chinh, Phường Tân Bình, TP.HCM",10.798500,106.643500
+HCM020013,Cửa Hàng Cộng Hòa (MobiFone TTKD Gia Định),"365 Cộng Hòa, Phường Tân Bình, TP.HCM",10.802240,106.642110
+HCM020014,Cửa Hàng Lũy Bán Bích (MobiFone TTKD Gia Định),"851 Lũy Bán Bích, P.Phú Thọ Hòa, TPHCM",10.788380,106.636860
+HCM020015,Cửa hàng CH MobiFone Hoàng Văn Thụ (MobiFone TTKD Gia Định),"262 Hoàng Văn Thụ, Phường Tân Sơn Nhất, TP.HCM",10.799120,106.659450
+HCM020016,Cửa Hàng Lê Trọng Tấn (MobiFone TTKD Gia Định),"349 Lê Trọng Tấn P.Tân Sơn Nhì, TPHCM",10.807870,106.619520
+HCM020018,Cửa Hàng Tây Thạnh (MobiFone TTKD Gia Định),"387 Tây Thạnh, Phường Tây Thạnh, TPHCM",10.809100,106.619120
+HCM030007,Cửa hàng MobiFone Phạm Hùng (MobiFone TTKD Bến Thành),"441 Phạm Hùng, Xã Bình Hưng, TP.HCM",10.731900,106.675020
+HCM030009,Cửa Hàng Cần Giờ (MobiFone TTKD Bến Thành),"489/2 Đào Cử, Khu Phố Miễu Nhì, Xã Cần Giờ, TP.HCM",10.412110,106.967950
+HCM030010,Cửa Hàng Huỳnh Tấn Phát-Nhà Bè (MobiFone TTKD Bến Thành),"1680 Huỳnh Tấn Phát, XÃ Nhà Bè, TPHCM",10.700810,106.738140
+HCM030011,Cửa hàng MobiFone Lê Văn Lương (MobiFone TTKD Bến Thành),"392A Lê Văn Lương, Ấp 69 Xã Nhà Bè, TP.HCM",10.710160,106.702120
+HCM030012,Cửa Hàng Khánh Hội (MobiFone TTKD Bến Thành),"214 Khánh Hội, Phường Khánh Hội TP.HCM",10.758870,106.699260
+HCM040007,Cửa Hàng Quận 12 (MobiFone TTKD Gò Vấp),"167 Nguyễn Văn Quá, Phường Đông Hưng Thuận, Tp.HCM",10.831130,106.627270
+HCM040008,Cửa Hàng Hóc Môn (TTKD Gò Vấp),"Số 26 Lê Thị Hà Khu Phố 8, Xã Hóc Môn, Tp.HCM",10.887110,106.598080
+HCM040010,Cửa Hàng Quang Trung (MobiFone TTKD Gò Vấp),"170C Quang Trung, Phường Gò Vấp, Tp.HCM",10.828820,106.673770
+HCM040012,Cửa Hàng Gò Vấp (MobiFone TTKD Gò Vấp),"32 đường số 3, KDC Cityland, Phường Gò Vấp, Tp.HCM",10.835140,106.670610
+HCM040013,Cửa Hàng Phan Văn Trị (MobiFone TTKD Gò Vấp),"408 Phan Văn Trị, Phường Hạnh Thông, Tp.HCM",10.827480,106.688200
+HCM040014,Cửa Hàng Củ Chi (MobiFone TTKD Gò Vấp),"238 Tỉnh lộ 8, Xã Tân An Hội, Tp.HCM",10.974500,106.497530
+HCM040016,Cửa Hàng Nguyễn Ảnh Thủ (MobiFone TTKD Gò Vấp),"651 Nguyễn Ảnh Thủ, Phường Tân Thới Hiệp, Tp.HCM",10.882180,106.628720
+HCM050006,Cửa Hàng Trần Não (MobiFone Thủ Đức),"156 Trần Não, Phường An Khánh, Thành phố Hồ Chí Minh",10.792289,106.730405
+HCM050007,Cửa Hàng Nguyễn Duy Trinh (MobiFone Thủ Đức),"170 Nguyễn Duy Trinh, Phường Bình Trưng, Thành phố Hồ Chí Minh",10.787861,106.760389
+HCM050008,Cửa Hàng Nguyễn Văn Tăng (MobiFone Thủ Đức),"117 Nguyễn Văn Tăng, Phường Long Bình, Thành phố Hồ Chí Minh",10.845140,106.817620
+HCM050009,Cửa Hàng Đỗ Xuân Hợp (MobiFone Thủ Đức),"64 Đỗ Xuân Hợp, Phường Phước Long, Thành phố Hồ Chí Minh",10.832190,106.767250
+HCM050012,Cửa Hàng Thủ Đức (MobiFone Thủ Đức),"384 Võ Văn Ngân, Phường Thủ Đức, Thành phố Hồ Chí Minh",10.849590,106.772620
+HCM050013,Cửa Hàng Quận 09 (MobiFone Thủ Đức),"254-256 Lê Văn Việt, Phường Tăng Nhơn Phú, Thành phố Hồ Chí Minh",10.844040,106.783720
+HCM060001,Cửa hàng Thuận An,"57C - 57D Nguyễn Văn Tiết, Phường Lái Thiêu, TP.Hồ Chí Minh",10.919970,106.712920
+HCM060002,Cửa Hàng Sông Bé (Bình Dương),"491 Đại lộ Bình Dương, Phường Thủ Dầu Một, TP.Hồ Chí Minh",10.982980,106.666170
+HCM060003,Mobifone Huyện Dĩ An (Bình Dương),"160 đường Nguyễn An Ninh, Phường Dĩ An, TP.Hồ Chí Minh",10.902140,106.768200
+HCM060005,Mobifone Huyện Dầu Tiếng (Bình Dương),"76 đường Tự Do, tổ 10, khu phố 2, Xã Dầu Tiếng, TP.Hồ Chí Minh",11.274030,106.359450
+HCM060007,Cửa hàng Phú Giáo,"77 đường 18 tháng 9, Xã Phú Giáo, TP.Hồ Chí Minh",11.291310,106.792550
+HCM060011,Cửa hàng Bàu Bàng,"Căn A3-21 đường NC, khu đô thị Bàu Bàng, Xã Bàu Bàng, TP.Hồ Chí Minh",11.243930,106.634670
+HCM020134,Cửa Hàng Phan Đăng Lưu (MobiFone TTKD Gia Định),"122A Phan Đăng Lưu, P.Đức Nhuận, TP.HCM",10.802760,106.683790
+HCM070001,Cửa hàng Bà Rịa,"158 Nguyễn Thanh Đằng, Phường Bà Rịa, Thành phố Hồ Chí Minh, Việt Nam",10.498380,107.172280
+HCM070002,Cửa Hàng Vũng Tàu,"605 Trương Công Định, Phường Tam Thắng, Thành phố Hồ Chí Minh, Việt Nam",10.362565,107.088498
+HCM070004,Cửa hàng Long Điền,"77 Mạc Thanh Đạm, Khu phố Long Lâm, xã Long Điền, Thành phố Hồ Chí Minh, Việt Nam",10.489590,107.213330
+HCM070006,Cửa hàng Xuyên Mộc,"89 Huỳnh Minh Thạnh, xã Hồ Tràm, Thành phố Hồ Chí Minh, Việt Nam",10.530920,107.400680
+HCM070012,Cửa Hàng Đất Đỏ,"17 Khu phố Phước Thới, xã Đất Đỏ, Thành phố Hồ Chí Minh, Việt Nam",10.490580,107.271380
+HCM070014,Cửa hàng Vũng Tàu 3,"Số 778A đường 30/4, Phường Phước Thắng, Thành Phố Hồ Chí Minh, Việt Nam",10.403740,107.125200
+HCM020129,Cửa hàng Lê Văn Duyệt (MobiFone TTKD Sài Gòn),"55 Lê Văn Duyệt, P. Gia Định, TP.HCM",10.795330,106.695920
+HCM020136,Cửa hàng Bà Điểm (TTKD Gia Định),"1/3E Phan Văn Hớn, Xã Bà Điểm, Tp.HCM",10.843930,106.594980
+HCM030049,Cửa Hàng Phạm Thế Hiển (TTKD Bến Thành),550 Phạm Thế Hiển P.Chánh Hưng TPHCM,10.746310,106.677750
+HCM010086,Cửa Hàng Hậu Giang (MobiFone TTKD Sài Gòn),"663-665 Hậu Giang, Phường Bình Phú, TPHCM",10.747430,106.633210
+HCM030047,Cửa Hàng Trần Hưng Đạo (MobiFone TTKD Bến Thành),"101 Trần Hưng Đạo. Phường Sài Gòn, TP.HCM",10.767520,106.695209
+HCM020130,Cửa hàng Nơ Trang Long (Mobifone TTKD Gia Định),214 Nơ Trang Long P. Bình Thạnh TP Hồ Chí Minh,10.813010,106.696960
+HCM030013,Cửa Hàng Huỳnh Tấn Phát (MobiFone TTKD Bến Thành),"Số 785 Huỳnh Tấn Phát, Phường Phú Thuận, TPHCM",10.733710,106.731100
+HCM030008,Cửa hàng MobiFone Bình Chánh (MobiFone TTKD Bến Thành),"692 Quốc Lộ 50, xã Bình Hưng,TP.HCM",10.720450,106.655510
+HCM060004,Mobifone Huyện Bến Cát - Phú Giáo (Bình Dương),"408, Quốc lộ 13, khu phố Mỹ Phước, Phường Bến Cát, TP.Hồ Chí Minh",11.148930,106.597340
+HCM070007,Cửa hàng Côn Đảo,"Đường Nguyễn Văn Linh, Khu 7, Đặc khu Côn Đảo, Thành phố Hồ Chí Minh, Việt Nam",8.689455,106.609350
+HCM020133,Cửa Hàng Lê Quang Định (TTKD Gia Đinh),"42 Lê Quang Định, Phường Bình Thạnh, Tp.HCM",10.804240,106.698310
+HCM070005,Cửa hàng Châu Đức,"296 Lê Hồng Phong, xã Ngãi Giao, Thành phố Hồ Chí Minh, Việt Nam",10.648122,107.242764
+HCM030051,Cửa Hàng 329 Nguyễn Trãi (TTKD Bến Thành),"329 Nguyễn Trãi, Phường Cầu Ông Lãnh, Tp.HCM, Việt Nam",10.762200,106.686530
+HCM020132,Cửa Hàng Nguyễn Thị Tú-Bình Chánh (MobiFone TTKD Gia Định),"D3/22 Nguyễn Thị Tú, Ấp 4, xã Tân Vĩnh Lộc, TP.HCM",10.813970,106.581160
+HCM030048,Cửa Hàng 313 An Dương Vương (TTKD Bến Thành),313 An Dương Vương P.Chợ Quán TP.HCM,10.759600,106.679650
+HCM010005,Cửa Hàng 54 Phạm Ngọc Thạch (MobiFone TTKD Sài Gòn-CH ND cũ),"54 Phạm Ngọc Thạch Phường Xuân Hòa, TP.HCM",10.785850,106.692600
+HCM010018,Cửa Hàng Quận 10 (MobiFone TTKD Sài Gòn),"596A Nguyễn Đình Chiểu, phường Bàn Cờ TP. HCM",10.769700,106.681650
+HCM020011,Cửa Hàng Lê Văn Quới (MobiFone TTKD Gia Định),"264 Lê Văn Quới, Phường Bình Trị Đông, TPHCM",10.776360,106.612640
+HCM020017,Cửa hàng MobiFone Gò Dầu(MobiFone TTKD Gia Định),"111 Gò Dầu, Phường Tân Sơn Nhì, TP.HCM",10.795760,106.624350
+HCM030015,Cửa Hàng Quận 7 (MobiFone TTKD Bến Thành),69-71 Nguyễn Thị Thập P.Tân Hưng TPHCM,10.740680,106.698020
+HCM040009,Cửa Hàng Lê Văn Thọ (MobiFone TTKD Gò Vấp),"573 Lê Văn Thọ, Phường An Hội Tây, Tp.HCM",10.853190,106.655900
+HCM040015,Cửa hàng MBF Hiệp Thành (MobiFone TTKD Gò Vấp),"33A/5 Nguyễn Ảnh Thủ, Phường Tân Thới Hiệp, Tp.HCM",10.877110,106.643290
+HCM050010,Cửa Hàng Kha Vạn Cân (MobiFone Thủ Đức),"1092 Kha Vạn Cân, Phường Thủ Đức, Thành phố Hồ Chí Minh",10.857820,106.758100
+HCM060006,Mobifone Huyện Tân Uyên (Bình Dương),"209B, tổ 5, khu phố 1, Phường Tân Uyên, TP.Hồ Chí Minh",11.056430,106.790670
+HCM070003,Cửa Hàng Phú Mỹ,"2491 Độc Lập, Khu Phố Vạn Hạnh, Phường Phú Mỹ, Thành Phố Hồ Chí Minh, Việt Nam",10.586465,107.055291
