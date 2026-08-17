@@ -1,0 +1,21 @@
+openapi: 3.0.3
+info: {title: API, version: 1.0.0}
+paths:
+  /api/v1/probe/:
+    post:
+      operationId: probe_create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProbeInput'
+      responses:
+        '204': {description: accepted}
+components:
+  schemas:
+    ProbeInput:
+      type: object
+      required: [value]
+      properties:
+        value: {type: string}

@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: timekeeping
+      POSTGRES_USER: migration_admin
+      POSTGRES_PASSWORD: local_migration_only
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U migration_admin -d timekeeping"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - foundation_postgres_data:/var/lib/postgresql/data
+      - ./scripts/postgres-init.sql:/docker-entrypoint-initdb.d/10-runtime-role.sql:ro
+
+volumes:
+  foundation_postgres_data:

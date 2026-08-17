@@ -1,0 +1,52 @@
+name: Contract
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  contract-integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: timekeeping_test
+          POSTGRES_USER: runtime_test
+          POSTGRES_PASSWORD: runtime_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U runtime_test -d timekeeping_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://runtime_test:runtime_test_password@127.0.0.1:5432/timekeeping_test
+      POSTGRES_TEST_DATABASE_URL: postgresql://runtime_test:runtime_test_password@127.0.0.1:5432/timekeeping_test
+      APP_ENV: development
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: uv sync --project backend --locked
+      - run: npm --prefix frontend ci
+      - run: uv run --project backend pytest backend/tests/integration/api
+      - run: uv run --project backend pytest -m postgres backend/tests/integration/postgres
+      - run: uv run --project backend pytest backend/tests/contract
+      - run: uv run --project backend python scripts/generate_openapi.py --check
+      - run: uv run --project backend python scripts/check_openapi.py --all
+      - run: npm --prefix frontend run api:check
+      - run: uv run --project backend python scripts/check_contract_drift.py
+      - run: scripts/check_openapi_compatibility.sh
+      - run: uv run --project backend python scripts/migration_check.py check
+      - run: uv run --project backend pytest backend/tests/integration/postgres/test_cache_migration.py
+      - run: uv run --project backend python scripts/deployment_check.py isolation

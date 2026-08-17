@@ -1,0 +1,76 @@
+const requestIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const authorizedCodes = new Set(["VALIDATION_FAILED", "PERMISSION_DENIED"]);
+
+export type ApiFailure =
+  | {
+      kind: "canonical";
+      errorCode: string;
+      message: string;
+      details: Record<string, unknown>;
+      requestId: string;
+    }
+  | { kind: "unexpected_response"; status: number; requestId?: string }
+  | { kind: "network" };
+
+export function networkFailure(): ApiFailure {
+  return { kind: "network" };
+}
+
+export async function parseApiFailure(response: Response): Promise<ApiFailure> {
+  const headerRequestId = validRequestId(response.headers.get("X-Request-Id"));
+  const body = await readJson(response);
+  if (!isCanonicalBody(body)) return unexpectedFailure(response.status, headerRequestId);
+  const bodyRequestId = validRequestId(body.request_id);
+  if (bodyRequestId === undefined || (headerRequestId && headerRequestId !== bodyRequestId)) {
+    return unexpectedFailure(response.status, headerRequestId);
+  }
+  if (!mirrorsMatch(body, body.details)) return unexpectedFailure(response.status, headerRequestId);
+  return {
+    kind: "canonical",
+    errorCode: body.error_code,
+    message: body.message,
+    details: body.details,
+    requestId: bodyRequestId,
+  };
+}
+
+async function readJson(response: Response): Promise<unknown> {
+  try {
+    return await response.json();
+  } catch {
+    return undefined;
+  }
+}
+
+function isCanonicalBody(body: unknown): body is Record<string, unknown> & {
+  error_code: string;
+  message: string;
+  details: Record<string, unknown>;
+} {
+  if (!isRecord(body) || !isRecord(body.details)) return false;
+  if (typeof body.error_code !== "string" || !authorizedCodes.has(body.error_code)) return false;
+  return body.error === body.error_code && typeof body.message === "string";
+}
+
+function unexpectedFailure(status: number, requestId?: string): ApiFailure {
+  return {
+    kind: "unexpected_response",
+    status,
+    ...(requestId === undefined ? {} : { requestId }),
+  };
+}
+
+function mirrorsMatch(body: Record<string, unknown>, details: Record<string, unknown>): boolean {
+  return Object.entries(details).every(([key, value]) => {
+    if (["error_code", "message", "details", "request_id", "error"].includes(key)) return true;
+    return JSON.stringify(body[key]) === JSON.stringify(value);
+  });
+}
+
+function validRequestId(value: unknown): string | undefined {
+  return typeof value === "string" && requestIdPattern.test(value) ? value : undefined;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}

@@ -1,0 +1,53 @@
+schema_version: 1
+environments:
+  development:
+    database_identity: UNRESOLVED
+    migration_identity: UNRESOLVED
+    bucket_identity: UNRESOLVED
+    cache_queue_namespace: UNRESOLVED
+    signing_key_identity: UNRESOLVED
+    credential_identity: UNRESOLVED
+    cache:
+      backend: locmem
+    backup:
+      plan: UNRESOLVED
+      pitr_retention_days: UNRESOLVED
+      mechanism: UNRESOLVED
+      daily_schedule_utc: UNRESOLVED
+      retention_days: UNRESOLVED
+      restore_project_ref: UNRESOLVED
+      alert_owner: UNRESOLVED
+  staging:
+    database_identity: UNRESOLVED
+    migration_identity: UNRESOLVED
+    bucket_identity: UNRESOLVED
+    cache_queue_namespace: UNRESOLVED
+    signing_key_identity: UNRESOLVED
+    credential_identity: UNRESOLVED
+    cache:
+      backend: database
+    backup:
+      plan: UNRESOLVED
+      pitr_retention_days: UNRESOLVED
+      mechanism: UNRESOLVED
+      daily_schedule_utc: UNRESOLVED
+      retention_days: UNRESOLVED
+      restore_project_ref: UNRESOLVED
+      alert_owner: UNRESOLVED
+  production:
+    database_identity: UNRESOLVED
+    migration_identity: UNRESOLVED
+    bucket_identity: UNRESOLVED
+    cache_queue_namespace: UNRESOLVED
+    signing_key_identity: UNRESOLVED
+    credential_identity: UNRESOLVED
+    cache:
+      backend: database
+    backup:
+      plan: UNRESOLVED
+      pitr_retention_days: UNRESOLVED
+      mechanism: UNRESOLVED
+      daily_schedule_utc: UNRESOLVED
+      retention_days: UNRESOLVED
+      restore_project_ref: UNRESOLVED
+      alert_owner: UNRESOLVED

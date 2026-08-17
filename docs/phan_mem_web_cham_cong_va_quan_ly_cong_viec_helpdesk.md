@@ -638,3 +638,45 @@ thống mới bắt đầu nhận xét về dữ liệu trong request.
 - Báo cáo trực quan theo ngày, nhân viên và trạng thái công việc.
 - Mọi bản ghi có tọa độ đều mở được trực tiếp trên Google Maps để kiểm tra hiện
   trường; nếu tọa độ khớp địa điểm đã đăng ký thì hiển thị luôn địa chỉ.
+
+## **7. Nền tảng kỹ thuật và vận hành đã chốt**
+
+Phần này đồng bộ các quyết định đã chốt trong CHOT; nó không chọn nhà cung cấp
+hay tạo thêm hành vi nghiệp vụ.
+
+- **FR-15 — Hợp đồng API có phiên bản.** Mọi REST JSON route dùng `/api/v1/`.
+  Lỗi dùng thân canonical `{error_code, message, details, request_id}` và giữ
+  mirror deprecated của v1; `request_id` do server sinh và khớp
+  `X-Request-Id`. OpenAPI và kiểu/client TypeScript được sinh, commit, kiểm drift
+  và kiểm tương thích ngược; frontend gọi API qua một `authenticatedFetch`.
+- **NFR-27 — Quan trắc an toàn.** Correlation là hạ tầng sở hữu. Mọi trường chuỗi
+  có thể mang dữ liệu nhạy cảm trước khi vào log/metric/alert phải đi qua đúng
+  bộ làm sạch dùng chung; lỗi telemetry không được làm hỏng thao tác đang được
+  quan sát, và thiếu bằng chứng quan trắc phải là `unknown`, không phải `ok`.
+- **NFR-28 — Cô lập triển khai.** Development, staging và production không dùng
+  chung database, bucket, Redis namespace, signing key hay credential biên.
+  Trình duyệt chỉ gọi API qua proxy web; proxy xóa header credential do client
+  gửi rồi gắn credential nguồn, còn origin kiểm tra theo thời gian hằng và trả
+  lỗi 403 canonical khi thiếu/sai. Các lựa chọn chưa được duyệt giữ nguyên
+  `UNRESOLVED`; vì thế không được tuyên bố production-ready.
+- **NFR-29 — Di trú và khả năng khôi phục.** Migration chạy trước rollout, tương
+  thích N-1 và theo expand–migrate–contract; cột `NOT NULL` mới có `db_default`,
+  thao tác phá hủy hoãn sang release sau. Backup hằng ngày, giữ tối thiểu 30
+  ngày, mục tiêu RPO không quá 24 giờ và RTO không quá 4 giờ. Bằng chứng chỉ có
+  khi restore drill thật (không quá 90 ngày) và phép đo năng lực được ghi
+  `passed`/`failed`; phép đo năng lực chỉ đủ điều kiện làm bằng chứng khi dùng ít
+  nhất **50 tài khoản thật**, mức đồng thời ít nhất **20**, và p95 không quá
+  **500 ms**. Dưới một trong hai ngưỡng đầu phải bị từ chối trước khi gọi mạng;
+  p95 vượt 500 ms phải ghi `failed` kèm người chịu trách nhiệm khắc phục, không
+  được ghi `passed`. Mọi kết nối/tài nguyên đã mở phải được đóng ở cả đường
+  thành công lẫn thất bại. Danh tính, mật khẩu, token, giá trị Bearer, URL chứa
+  thông tin xác thực và giá trị bí mật không được xuất hiện trong stdout,
+  stderr hoặc kết quả/artifact trả về. Fixture kiểm thử không phải bằng chứng
+  vận hành thật; đầu ra của lệnh không tự động làm production-ready hoặc
+  recovery-ready. Bằng chứng thật bị `failed` phải có người chịu trách nhiệm
+  khắc phục. Các lựa chọn hoặc số đo chưa có vẫn là `UNRESOLVED`.
+- **AD-7 / AD-10 / AD-11.** Schema tiến hóa không gãy; ranh giới runtime/admin,
+  môi trường và origin được kiểm bằng lệnh chạy được; contract, correlation,
+  thông báo và dữ liệu chẩn đoán có một chủ sở hữu dùng chung. Những control nằm
+  trong repo phải có kiểm thử, nhưng thao tác nhà cung cấp, restore thật và phép
+  đo năng lực vẫn cần người vận hành ký nhận theo CHOT §9.7–§9.8.

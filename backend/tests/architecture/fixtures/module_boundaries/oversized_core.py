@@ -1,0 +1,2 @@
+class AttendancePolicy:
+    pass

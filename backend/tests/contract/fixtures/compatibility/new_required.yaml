@@ -1,0 +1,22 @@
+openapi: 3.0.3
+info: {title: API, version: 1.0.0}
+paths:
+  /api/v1/probe/:
+    get:
+      operationId: probe_retrieve
+      parameters:
+        - in: query
+          name: required_value
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [value]
+                properties:
+                  value: {type: string}
+components: {schemas: {}}

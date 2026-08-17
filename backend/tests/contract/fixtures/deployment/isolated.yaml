@@ -1,0 +1,26 @@
+schema_version: 1
+environments:
+  development:
+    database_identity: db-dev
+    migration_identity: migration-dev
+    bucket_identity: bucket-dev
+    cache_queue_namespace: cache-dev
+    signing_key_identity: signing-dev
+    credential_identity: origin-dev
+    cache: {backend: locmem}
+  staging:
+    database_identity: db-stage
+    migration_identity: migration-stage
+    bucket_identity: bucket-stage
+    cache_queue_namespace: cache-stage
+    signing_key_identity: signing-stage
+    credential_identity: origin-stage
+    cache: {backend: database}
+  production:
+    database_identity: db-production
+    migration_identity: migration-production
+    bucket_identity: bucket-production
+    cache_queue_namespace: cache-production
+    signing_key_identity: signing-production
+    credential_identity: origin-production
+    cache: {backend: database}

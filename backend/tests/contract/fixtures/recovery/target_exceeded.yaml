@@ -1,0 +1,13 @@
+schema_version: 1
+targets: {rpo_hours: 24, rto_hours: 4, retention_days: 30, capacity_p95_ms: 500}
+drill:
+  status: passed
+  recorded_at: "2999-01-01T00:00:00+00:00"
+  measured_rpo_hours: 25
+  measured_rto_hours: 5
+capacity:
+  status: passed
+  recorded_at: "2999-01-01T00:00:00+00:00"
+  distinct_identities: 49
+  concurrency: 19
+  measured_p95_ms: 501

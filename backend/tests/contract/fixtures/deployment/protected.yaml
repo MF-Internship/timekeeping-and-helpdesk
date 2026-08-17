@@ -1,0 +1,10 @@
+schema_version: 1
+environments:
+  development:
+    database_identity: "https://user:password@example.invalid/database"
+    migration_identity: migration-dev
+    bucket_identity: bucket-dev
+    cache_queue_namespace: cache-dev
+    signing_key_identity: signing-dev
+    credential_identity: origin-dev
+    cache: {backend: locmem}

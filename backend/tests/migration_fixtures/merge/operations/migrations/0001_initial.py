@@ -1,0 +1,3 @@
+class Migration:
+    dependencies = []
+    operations = []

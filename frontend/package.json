@@ -1,0 +1,40 @@
+{
+  "name": "timekeeping-helpdesk-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "api:generate": "node scripts/generate-api.mjs --write",
+    "api:check": "node scripts/generate-api.mjs --check"
+  },
+  "dependencies": {
+    "next": "16.3.1",
+    "openapi-fetch": "0.14.0",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "3.3.1",
+    "@testing-library/jest-dom": "6.8.0",
+    "@testing-library/react": "16.3.0",
+    "@types/node": "22.17.2",
+    "@types/react": "19.1.10",
+    "@types/react-dom": "19.1.7",
+    "eslint": "9.33.0",
+    "eslint-config-next": "16.0.0",
+    "jsdom": "26.1.0",
+    "openapi-typescript": "7.9.1",
+    "prettier": "3.6.2",
+    "typescript": "5.9.2",
+    "vitest": "3.2.7"
+  }
+}

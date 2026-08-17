@@ -1,0 +1,22 @@
+schema_version: 1
+targets:
+  rpo_hours: 24
+  rto_hours: 4
+  retention_days: 30
+  restore_drill_max_age_days: 90
+  capacity_p95_ms: 500
+drill:
+  status: UNRESOLVED
+  recorded_at: UNRESOLVED
+  measured_rpo_hours: UNRESOLVED
+  measured_rto_hours: UNRESOLVED
+  verified_categories: UNRESOLVED
+  isolated_restore_identity: UNRESOLVED
+  remediation_owner: UNRESOLVED
+capacity:
+  status: UNRESOLVED
+  recorded_at: UNRESOLVED
+  distinct_identities: UNRESOLVED
+  concurrency: UNRESOLVED
+  measured_p95_ms: UNRESOLVED
+  remediation_owner: UNRESOLVED

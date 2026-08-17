@@ -1,0 +1,11 @@
+schema_version: 1
+targets:
+  rpo_hours: 24
+  rto_hours: 4
+  retention_days: 30
+  capacity_p95_ms: 500
+drill:
+  status: failed
+  remediation_owner: ""
+capacity:
+  status: UNRESOLVED

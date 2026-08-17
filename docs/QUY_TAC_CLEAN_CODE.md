@@ -177,7 +177,7 @@ def classify_geofence(distance_m: float,
 ```text
 backend/
   config/                    # Django composition root và environment settings
-  shared/                    # shared kernel hẹp và technical primitives
+  core/                      # shared kernel hẹp và technical primitives
   identity/                  # users, roles, JWT lifecycle
   locations/                 # locations và pure geofence rules
   attendance/                # sessions, attempts, anomalies, end-of-day use case

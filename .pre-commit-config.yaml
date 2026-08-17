@@ -1,0 +1,38 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-format-check
+        name: Ruff format check
+        entry: uv run --project backend ruff format --check backend scripts
+        language: system
+        pass_filenames: false
+      - id: ruff-check
+        name: Ruff lint
+        entry: uv run --project backend ruff check backend scripts
+        language: system
+        pass_filenames: false
+      - id: maintainability
+        name: Maintainability boundaries
+        entry: uv run --project backend python scripts/check_function_length.py backend/core backend/config backend/operations scripts frontend/src/shared/api/client.ts
+        language: system
+        pass_filenames: false
+      - id: architecture
+        name: Architecture boundaries
+        entry: uv run --project backend pytest -q backend/tests/architecture
+        language: system
+        pass_filenames: false
+      - id: migration-safety
+        name: Migration safety
+        entry: uv run --project backend python scripts/migration_check.py check
+        language: system
+        pass_filenames: false
+      - id: contract-drift
+        name: Contract drift
+        entry: uv run --project backend python scripts/check_contract_drift.py
+        language: system
+        pass_filenames: false
+      - id: frontend-static
+        name: Frontend static checks
+        entry: npm --prefix frontend run typecheck
+        language: system
+        pass_filenames: false

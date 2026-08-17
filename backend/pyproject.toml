@@ -1,0 +1,67 @@
+[project]
+name = "timekeeping-helpdesk-backend"
+version = "0.1.0"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+  "Django==5.2.5",
+  "djangorestframework==3.16.1",
+  "drf-spectacular==0.28.0",
+  "psycopg[binary]==3.2.9",
+  "PyYAML==6.0.2",
+]
+
+[dependency-groups]
+dev = [
+  "django-stubs==5.2.2",
+  "djangorestframework-stubs==3.16.2",
+  "mypy==1.17.1",
+  "pytest==8.4.1",
+  "pytest-django==4.11.1",
+  "ruff==0.12.8",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "tests.settings"
+pythonpath = [".", ".."]
+testpaths = ["tests"]
+addopts = "--strict-markers --strict-config"
+markers = [
+  "unit: isolated unit tests",
+  "integration: integration tests",
+  "postgres: tests requiring PostgreSQL",
+  "contract: executable contract tests",
+  "architecture: dependency and ownership tests",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+exclude = [".venv", "migrations", "tests/migration_fixtures", "tests/**/fixtures"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "C4", "SIM", "RUF", "C90", "PLR0913", "PLR0915"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 8
+
+[tool.ruff.lint.pylint]
+max-args = 4
+max-statements = 25
+
+[tool.ruff.format]
+quote-style = "double"
+line-ending = "lf"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["config", "core", "operations", "../scripts"]
+exclude = ".venv|migrations|tests/fixtures|tests/migration_fixtures"
+mypy_path = "$MYPY_CONFIG_FILE_DIR/stubs"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["config", "core", "operations"]
