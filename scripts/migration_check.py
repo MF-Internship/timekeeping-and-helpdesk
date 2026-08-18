@@ -19,7 +19,7 @@ _DESTRUCTIVE = {
     "AlterField",
 }
 _EXPANSION = {"AddField", "CreateModel"}
-_ALLOWED_OWNERS = frozenset({"operations", "identity", "audit"})
+_ALLOWED_OWNERS = frozenset({"operations", "identity", "audit", "locations"})
 
 
 @dataclass(frozen=True, slots=True)

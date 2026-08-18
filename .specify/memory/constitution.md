@@ -1,11 +1,11 @@
 <!--
 Sync Impact Report
-- Version change: template (unratified) -> 1.0.0
-- Modified principles: none; initial project constitution
-- Added principles: I-XII
-- Added sections: Engineering Constraints; Development Workflow & Quality Gates
-- Removed sections: none; template placeholders were resolved
-- Follow-up TODOs: TODO(RATIFICATION_DATE): original adoption date was not recorded
+- Version change: 1.0.0 -> 1.0.1
+- Modified principles: none
+- Added sections: none
+- Removed sections: none
+- Clarifications: ratification date recovered from the original constitution commit
+- Follow-up TODOs: none
 -->
 # Phần mềm Web Chấm công và Quản lý công việc Helpdesk Constitution
 
@@ -290,4 +290,4 @@ conflict, secret, unexplained TODO, or unreviewed breaking change remains.
   affected scope, the conflict MUST be reported, and sources MUST be corrected in authority
   order before proceeding.
 
-**Version**: 1.0.0 | **Ratified**: TODO(RATIFICATION_DATE): original adoption date was not recorded | **Last Amended**: 2026-08-17
+**Version**: 1.0.1 | **Ratified**: 2026-08-17 | **Last Amended**: 2026-08-18

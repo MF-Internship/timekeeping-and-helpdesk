@@ -16,6 +16,8 @@ def test_authorized_codes_are_closed() -> None:
                 "ACCOUNT_INACTIVE",
                 "PASSWORD_CHANGE_REQUIRED",
                 "SERVER_OWNED_FIELD",
+                "NOT_FOUND",
+                "LOCATION_VERSION_CONFLICT",
             }
         )
         == AUTHORIZED_FOUNDATION_ERROR_CODES
@@ -48,7 +50,7 @@ def test_canonical_keys_cannot_be_overwritten_by_details() -> None:
     assert payload["details"]["message"] == ["collision"]
 
 
-@pytest.mark.parametrize("code", ["NOT_FOUND", "METHOD_NOT_ALLOWED", "INTERNAL_ERROR"])
+@pytest.mark.parametrize("code", ["METHOD_NOT_ALLOWED", "INTERNAL_ERROR"])
 def test_unauthorized_codes_are_rejected(code: str) -> None:
     from core.errors import build_error_envelope
 

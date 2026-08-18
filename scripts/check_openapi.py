@@ -24,6 +24,14 @@ _ALLOWED_PROTECTED_SCHEMA_PATHS = frozenset(
         "$.components.schemas.Login.properties.password",
         "$.components.schemas.GeneratedUserResult.properties.generated_password",
         "$.components.schemas.ResetPasswordResult.properties.generated_password",
+        # Coordinates are approved Location API fields. The safety check still
+        # rejects coordinate values/examples anywhere in the schema.
+        "$.components.schemas.Location.properties.latitude",
+        "$.components.schemas.Location.properties.longitude",
+        "$.components.schemas.LocationUpdate.properties.latitude",
+        "$.components.schemas.LocationUpdate.properties.longitude",
+        "$.components.schemas.PatchedLocationUpdate.properties.latitude",
+        "$.components.schemas.PatchedLocationUpdate.properties.longitude",
     }
 )
 

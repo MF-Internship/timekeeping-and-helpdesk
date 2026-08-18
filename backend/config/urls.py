@@ -1,8 +1,14 @@
 from django.conf import settings
 from django.urls import URLPattern, URLResolver, include, path
 
-from config.composition import authorize_identity_logout, identity_container, identity_target_lookup
+from config.composition import (
+    authorize_identity_logout,
+    identity_container,
+    identity_target_lookup,
+    locations_container,
+)
 from identity.adapters.api.urls import identity_urlpatterns
+from locations.adapters.api.urls import location_urlpatterns
 
 urlpatterns: list[URLPattern | URLResolver] = [
     path(
@@ -13,6 +19,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
                 identity_target_lookup,
                 authorize_identity_logout,
             )
+            + location_urlpatterns(locations_container)
         ),
     ),
 ]

@@ -33,8 +33,8 @@ jobs:
       - run: uv sync --project backend --locked
       - run: uv run --project backend ruff format --check backend scripts
       - run: uv run --project backend ruff check backend scripts
-      - run: uv run --project backend mypy backend/core backend/config backend/operations backend/identity backend/audit scripts
-      - run: uv run --project backend python scripts/check_function_length.py backend/core backend/config backend/operations backend/identity backend/audit scripts frontend/src/shared/api/client.ts
+      - run: uv run --project backend mypy backend/core backend/config backend/operations backend/identity backend/audit backend/locations scripts
+      - run: uv run --project backend python scripts/check_function_length.py backend/core backend/config backend/operations backend/identity backend/audit backend/locations scripts frontend/src/shared/api/client.ts
       - run: uv run --project backend pytest backend/tests/unit backend/tests/architecture backend/tests/contract
       - run: uv run --project backend pytest backend/tests/integration/api
       - run: uv run --project backend pytest -m postgres backend/tests/integration/postgres

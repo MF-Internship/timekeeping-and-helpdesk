@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { API_PROXY_SOURCE } from "../../next.config";
+import nextConfig, { API_PROXY_SOURCE, API_PROXY_TRAILING_SOURCE } from "../../next.config";
 import { buildOriginHeaders, config } from "@/middleware";
 
 describe("origin proxy boundary", () => {
@@ -18,6 +18,21 @@ describe("origin proxy boundary", () => {
   it("uses one literal matcher and rewrite source", () => {
     expect(config.matcher).toEqual([API_PROXY_SOURCE]);
     expect(API_PROXY_SOURCE).toBe("/api/v1/:path*");
+  });
+
+  it("preserves trailing slashes when proxying Django routes", async () => {
+    const rewrites = await nextConfig.rewrites?.();
+
+    expect(rewrites).toEqual([
+      expect.objectContaining({
+        source: API_PROXY_TRAILING_SOURCE,
+        destination: expect.stringMatching(/\/api\/v1\/:path\*\/$/),
+      }),
+      expect.objectContaining({
+        source: API_PROXY_SOURCE,
+        destination: expect.stringMatching(/\/api\/v1\/:path\*$/),
+      }),
+    ]);
   });
 
   it("does not expose a public origin secret", () => {

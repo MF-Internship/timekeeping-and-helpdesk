@@ -1,3 +1,5 @@
+from enum import StrEnum
+
 import pytest
 
 from audit.domain.records import AuditAction, AuditEntry, IdentityEventType, OutboxRecord
@@ -33,3 +35,13 @@ def test_url_value_is_rejected_without_echoing_the_value() -> None:
 
     assert raised.value.path == "$.diagnostic"
     assert "credential" not in str(raised.value)
+
+
+@pytest.mark.unit
+def test_owner_defined_closed_enum_is_accepted_without_changing_identity_vocabulary() -> None:
+    class LocationEvent(StrEnum):
+        LOCATION_UPDATED = "location.updated"
+
+    record = OutboxRecord(LocationEvent.LOCATION_UPDATED, "Location", "7", {"version": 2})
+    assert record.event_type is LocationEvent.LOCATION_UPDATED
+    assert len(IdentityEventType) == 7

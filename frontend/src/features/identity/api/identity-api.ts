@@ -1,5 +1,5 @@
 import { apiClient } from "@/shared/api/client";
-import { parseApiFailure } from "@/shared/errors/api-error";
+import { parseApiResultFailure } from "@/shared/errors/api-error";
 
 export type LoginInput = { username: string; password: string };
 export type ProfileInput = { full_name?: string; phone?: string | null; email?: string | null };
@@ -11,13 +11,13 @@ export type UserCreateInput = {
   email?: string | null;
 };
 
-async function unwrap<T>(result: { data?: T; response: Response }): Promise<T> {
-  if (result.data === undefined) throw await parseApiFailure(result.response);
+async function unwrap<T>(result: { data?: T; error?: unknown; response: Response }): Promise<T> {
+  if (result.data === undefined) throw await parseApiResultFailure(result);
   return result.data;
 }
 
-async function ensureSuccess(result: { response: Response }): Promise<void> {
-  if (!result.response.ok) throw await parseApiFailure(result.response);
+async function ensureSuccess(result: { error?: unknown; response: Response }): Promise<void> {
+  if (!result.response.ok) throw await parseApiResultFailure(result);
 }
 
 export async function login(input: LoginInput) {

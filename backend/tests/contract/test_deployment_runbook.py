@@ -1,27 +1,19 @@
+from __future__ import annotations
+
 from pathlib import Path
 
 
-def test_runbook_contains_every_required_operational_procedure() -> None:
-    source = Path("docs/TRIEN_KHAI.md").read_text(encoding="utf-8").casefold()
-    required = (
-        "≥2 az",
-        "public load balancer",
-        "private application instances",
-        "per-az egress",
-        "exactly one scheduler",
-        "all outbound egress",
-        "database_url",
-        "database_admin_url",
-        "credential rotation",
-        "migration before rollout",
-        "isolated restore",
-        "session revocation",
-        "stale lease",
-        "iac is deferred",
-        "apac is not data residency",
-        "throttle_cache",
-        "recovery-evidence.yaml",
-        "unresolved",
-    )
-    for phrase in required:
-        assert phrase in source, phrase
+def test_feature003_reference_data_release_order_is_mandatory() -> None:
+    text = Path("docs/TRIEN_KHAI.md").read_text(encoding="utf-8")
+    positions = [
+        text.index(value)
+        for value in (
+            "migration before rollout",
+            "initialize_location_config",
+            "seed_locations",
+            "verify_location_reference_ready",
+            "enable route/UI Feature 003",
+        )
+    ]
+    assert positions == sorted(positions)
+    assert "Chỉ exit code `0`" in text

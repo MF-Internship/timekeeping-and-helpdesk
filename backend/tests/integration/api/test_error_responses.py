@@ -10,7 +10,7 @@ from rest_framework.exceptions import ValidationError
 
 def test_runtime_defines_no_unauthorized_framework_error_code() -> None:
     backend = Path(__file__).parents[3]
-    forbidden = {"NOT_FOUND", "METHOD_NOT_ALLOWED", "UNSUPPORTED_MEDIA_TYPE", "INTERNAL_ERROR"}
+    forbidden = {"METHOD_NOT_ALLOWED", "UNSUPPORTED_MEDIA_TYPE", "INTERNAL_ERROR"}
     found: set[str] = set()
     for path in [*backend.joinpath("core").glob("*.py"), *backend.joinpath("config").glob("*.py")]:
         tree = ast.parse(path.read_text(encoding="utf-8"))

@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 BACKEND_ROOT = Path(__file__).parents[2]
-APPROVED_LOCAL_APPS = frozenset({"operations", "identity", "audit"})
+APPROVED_LOCAL_APPS = frozenset({"operations", "identity", "audit", "locations"})
 
 
 @pytest.mark.architecture

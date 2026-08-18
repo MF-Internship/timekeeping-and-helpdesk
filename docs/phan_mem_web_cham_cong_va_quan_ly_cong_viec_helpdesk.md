@@ -264,7 +264,9 @@ tới nơi. Quản lý muốn đóng việc của người khác thì dùng đư
 ### **3.4. Xác định địa điểm thực hiện**
 
 Hệ thống có **76 địa điểm (`Location`)**, tương ứng trực tiếp 7 trung tâm kinh
-doanh và 69 cửa hàng trong dữ liệu nguồn. Mỗi địa điểm bao gồm:
+doanh và 69 cửa hàng trong dữ liệu nguồn. Đây là tập đóng: không tạo hoặc xóa
+địa điểm thủ công; Quản lý chỉ được sửa thông tin cho phép trên 76 địa điểm hiện
+có. Mỗi địa điểm bao gồm:
 
 - Tên địa điểm.
 - Địa chỉ.
@@ -276,6 +278,13 @@ hai hoặc nhiều trung tâm/cửa hàng, chúng vẫn là những `Location` r
 giao nhau là hợp lệ và hệ thống chỉ cảnh báo khi quản lý cấu hình. Dữ liệu hiện
 tại có một cặp cửa hàng trùng đúng tọa độ và hai cặp cách nhau dưới 50 m, nên
 màn hình chọn địa điểm luôn hiển thị **mã kèm tên** để nhân viên phân biệt được.
+
+Khi Quản lý sửa Location hoặc Config nhưng các giá trị thực tế không đổi, hệ
+thống trả thành công như một no-op và không tạo thêm lịch sử giả. Riêng Location
+vẫn kiểm version trước: màn hình cũ phải refresh khi conflict, không được coi là
+no-op. Nếu Quản lý hạ bán kính tối đa xuống thấp hơn bán kính của bất kỳ Location
+nào (kể cả đang tắt), toàn bộ thay đổi bị từ chối và giao diện liệt kê mã địa điểm
+cần xử lý; hệ thống không tự thu nhỏ bán kính hàng loạt.
 
 Task có thể hoàn thành tại bất kỳ tọa độ nào, kể cả công an phường, ủy ban,
 trường học hoặc nơi khác ngoài 76 Location. Không khớp địa điểm đã biết không
@@ -385,6 +394,11 @@ giữ nguyên người phụ trách và trạng thái, vẫn nằm ở nhóm Qu�
 thấy và tự xử — giao thêm người khác, hoặc tự xác nhận hoàn thành kèm ghi chú.
 Báo cáo và lịch sử vẫn đếm đủ phần việc người đó đã làm; số liệu tháng trước
 không được tự đổi chỉ vì hôm nay có người nghỉ việc.
+
+Khóa một tài khoản đã khóa hoặc mở một tài khoản vốn đang mở vẫn trả về trạng
+thái hiện tại nhưng không tạo thêm một lần thay đổi giả trong lịch sử. Ngược lại,
+đặt lại mật khẩu lần nữa luôn là một yêu cầu mới: hệ thống sinh mật khẩu mới và
+hiển thị lại đúng một lần; mật khẩu của lần reset trước hết hiệu lực.
 - Cập nhật thông tin cá nhân:
   - **Họ và tên — bắt buộc, không được để trống.** Đây là tên hiển thị ở mọi danh
     sách, báo cáo và ô tìm kiếm, nên tên rỗng làm hỏng toàn bộ các màn đó.
@@ -409,7 +423,8 @@ nhiều lần trong ca**: đăng nhập một lần, ứng dụng tự duy trì 
 một tuần miễn là còn sử dụng. Đổi lại, quản lý phải cắt được truy cập khi cần:
 khi người dùng bấm đăng xuất, khi quản lý khóa tài khoản, khi quản lý đặt lại
 mật khẩu, hoặc khi chính người dùng đổi mật khẩu, hệ thống **thu hồi toàn bộ
-phiên trên mọi thiết bị** của người đó và ghi nhật ký.
+phiên trên mọi thiết bị** của người đó. Thao tác mutation và lần thu hồi thực sự
+có phiên bị cắt được ghi nhật ký; gọi lặp không đổi trạng thái không tạo lịch sử giả.
 
 Mức độ tức thời khác nhau theo tình huống, và tài liệu không được nói mạnh hơn
 thực tế — xem câu canonical ở [CHỐT §9.2.1](CHOT_YEU_CAU.md):
@@ -428,6 +443,12 @@ trong cùng một thao tác.
 
 Vì vậy, khi máy bị mất, thao tác đúng là **khóa tài khoản** — chỉ đặt lại mật
 khẩu thì vẫn còn cửa sổ tối đa 15 phút.
+
+Đăng xuất là thao tác idempotent: chỉ cần access token còn hợp lệ, hệ thống luôn
+trả thành công, xóa cookie và thử thu hồi toàn bộ phiên của đúng tài khoản đang
+đăng nhập, kể cả cookie refresh đã thiếu/hỏng/hết hạn. Bấm lại không tạo thêm một
+dòng lịch sử nếu không còn phiên nào để thu hồi. Cách này không biến cookie lỗi
+thành lý do giữ các phiên khác sống sót.
 
 Khi bị chặn, ứng dụng phải nói rõ **lý do** thay vì báo lỗi chung chung: phiên
 hết hạn thì tự làm mới hoặc yêu cầu đăng nhập lại, tài khoản bị khóa thì hiện
@@ -545,6 +566,8 @@ Có toàn bộ quyền của Lãnh đạo và bổ sung các chức năng quản
   luồng nghiệp vụ nào của Lãnh đạo hay Helpdesk chạm tới.
 - Cấu hình thời gian Check In/Check Out.
 - Cấu hình bán kính GPS cho chấm công và xác định địa điểm.
+- Không thể hạ bán kính tối đa xuống dưới bán kính Location hiện hữu; thao tác bị
+  từ chối nguyên tử và không tự sửa Location.
 - Cấu hình trần sai số GPS chấp nhận được cho chấm công. Đây là cổng chất lượng
   độc lập với bán kính, không bị ràng buộc phải nhỏ hơn bán kính nhỏ nhất.
 - Quản lý người dùng — chỉ với tài khoản **Lãnh đạo** và **Helpdesk**:
@@ -675,6 +698,11 @@ hay tạo thêm hành vi nghiệp vụ.
   vận hành thật; đầu ra của lệnh không tự động làm production-ready hoặc
   recovery-ready. Bằng chứng thật bị `failed` phải có người chịu trách nhiệm
   khắc phục. Các lựa chọn hoặc số đo chưa có vẫn là `UNRESOLVED`.
+- **NFR-30 — Hạn mức xác thực dùng chung.** Đăng nhập tối đa 10 request/phút
+  theo client IP, refresh tối đa 120 request/phút theo client IP, và đổi mật khẩu
+  tối đa 5 request/phút theo tài khoản đã xác thực. Vượt hạn mức trả `429` kèm
+  thời gian chờ; kho đếm dùng chung hỏng thì trả `503` và không cho request đi
+  tiếp. Các worker không có quota riêng và frontend không tự đoán thời gian chờ.
 - **AD-7 / AD-10 / AD-11.** Schema tiến hóa không gãy; ranh giới runtime/admin,
   môi trường và origin được kiểm bằng lệnh chạy được; contract, correlation,
   thông báo và dữ liệu chẩn đoán có một chủ sở hữu dùng chung. Những control nằm

@@ -6,4 +6,6 @@ ERROR_MESSAGES = {
     "ACCOUNT_INACTIVE": "Tài khoản đã bị khóa, liên hệ quản lý.",
     "PASSWORD_CHANGE_REQUIRED": "Bạn phải đổi mật khẩu trước khi tiếp tục.",
     "SERVER_OWNED_FIELD": "Dữ liệu chứa trường do hệ thống quản lý.",
+    "NOT_FOUND": "Không tìm thấy dữ liệu yêu cầu.",
+    "LOCATION_VERSION_CONFLICT": "Dữ liệu địa điểm đã được thay đổi.",
 }

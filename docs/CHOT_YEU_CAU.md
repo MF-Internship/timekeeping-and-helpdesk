@@ -88,6 +88,11 @@ Location (76 bản ghi)
   latitude, longitude, radius_m, is_active
 ```
 
+Tập này là tập đóng đúng 76 bản ghi từ hai CSV canonical. Không có thao tác tạo
+`Location` thủ công hoặc `POST /api/v1/locations/`; Manager chỉ được sửa các
+field cho phép qua `PATCH` và seed chạy lại có quyền khôi phục field do
+nguồn/config sở hữu (R-113).
+
 ```python
 class LocationKind(models.TextChoices):
     BUSINESS_CENTER = "BUSINESS_CENTER", "Trung tâm kinh doanh"
@@ -254,6 +259,17 @@ shift_start < shift_end          (MVP không hỗ trợ ca qua ngày)
 Không biến cảnh báo thành DB constraint khi nghiệp vụ chưa chốt nó là bất biến
 cứng; ngược lại, không cho dữ liệu vi phạm bất biến cứng đi vào hệ thống qua
 seed/import.
+
+**Hạ trần bán kính Config (chốt, R-114).** `Location.radius_m <=
+Config.max_radius_m` là bất biến trên **toàn bộ** 76 Location, không chỉ các dòng
+đang hoạt động. `PATCH /api/v1/config/` làm `max_radius_m` thấp hơn bán kính của
+bất kỳ Location hiện hữu nào bị từ chối nguyên tử bằng `400 VALIDATION_FAILED`;
+`details` nêu field `max_radius_m` và danh sách `id`/`code` vi phạm nhưng không
+chứa tọa độ. Server không tự thu nhỏ Location, không ghi Config/AuditLog/
+OutboxEvent và không tăng aggregate version. Giá trị bằng bán kính lớn nhất hiện
+có là hợp lệ. Kiểm tra này chạy sau RBAC/DTO nhưng trong transaction đã khóa
+Config; mọi Location update cũng khóa Config trước Location để kết quả tuyến tính
+dưới cạnh tranh.
 
 ## 5. Chấm công
 
@@ -867,6 +883,11 @@ Ghi chú model:
   server khóa bản ghi, tính lại overlap từ candidate state trong cùng transaction,
   ghi Location + AuditLog + warning set rồi tăng version. Stale write trả `409`
   và giữ reason client đã nhập để review lại; không last-write-wins.
+  Nếu version hiện tại nhưng candidate không đổi bất kỳ field mutable nào thì đây
+  là no-op idempotent (R-115): trả `200` với Location/version hiện tại và warning
+  tính lại, không ghi DB, không tăng version, không AuditLog/OutboxEvent và không
+  tăng aggregate version. Version stale vẫn trả `409` kể cả candidate tình cờ
+  bằng state hiện tại; `reason` đứng một mình vẫn là `400 VALIDATION_FAILED`.
 - `Attendance.location` **không nullable** và `validation_result` luôn là
   `INSIDE_GEOFENCE`: §5.1 bước 8 đã từ chối mọi trường hợp khác. Giữ hai cột này
   để báo cáo dùng chung schema với `TaskUpdate`, không để mở rộng ngầm.
@@ -1345,9 +1366,11 @@ Quy tắc bắt buộc:
   SimpleJWT). Cấu hình chỉ dùng JWT stateless cho refresh là **sai chốt** vì mất
   khả năng thu hồi.
 - Thu hồi xảy ra ở bốn tình huống, tất cả đều blacklist **toàn bộ** refresh token
-  đang mở của user và ghi `AuditLog`: đăng xuất, Manager reset mật khẩu, user tự
-  đổi mật khẩu, và tài khoản bị đặt `is_active = False`. Không có tình huống nào
-  chỉ thu hồi đúng một refresh token — kể cả logout (§10).
+  đang mở của user: đăng xuất, Manager reset mật khẩu, user tự đổi mật khẩu, và
+  tài khoản bị đặt `is_active = False`. Evidence của chính lần thu hồi chỉ ghi
+  khi count > 0 theo §9.2.2; reset/đổi mật khẩu/status transition vẫn có evidence
+  mutation riêng. Không có tình huống nào chỉ thu hồi đúng một refresh token —
+  kể cả logout (§10).
 - **User tự đổi mật khẩu là ngoại lệ về response, không phải về thu hồi (chốt,
   R-78).** `POST /api/change-password/` vẫn thu hồi **toàn bộ** refresh token
   như ba tình huống kia, nhưng sau đó **cấp ngay một cặp `access` + `refresh`
@@ -1389,10 +1412,69 @@ Quy tắc bắt buộc:
   tài khoản đó nên không lộ thêm thông tin; ở `/api/v1/auth/login` vẫn giữ chung
   `401 INVALID_CREDENTIALS` cho cả sai mật khẩu lẫn tài khoản khóa.
 
+### 9.2.2 Logout và thao tác lặp: idempotent theo trạng thái (R-110, R-111)
+
+**Logout dùng access token để xác định actor và luôn ưu tiên cắt phiên (R-110).**
+Sau khi access token hợp lệ đã nạp được user hoạt động và request qua các cổng
+phân quyền/trạng thái tài khoản hiện hành, refresh cookie **không còn là điều kiện
+để được logout**. Cookie chỉ là credential cần xóa ở client; server thu hồi theo
+actor của access token, tuyệt đối không lấy user từ cookie. Bốn trường hợp có
+cùng kết quả HTTP và cùng gọi `revoke_all_refresh_tokens(actor, LOGOUT)`:
+
+| Refresh cookie ở request logout | HTTP | Thu hồi toàn bộ refresh của actor | Evidence |
+|---|---|---|---|
+| Thiếu | `204`, không body | Có | Chỉ khi thực sự thu hồi ít nhất một refresh đang hoạt động |
+| Sai định dạng/chữ ký/hết hạn hoặc thuộc user khác | `204`, không body | Có | Chỉ khi thực sự thu hồi ít nhất một refresh đang hoạt động |
+| Hợp lệ nhưng đã bị thu hồi | `204`, không body | Có | Chỉ khi thực sự thu hồi ít nhất một refresh đang hoạt động khác |
+| Hợp lệ và đang hoạt động | `204`, không body | Có | Có: một `AuditLog` và một `OutboxEvent` cho lần thu hồi toàn cục |
+
+Cookie luôn được clear với đúng thuộc tính cookie đã chốt. Logout là **idempotent
+theo trạng thái**: gọi lại khi không còn refresh hoạt động vẫn trả `204`, helper
+trả `revoked_count = 0`, không ghi `AuditLog`, không append `OutboxEvent`, không
+tăng `aggregate_version`. Nếu cookie gửi lại đã chết nhưng actor còn một phiên
+khác, lần gọi vẫn thu hồi phiên còn lại và sinh đúng một cặp evidence. Không thêm
+mã lỗi mới: `401 INVALID_TOKEN` của logout chỉ còn áp cho access token thiếu/sai/
+hết hạn; `401 ACCOUNT_INACTIVE`, `403 PASSWORD_CHANGE_REQUIRED` và thứ tự cổng
+quyền giữ nguyên. Endpoint refresh vẫn trả `401 INVALID_TOKEN` cho refresh token
+thiếu/sai/hết hạn/blacklist; quyết định idempotent này chỉ áp cho logout.
+
+**Mọi thao tác lặp khác cũng phân biệt “ý định mới” với “không đổi state”
+(R-111).**
+
+- `PATCH .../status` đặt đúng giá trị hiện có trả `200` với representation hiện
+  tại, là no-op: không UPDATE User, không gọi thu hồi, không AuditLog, không
+  OutboxEvent và không tăng aggregate version.
+- Chuyển `active → inactive` hoặc `inactive → active` là mutation thật: ghi User,
+  một AuditLog và một OutboxEvent trạng thái; mỗi OutboxEvent làm version tăng
+  đúng một. Riêng `active → inactive` còn gọi thu hồi toàn cục.
+- `revoke_all_refresh_tokens` khi không có refresh đang hoạt động trả thành công
+  với `revoked_count = 0`, không ghi dòng blacklist mới, không AuditLog, không
+  OutboxEvent và không tăng version. Khi count > 0, helper ghi đúng một AuditLog
+  và một OutboxEvent tổng hợp, không ghi một cặp evidence cho từng token.
+- Vì vậy deactivation lặp lại sau khi đã inactive là no-op `200`; logout lặp lại
+  theo R-110 là no-op `204`. Không có hard delete và không xóa lịch sử.
+- Manager reset mật khẩu lặp lại **không phải no-op**: mỗi request hợp lệ là một
+  ý định mới, sinh mật khẩu mới, ghi hash/cờ, trả `200`, ghi một AuditLog và một
+  OutboxEvent reset, làm aggregate version tăng một. Nó vẫn gọi helper thu hồi;
+  event thu hồi chỉ sinh thêm (và version chỉ tăng thêm) khi count > 0.
+- User tự đổi mật khẩu hợp lệ lần nữa cũng là mutation mới theo mật khẩu mới;
+  luật revoke-before-issue của R-78 giữ nguyên.
+
+Mọi evidence nói trên cùng mutation/blacklist nằm trong transaction của caller.
+Version chỉ tăng vì một OutboxEvent đã commit; no-op không tạo “khoảng trống”
+version và không tạo bằng chứng giả rằng state đã đổi.
+
 ### 9.3 Import, xuất báo cáo và lịch làm việc
 
 - Seed chạy idempotent theo `Location.code`, giữ mã/tên/địa chỉ/tọa độ CSV và
   quan hệ cha suy theo §2; không gộp location vì địa chỉ hay tọa độ trùng.
+- **Reference-data readiness (chốt, R-117).** Migration chỉ tạo schema, không bịa
+  shift/grace và không tự seed. Trước khi bật route/UI Feature 003, deployment
+  phải chạy một kiểm tra read-only có exit code: đúng một Config hoàn chỉnh
+  `id=1`, đúng 76 Location/7 BUSINESS_CENTER/69 SHOP, đúng canonical code,
+  hierarchy và source coordinates. Thiếu/sai bất kỳ điều kiện nào thì gate fail
+  closed và route/UI chưa được enable. Check không sửa dữ liệu và không thay thế
+  hai command initialization/seed có attribution.
 - Validator import áp dụng đúng bảng “dừng hay cảnh báo” ở §4.3: dừng khi vi phạm
   bất biến Config hoặc `radius_m <= 0` / `radius_m > Config.max_radius_m`; chỉ
   cảnh báo với geofence overlap và với `radius_m < Config.max_attendance_accuracy_m`.
@@ -1738,6 +1820,35 @@ Quy tắc bắt buộc:
   ai thấy. Bản kê môi trường phải ghi lựa chọn này để lệnh so trùng đọc và từ
   chối được từ bên ngoài tiến trình.
 
+### 9.7.1 Hạn mức endpoint xác thực (R-112)
+
+Các số từng xuất hiện ở R-109 nay được chốt thành contract nghiệp vụ/HTTP:
+
+| Scope | Endpoint | Hạn mức | Khóa đếm |
+|---|---|---:|---|
+| `login` | `POST /api/v1/auth/login` | 10 request / 60 giây | Client IP canonical do server suy ra sau trusted-proxy normalization; không tin `X-Forwarded-For` tùy ý |
+| `refresh` | `POST /api/v1/auth/refresh` | 120 request / 60 giây | Client IP canonical như trên, kể cả cookie thiếu/sai |
+| `password_change` | `POST /api/v1/change-password` | 5 request / 60 giây | `User.id` đã xác thực |
+
+Mọi request tới scope đều tính, bất kể sau đó credential/DTO đúng hay sai. Login
+và refresh chạy throttle sau cổng hạ tầng nhưng trước parse DTO/nghiệp vụ;
+password change chạy sau authentication và permission/account gate hiện hành,
+trước DTO. Vượt hạn mức trả `429 THROTTLED` bằng error envelope canonical, có
+`Retry-After`, không gọi service và không ghi AuditLog/OutboxEvent.
+
+Ba scope dùng đúng `core.cache.THROTTLE_CACHE_ALIAS` và cache dùng chung của
+R-109; cấm alias/cache subsystem thứ hai. Kho đếm không truy cập được là
+**fail-closed**: request dừng với `503 SERVICE_UNAVAILABLE` bằng envelope
+canonical, không được coi như còn quota và không chạy nghiệp vụ. `THROTTLED` và
+`SERVICE_UNAVAILABLE` là hai error code được R-112 phê duyệt; không dùng
+`INVALID_CREDENTIALS`/`INVALID_TOKEN` để che lỗi throttle hay hạ tầng.
+
+Kiểm thử bắt buộc dùng clock kiểm soát để chứng minh request trong/ngoài cửa sổ,
+key độc lập và key dùng chung đúng phạm vi; kiểm thử integration dùng backend
+cache chung để chứng minh hai process/worker không được mỗi bên một quota. Test
+cache failure phải chứng minh fail-closed và không có side effect. Không thêm
+dependency, Redis instance hay migration cache mới.
+
 ### 9.8 Nền tảng di trú, sao lưu và khôi phục (R-108)
 
 - R-107 chứng minh ba môi trường **không dùng chung tài nguyên nào**; nó không
@@ -1914,10 +2025,13 @@ Ba endpoint xác thực theo §9.2.1: `POST /api/v1/auth/login` nhận `username
 thông báo, không phân biệt để tránh dò tài khoản. `POST /api/v1/auth/refresh` đọc
 cookie, trả access mới, xoay cookie và blacklist token cũ; token hết hạn,
 sai chữ ký hoặc đã bị blacklist đều trả `401 INVALID_TOKEN`. `POST
-/api/v1/auth/logout` đọc cookie, thu hồi **toàn bộ** refresh token đang mở của
-user (không chỉ token gửi kèm) qua đúng helper thu hồi ở §9.2.1, ghi `AuditLog`
-rồi trả `204`; access token đang cầm không bị blacklist. Request thiếu, sai
-hoặc hết hạn access token trả `401 INVALID_TOKEN`; token còn hợp lệ nhưng user đã
+/api/v1/auth/logout` xác định actor bằng access token, luôn gọi helper thu hồi
+**toàn bộ** refresh token đang mở của actor (không chỉ token gửi kèm), clear
+cookie rồi trả `204` theo ma trận idempotent §9.2.2. Refresh cookie thiếu/sai/
+hết hạn/đã blacklist/thuộc user khác không đổi kết quả logout; chỉ lần thực sự
+thu hồi ít nhất một phiên mới ghi một AuditLog + một OutboxEvent và tăng version.
+Access token đang cầm không bị blacklist. Request thiếu, sai hoặc hết hạn access
+token trả `401 INVALID_TOKEN`; token còn hợp lệ nhưng user đã
 bị `is_active = False` trả `401 ACCOUNT_INACTIVE` — hai mã khác nhau vì client xử
 lý khác nhau: `INVALID_TOKEN` thì thử refresh, `ACCOUNT_INACTIVE` thì dừng hẳn và
 báo tài khoản bị khóa (§9.2.1). `must_change_password = True` trả
@@ -2018,10 +2132,9 @@ không có action.
 | Method + path | Action | Ghi chú |
 |---|---|---|
 | `GET /api/v1/locations/` | `location.view` | Cả ba vai trò; lọc tùy chọn theo `kind`, `parent`, `is_active` |
-| `POST /api/v1/locations/` | `location.manage` | Tạo `Location`; áp bảng “dừng hay cảnh báo” §4.3 |
-| `PATCH /api/v1/locations/{id}/` | `location.manage` | Sửa tên/địa chỉ/tọa độ/`radius_m`/`is_active`; **không** đổi `code`; bắt `version`, tính lại overlap trong transaction, stale trả `409 LOCATION_VERSION_CONFLICT` |
+| `PATCH /api/v1/locations/{id}/` | `location.manage` | Sửa tên/địa chỉ/tọa độ/`radius_m`/`is_active`; **không** đổi `code`; bắt `version`, tính lại overlap trong transaction, stale trả `409 LOCATION_VERSION_CONFLICT`; same-value candidate là no-op `200` theo R-115 |
 | `GET /api/v1/config/` | `config.view` | Cả ba vai trò — client cần đọc ngưỡng để dựng UI (§8) |
-| `PATCH /api/v1/config/` | `config.manage_attendance` | Sửa singleton `pk=1`; cùng URL với `GET` nhưng khác action, kiểm theo method |
+| `PATCH /api/v1/config/` | `config.manage_attendance` | Sửa singleton `pk=1`; cùng URL với `GET` nhưng khác action, kiểm theo method; hạ `max_radius_m` dưới bất kỳ Location hiện hữu nào bị từ chối theo R-114; same-value candidate là no-op `200` theo R-115 |
 | `GET /api/v1/holidays/` | `holiday.manage` | Chỉ `MANAGER`; job cuối ngày **không** đọc bảng này (§5.3, R-82) |
 | `POST /api/v1/holidays/` | `holiday.manage` | Thêm ngày nghỉ; `date` là `UNIQUE`, trùng trả `400` |
 | `DELETE /api/v1/holidays/{id}/` | `holiday.manage` | Xóa ngày nghỉ |
@@ -2032,6 +2145,22 @@ Mọi thao tác ghi ghi `AuditLog` kèm actor, target, action và giá trị cũ
 riêng reset mật khẩu **không** ghi mật khẩu vào `AuditLog`. `username` là bất
 biến sau khi tạo: đổi `username` không nằm trong MVP, muốn thêm thì mở endpoint
 riêng để không lẫn vào `PATCH` hồ sơ.
+
+**PATCH không đổi state (chốt, R-115).** Với Location hoặc Config, payload phải
+có ít nhất một field mutable; `reason` riêng lẻ không đủ. Sau khi khóa và dựng
+complete candidate, nếu mọi field mutable bằng state hiện tại thì response vẫn
+`200` và trả resource/warnings hiện hành, nhưng không gọi save, không tăng
+Location version, không tạo AuditLog/OutboxEvent và không tăng aggregate version.
+Đây là idempotent no-op, không phải một mutation có bằng chứng. Với Location,
+version được so trước khi xét no-op: version stale luôn `409` và không được hợp
+thức hóa chỉ vì candidate trùng state mới.
+
+**ID route sai hình dạng (chốt, R-116).** Mọi route Feature 003 dùng string
+converter để authentication, action RBAC và account gate chạy trước parse id.
+Sau khi qua các gate đó, id Location/Holiday không parse thành số nguyên dương và
+id hợp lệ nhưng không tồn tại đều trả cùng `404 NOT_FOUND`; không để lộ target,
+không mutation/audit/outbox. Quy tắc này áp nhất quán cho `PATCH Location` và
+`DELETE Holiday`.
 
 ### 10.1 Hợp đồng API có phiên bản và client sinh tự động (chốt, R-103)
 
@@ -2220,6 +2349,24 @@ trả `404`, và không có giao diện HTML kiểu Swagger/ReDoc.
   mismatch và stale run; LEADER không nhận account/AuditLog link.
 - `PATCH Location` với version cũ trả conflict; overlap được tính lại trong
   transaction lưu và AuditLog giữ before/after/reason.
+- `PATCH Location` current-version và `PATCH Config` có field nhưng candidate
+  không đổi trả `200` no-op: không save/audit/outbox/version; Location stale vẫn
+  `409` dù candidate bằng state hiện tại (R-115).
+- Hạ `Config.max_radius_m` bằng bán kính Location lớn nhất thì thành công; thấp
+  hơn bán kính của Location active **hoặc inactive** thì `400`, toàn bộ
+  Config/Location/AuditLog/OutboxEvent/version không đổi. Race Config-lowering
+  với Location update và hai Location update khác nhau phải dùng PostgreSQL thật,
+  hai connection/barrier và chứng minh thứ tự khóa Config → Location (R-114).
+- Location `name`/`address` rỗng, `is_active = NULL` và mọi constraint/default
+  Location phải có test PostgreSQL; không dùng SQLite/mock làm bằng chứng.
+- `PATCH Location`/`DELETE Holiday` với id sai hình dạng: actor thiếu quyền vẫn
+  `403`; actor đủ quyền nhận `404 NOT_FOUND`, giống id hợp lệ không tồn tại, và
+  không có side effect (R-116).
+- Mọi response Feature 003, cả success/error/conflict, có `Cache-Control:
+  private, no-store`; error `request_id` khớp `X-Request-Id`.
+- Gate readiness fail nếu Config thiếu/không hợp lệ hoặc Location không đúng
+  76/7/69/source/hierarchy; pass chỉ sau initialization + seed canonical và
+  tuyệt đối không tự sửa state (R-117).
 - Failure-rate response luôn có numerator/denominator/excluded/observed/nearest
   coverage; denominator 0 trả `rate = NULL`/`N/A`, không `0%`.
 - Export mặc định không có tọa độ/Maps/photo/presigned URL; opt-in MANAGER/LEADER
@@ -2304,6 +2451,18 @@ trả `404`, và không có giao diện HTML kiểu Swagger/ReDoc.
   mới.
 - Sau `POST /api/v1/auth/logout`, refresh token bị blacklist: gọi lại
   `/api/v1/auth/refresh` với cookie đó trả `401`.
+- Logout với access hợp lệ và lần lượt cookie thiếu, sai, hết hạn, thuộc user
+  khác, đã blacklist, đang active đều trả `204`, clear cookie và gọi revoke theo
+  actor. Có active session thì đúng một audit+outbox; gọi lặp khi count = 0 không
+  thêm evidence/version.
+- `PATCH .../status` với giá trị đang có trả `200` nhưng số User write,
+  AuditLog, OutboxEvent và version đều không đổi. Reset hai lần vẫn sinh hai mật
+  khẩu khác nhau và hai reset evidence; lần thứ hai chỉ có revocation evidence
+  nếu lại có active refresh.
+- Clock-controlled throttle test: request thứ 11 login/IP, 121 refresh/IP và 6
+  password-change/User trong 60 giây trả `429 THROTTLED` + `Retry-After`; key
+  khác còn quota, hai worker dùng chung counter; cache hỏng trả
+  `503 SERVICE_UNAVAILABLE`, không mutation/audit/outbox.
 - Manager reset mật khẩu, user tự đổi mật khẩu, hoặc đặt `is_active = False`: mọi
   refresh token đang mở của user đó bị blacklist và có `AuditLog`; refresh sau đó
   đều `401`.

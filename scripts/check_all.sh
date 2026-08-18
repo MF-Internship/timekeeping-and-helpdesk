@@ -4,14 +4,14 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
-maintainability_paths=(backend/core backend/config backend/operations backend/identity backend/audit scripts frontend/src/shared/api/client.ts)
+maintainability_paths=(backend/core backend/config backend/operations backend/identity backend/audit backend/locations scripts frontend/src/shared/api/client.ts)
 if [[ -n "${CHECK_ALL_MAINTAINABILITY_PATH:-}" ]]; then
   maintainability_paths=("$CHECK_ALL_MAINTAINABILITY_PATH")
 fi
 
 uv run --project backend ruff format --check backend scripts
 uv run --project backend ruff check backend scripts
-uv run --project backend mypy backend/core backend/config backend/operations backend/identity backend/audit scripts
+uv run --project backend mypy backend/core backend/config backend/operations backend/identity backend/audit backend/locations scripts
 uv run --project backend python scripts/check_function_length.py "${maintainability_paths[@]}"
 uv run --project backend pytest backend/tests/unit backend/tests/architecture backend/tests/contract backend/tests/integration/api
 uv run --project backend pytest -m postgres backend/tests/integration/postgres

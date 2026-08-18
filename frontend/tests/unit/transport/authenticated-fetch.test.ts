@@ -35,6 +35,25 @@ describe("authenticatedFetch", () => {
     expect(new Headers(init.headers).get("Accept")).toBe("application/json");
   });
 
+  it("accepts the same-origin Request objects produced by openapi-fetch", async () => {
+    const platformFetch = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", platformFetch);
+    const request = new Request(`${window.location.origin}/api/v1/locations/`, {
+      method: "POST",
+      body: "{}",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    await authenticatedFetch(request);
+
+    const [target, init] = platformFetch.mock.calls[0] as [Request, RequestInit];
+    expect(target).toBeInstanceOf(Request);
+    expect(target.url).toBe(request.url);
+    expect(target.method).toBe("POST");
+    expect(new Headers(init.headers).get("Content-Type")).toBe("application/json");
+    expect(new Headers(init.headers).get("Accept")).toBe("application/json");
+  });
+
   it.each(["https://example.invalid/api/v1/schema/", "/outside/"])(
     "rejects %s before network activity",
     async (target) => {
@@ -45,6 +64,16 @@ describe("authenticatedFetch", () => {
       expect(platformFetch).not.toHaveBeenCalled();
     },
   );
+
+  it("rejects a cross-origin Request before network activity", async () => {
+    const platformFetch = vi.fn();
+    vi.stubGlobal("fetch", platformFetch);
+
+    await expect(
+      authenticatedFetch(new Request("https://example.invalid/api/v1/schema/")),
+    ).rejects.toThrow("API target");
+    expect(platformFetch).not.toHaveBeenCalled();
+  });
 
   it("shares one refresh and replays ten simultaneous invalid-token requests once", async () => {
     setMemoryAccessToken("old-access");

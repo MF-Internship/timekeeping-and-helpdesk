@@ -1,3 +1,4 @@
+import { StrictMode } from "react";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -61,9 +62,11 @@ describe("AuthProvider bootstrap", () => {
       capabilities: ["user.view"],
     });
     render(
-      <AuthProvider>
-        <Probe />
-      </AuthProvider>,
+      <StrictMode>
+        <AuthProvider>
+          <Probe />
+        </AuthProvider>
+      </StrictMode>,
     );
     await waitFor(() => expect(screen.getByText("authenticated")).toBeInTheDocument());
     expect(api.refresh).toHaveBeenCalledTimes(1);
