@@ -16,6 +16,21 @@ It owns operational framework adapters, the thin restore command,
 and the R-109 technical cache-table migration. This ownership does not authorize
 business entities or another persistence owner.
 
+`backend/identity/` owns the canonical User aggregate, authentication sessions,
+RBAC policy, self-service, and user-administration use cases. `backend/audit/`
+owns immutable audit evidence and the transactional outbox. Their domain and
+application layers remain framework-independent; Django models, SimpleJWT,
+serializers, views, and recording adapters stay at the adapter boundary.
+
+Identity request processing is ordered as authentication, action RBAC,
+body-independent Manager-target authorization, forced-password gate, DTO
+validation, owning-module object scope, business rules, transaction/database
+constraints, then audit/outbox. Permission decisions expose direct or approved
+implication provenance only. Attendance self ownership is deferred to Feature
+004, and Task creator/assignee ownership is deferred to Feature 006; Identity
+does not query or write either module. Audit/outbox appends join the caller's
+transaction. An asynchronous outbox relay remains outside Feature 002.
+
 ## Dependency direction
 
 Future business modules use `domain/`, `application/`, `ports/`, and `adapters/`.
@@ -29,11 +44,10 @@ moves business rules into an adapter, command, serializer, view, or component.
 
 ## Current feature boundary
 
-Feature 001 creates no authentication flow, location behavior, attendance,
-task-management behavior, notifications, reporting logic, business model,
-audit/outbox model, or public business endpoint. The sole technical table is
-the Django DatabaseCache table provisioned by the `operations` migration from
-the identity owned by `core.cache`.
+Feature 002 adds only Identity/Auth/RBAC and audit/outbox persistence. It adds no
+location, Attendance, Task, notification, reporting, or outbox-relay behavior.
+The pre-existing cache is the sole technical table; it remains owned by
+`operations` and identified by `core.cache`.
 
 ## Dependency provenance
 
@@ -44,6 +58,7 @@ only for the stated foundation requirement.
 | --- | --- |
 | `django` | Web composition, middleware, management-command discovery, migrations, and DatabaseCache. |
 | `djangorestframework` | Versioned JSON API boundary and validation adapters. |
+| `djangorestframework-simplejwt` | Fifteen-minute bearer access credentials plus server-tracked, rotating, revocable seven-day refresh credentials. |
 | `drf-spectacular` | Backend-authoritative OpenAPI generation. |
 | `psycopg` | PostgreSQL-only runtime, migration, and restore verification. |
 | `pyyaml` | Safe parsing of deployment, recovery, and OpenAPI YAML documents. |

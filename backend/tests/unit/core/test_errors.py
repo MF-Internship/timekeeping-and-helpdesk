@@ -6,8 +6,19 @@ import pytest
 def test_authorized_codes_are_closed() -> None:
     from core.error_codes import AUTHORIZED_FOUNDATION_ERROR_CODES
 
-    assert frozenset({"VALIDATION_FAILED", "PERMISSION_DENIED"}) == (
-        AUTHORIZED_FOUNDATION_ERROR_CODES
+    assert (
+        frozenset(
+            {
+                "VALIDATION_FAILED",
+                "PERMISSION_DENIED",
+                "INVALID_CREDENTIALS",
+                "INVALID_TOKEN",
+                "ACCOUNT_INACTIVE",
+                "PASSWORD_CHANGE_REQUIRED",
+                "SERVER_OWNED_FIELD",
+            }
+        )
+        == AUTHORIZED_FOUNDATION_ERROR_CODES
     )
 
 

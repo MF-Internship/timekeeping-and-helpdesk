@@ -14,6 +14,20 @@ from core.messages import ERROR_MESSAGES
 _CANONICAL_FIELDS = frozenset({"error_code", "message", "details", "request_id", "error"})
 
 
+class IdentityAPIError(Exception):
+    def __init__(
+        self,
+        error_code: str,
+        *,
+        status_code: int,
+        details: Mapping[str, object] | None = None,
+    ) -> None:
+        self.error_code = error_code
+        self.status_code = status_code
+        self.details = dict(details or {})
+        super().__init__(error_code)
+
+
 def build_error_envelope(
     error_code: str,
     request_id: str,
@@ -47,6 +61,17 @@ def drf_exception_handler(exception: Exception, context: dict[str, object]) -> o
     from rest_framework.response import Response
     from rest_framework.views import exception_handler
 
+    if isinstance(exception, IdentityAPIError):
+        from core.correlation import get_request_id
+
+        return Response(
+            build_error_envelope(
+                exception.error_code,
+                get_request_id(),
+                exception.details,
+            ),
+            status=exception.status_code,
+        )
     if isinstance(exception, ValidationError):
         from core.correlation import get_request_id
 

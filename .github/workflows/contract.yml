@@ -45,6 +45,7 @@ jobs:
       - run: uv run --project backend python scripts/generate_openapi.py --check
       - run: uv run --project backend python scripts/check_openapi.py --all
       - run: npm --prefix frontend run api:check
+      - run: npm --prefix frontend run typecheck
       - run: uv run --project backend python scripts/check_contract_drift.py
       - run: scripts/check_openapi_compatibility.sh
       - run: uv run --project backend python scripts/migration_check.py check

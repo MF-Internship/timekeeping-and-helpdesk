@@ -28,4 +28,19 @@ def test_all_paths_operation_ids_and_properties_are_canonical() -> None:
         for operation in item.values():
             operation_ids.append(operation["operationId"])
     assert len(operation_ids) == len(set(operation_ids))
-    assert operation_ids == ["api_schema_retrieve"]
+    assert operation_ids == [
+        "auth_login_create",
+        "auth_logout_create",
+        "auth_refresh_create",
+        "identity_change_password_create",
+        "identity_me_retrieve",
+        "identity_me_partial_update",
+        "api_schema_retrieve",
+        "users_list",
+        "users_create",
+        "users_retrieve",
+        "users_partial_update",
+        "users_reset_password_create",
+        "users_role_partial_update",
+        "users_status_partial_update",
+    ]

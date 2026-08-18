@@ -3,6 +3,206 @@ info:
   title: Timekeeping and Helpdesk API
   version: 1.0.0
 paths:
+  /api/v1/auth/login:
+    post:
+      operationId: auth_login_create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Login'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Login'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      tags:
+      - auth
+  /api/v1/auth/logout:
+    post:
+      operationId: auth_logout_create
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - auth
+  /api/v1/auth/refresh:
+    post:
+      operationId: auth_refresh_create
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      tags:
+      - auth
+  /api/v1/change-password:
+    post:
+      operationId: identity_change_password_create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - change-password
+  /api/v1/me/:
+    get:
+      operationId: identity_me_retrieve
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SelfUser'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - me
+    patch:
+      operationId: identity_me_partial_update
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProfile'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProfile'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProfile'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SelfUser'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - me
   /api/v1/schema/:
     get:
       description: Machine-readable schema endpoint; no interactive UI is registered.
@@ -140,11 +340,408 @@ paths:
                 type: object
           description: ''
       security:
+      - bearerAuth: []
       - {}
       tags:
-      - api
+      - schema
+  /api/v1/users/:
+    get:
+      operationId: users_list
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: role
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPage'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - users
+    post:
+      operationId: users_create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneratedUserResult'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - users
+  /api/v1/users/{user_id}/:
+    get:
+      operationId: users_retrieve
+      parameters:
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - users
+    patch:
+      operationId: users_partial_update
+      parameters:
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProfile'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProfile'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProfile'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - users
+  /api/v1/users/{user_id}/reset-password:
+    post:
+      operationId: users_reset_password_create
+      parameters:
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResetPasswordResult'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - users
+  /api/v1/users/{user_id}/role:
+    patch:
+      operationId: users_role_partial_update
+      parameters:
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRole'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRole'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRole'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - users
+  /api/v1/users/{user_id}/status:
+    patch:
+      operationId: users_status_partial_update
+      parameters:
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStatus'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedStatus'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedStatus'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - users
 components:
   schemas:
+    AccessResponse:
+      properties:
+        access:
+          readOnly: true
+          type: string
+      required:
+      - access
+      type: object
+    AdminUser:
+      properties:
+        created_at:
+          format: date-time
+          readOnly: true
+          type: string
+        email:
+          format: email
+          nullable: true
+          readOnly: true
+          type: string
+        full_name:
+          readOnly: true
+          type: string
+        id:
+          readOnly: true
+          type: integer
+        is_active:
+          readOnly: true
+          type: boolean
+        last_login:
+          format: date-time
+          nullable: true
+          readOnly: true
+          type: string
+        must_change_password:
+          readOnly: true
+          type: boolean
+        phone:
+          nullable: true
+          readOnly: true
+          type: string
+        role:
+          readOnly: true
+          type: string
+        username:
+          readOnly: true
+          type: string
+      required:
+      - created_at
+      - email
+      - full_name
+      - id
+      - is_active
+      - last_login
+      - must_change_password
+      - phone
+      - role
+      - username
+      type: object
     FoundationError:
       properties:
         details:
@@ -171,3 +768,234 @@ components:
       - request_id
       - error
       type: object
+    GeneratedUserResult:
+      properties:
+        generated_password:
+          readOnly: true
+          type: string
+        user:
+          allOf:
+          - $ref: '#/components/schemas/AdminUser'
+          readOnly: true
+      required:
+      - generated_password
+      - user
+      type: object
+    IdentityError:
+      properties:
+        details:
+          additionalProperties: {}
+          readOnly: true
+          type: object
+        error:
+          readOnly: true
+          type: string
+        error_code:
+          readOnly: true
+          type: string
+        message:
+          readOnly: true
+          type: string
+        request_id:
+          format: uuid
+          readOnly: true
+          type: string
+      required:
+      - details
+      - error
+      - error_code
+      - message
+      - request_id
+      type: object
+    Login:
+      properties:
+        password:
+          type: string
+          writeOnly: true
+        username:
+          type: string
+      required:
+      - password
+      - username
+      type: object
+    LoginResponse:
+      properties:
+        access:
+          readOnly: true
+          type: string
+        capabilities:
+          items:
+            type: string
+          readOnly: true
+          type: array
+        is_active:
+          readOnly: true
+          type: boolean
+        must_change_password:
+          readOnly: true
+          type: boolean
+        role:
+          readOnly: true
+          type: string
+      required:
+      - access
+      - capabilities
+      - is_active
+      - must_change_password
+      - role
+      type: object
+    PasswordChange:
+      properties:
+        current_password:
+          type: string
+          writeOnly: true
+        new_password:
+          type: string
+          writeOnly: true
+      required:
+      - current_password
+      - new_password
+      type: object
+    PatchedProfile:
+      properties:
+        email:
+          format: email
+          nullable: true
+          type: string
+        full_name:
+          type: string
+        phone:
+          nullable: true
+          type: string
+      type: object
+    PatchedRole:
+      properties:
+        role:
+          type: string
+      type: object
+    PatchedStatus:
+      properties:
+        is_active:
+          type: boolean
+      type: object
+    ResetPasswordResult:
+      properties:
+        generated_password:
+          readOnly: true
+          type: string
+        must_change_password:
+          readOnly: true
+          type: boolean
+        user_id:
+          readOnly: true
+          type: integer
+      required:
+      - generated_password
+      - must_change_password
+      - user_id
+      type: object
+    SelfUser:
+      properties:
+        capabilities:
+          items:
+            type: string
+          readOnly: true
+          type: array
+        created_at:
+          format: date-time
+          readOnly: true
+          type: string
+        email:
+          format: email
+          nullable: true
+          readOnly: true
+          type: string
+        full_name:
+          readOnly: true
+          type: string
+        id:
+          readOnly: true
+          type: integer
+        is_active:
+          readOnly: true
+          type: boolean
+        last_login:
+          format: date-time
+          nullable: true
+          readOnly: true
+          type: string
+        must_change_password:
+          readOnly: true
+          type: boolean
+        phone:
+          nullable: true
+          readOnly: true
+          type: string
+        role:
+          readOnly: true
+          type: string
+        username:
+          readOnly: true
+          type: string
+      required:
+      - capabilities
+      - created_at
+      - email
+      - full_name
+      - id
+      - is_active
+      - last_login
+      - must_change_password
+      - phone
+      - role
+      - username
+      type: object
+    UserCreate:
+      properties:
+        email:
+          format: email
+          nullable: true
+          type: string
+        full_name:
+          type: string
+        phone:
+          nullable: true
+          type: string
+        role:
+          type: string
+        username:
+          type: string
+      required:
+      - full_name
+      - role
+      - username
+      type: object
+    UserPage:
+      properties:
+        count:
+          readOnly: true
+          type: integer
+        next:
+          nullable: true
+          readOnly: true
+          type: string
+        previous:
+          nullable: true
+          readOnly: true
+          type: string
+        results:
+          items:
+            $ref: '#/components/schemas/AdminUser'
+          readOnly: true
+          type: array
+      required:
+      - count
+      - next
+      - previous
+      - results
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http

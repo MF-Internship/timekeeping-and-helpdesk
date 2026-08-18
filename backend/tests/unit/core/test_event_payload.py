@@ -21,6 +21,10 @@ from core.event_payload import (
         ({"latitude": 10.785850}, "$.latitude"),
         ({"longitude": 106.692600}, "$.longitude"),
         ({"url": "https://example.invalid/signed?token=hidden"}, "$.url"),
+        ({"generated_password": "hidden"}, "$.generated_password"),
+        ({"nested": {"jti": "hidden"}}, "$.nested.jti"),
+        ({"items": [{"credential": "hidden"}]}, "$.items[0].credential"),
+        ({"diagnostic": "scheme://hidden"}, "$.diagnostic"),
     ],
 )
 def test_protected_payload_reports_path_only(payload: object, path: str) -> None:
@@ -34,7 +38,14 @@ def test_protected_payload_reports_path_only(payload: object, path: str) -> None
 
 @pytest.mark.unit
 def test_forbidden_keys_match_exactly_not_by_substring() -> None:
-    validate_event_payload({"token_count": 2, "password_policy": "configured"})
+    validate_event_payload(
+        {
+            "token_count": 2,
+            "password_policy": "configured",
+            "must_change_password": True,
+            "active_refresh_sessions": 3,
+        }
+    )
 
 
 @pytest.mark.unit
