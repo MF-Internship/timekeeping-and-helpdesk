@@ -8,6 +8,14 @@
 
 **Input**: User description: "Implement the authoritative identity, authentication, user-administration, and canonical RBAC model, with allow/deny acceptance scenarios and complete security-focused test coverage."
 
+## Clarifications
+
+### Session 2026-08-18
+
+- Q: How does logout behave for missing, invalid, revoked, or active refresh cookies? → A: R-110 makes authenticated logout idempotent: always `204`, clear cookie, revoke all by access-token actor; evidence only when at least one active refresh is revoked.
+- Q: What happens when account-state or global-revocation operations repeat an already-achieved state? → A: R-111 makes same-state status and zero-session revocation no-ops without evidence/version; repeated reset remains a new attributable mutation.
+- Q: What are the canonical authentication throttles? → A: R-112 sets login 10/min/IP, refresh 120/min/IP, password change 5/min/User through the shared alias, with `429 THROTTLED` and fail-closed `503 SERVICE_UNAVAILABLE`.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Sign In and Maintain a Revocable Session (Priority: P1)
@@ -16,7 +24,7 @@ As an active user, I can sign in with my username and password and remain signed
 
 **Why this priority**: Every protected workflow depends on trustworthy identity and account-state enforcement.
 
-**Independent Test**: Sign in as an active user, refresh repeatedly through rotation, attempt reuse of an old refresh credential, log out from one of two devices using both required credentials, and verify the exact allow/deny outcomes without using another feature.
+**Independent Test**: Sign in as an active user, refresh repeatedly through rotation, attempt reuse of an old refresh credential, log out from one of two devices with valid access across every refresh-cookie state, and verify idempotent global revocation without using another feature.
 
 **Acceptance Scenarios**:
 
@@ -26,7 +34,8 @@ As an active user, I can sign in with my username and password and remain signed
 4. **Given** a refresh credential that is expired, malformed, has an invalid signature, is already revoked, or was consumed by rotation, **When** it is used, **Then** refresh is denied with `401 INVALID_TOKEN` and no replacement credential is issued.
 5. **Given** the same user has active refresh sessions on two devices, **When** the user logs out from either device, **Then** all refresh sessions for that user are revoked, subsequent refresh from both devices is denied, an audit record is created, and no new credential is issued.
 6. **Given** logout has revoked refresh sessions, **When** a previously issued access credential is used before its 15-minute lifetime ends, **Then** it remains usable unless the account is inactive or requires a password change; after expiry, renewal is denied.
-7. **Given** logout has a valid access credential but its refresh cookie is missing, malformed, expired, belongs to another user, or is already revoked, **When** logout is attempted, **Then** it returns `401 INVALID_TOKEN`, performs no global revocation, and creates no success audit/event; no new error code is introduced.
+7. **Given** logout has a valid access credential but its refresh cookie is missing, malformed, expired, belongs to another user, or is already revoked, **When** logout is attempted, **Then** it returns `204`, clears the cookie, and globally revokes by the access-token actor; audit/outbox evidence is added only if at least one active refresh is actually revoked.
+8. **Given** no active refresh session remains, **When** the same authenticated user logs out again, **Then** it still returns `204` but creates no AuditLog, OutboxEvent, state write, or aggregate-version advance.
 
 ---
 
@@ -68,6 +77,7 @@ As a Manager, I can find and administer Leader and Helpdesk accounts while prote
 7. **Given** a create or role-change request specifies `MANAGER`, **When** a Manager submits it, **Then** the request is denied with `403 PERMISSION_DENIED`, no Manager account is created or assigned, and no partial mutation occurs.
 8. **Given** an eligible profile-update request contains `username`, `role`, `password`, or `is_active`, **When** the Manager submits it, **Then** the request is rejected with `400 SERVER_OWNED_FIELD` and no field is changed.
 9. **Given** an account has been deactivated, **When** it is viewed in user administration, **Then** it remains visible and can be reactivated if it is not a Manager; Identity performs no call or write into Task, Attendance, Reporting, or another business module, while row-preservation integration proof remains with each owning feature.
+10. **Given** an eligible account already has the requested active state, **When** a Manager repeats that status request, **Then** it returns `200` with current state but performs no User write, revocation, audit/outbox append, or aggregate-version advance.
 
 ---
 
@@ -113,7 +123,7 @@ As a user, I see actions appropriate to my role, while the server independently 
 - A refresh or protected request arrives immediately after deactivation; refresh is denied and the next protected request with an otherwise valid access credential returns `401 ACCOUNT_INACTIVE`.
 - A role changes while an access credential is still valid; the next request uses the current stored role and permission map, not stale role or permission claims.
 - Logout is called with one refresh credential while other device credentials exist; all refresh credentials for the user are revoked.
-- Logout is called with valid access but a missing, invalid, mismatched, or already-revoked refresh cookie; it returns `INVALID_TOKEN` without success audit/outbox evidence.
+- Logout is called with valid access but a missing, invalid, mismatched, or already-revoked refresh cookie; it returns `204`, clears the cookie, and revokes by access-token actor. A zero-session repeat creates no evidence.
 - A generated password is lost before delivery; it cannot be viewed again and must be reset.
 - Two concurrent create requests use the same username; exactly one succeeds and the other reports the uniqueness conflict without creating a duplicate.
 - `full_name` is absent, empty, or whitespace-only; creation/update is rejected. Phone and email may be omitted, blank according to the canonical contract, or duplicated across users.
@@ -138,7 +148,7 @@ As a user, I see actions appropriate to my role, while the server independently 
 
 - **FR-006**: Login MUST accept username and password, issue a 15-minute access credential, establish a 7-day refresh credential through the protected refresh channel, update last-login state, and return account state, role, and effective capabilities without returning the refresh credential in JSON.
 - **FR-007**: The refresh credential MUST be server-tracked and rotated after each successful refresh; the consumed credential MUST be revoked, and any expired, invalid, revoked, or reused credential MUST return `401 INVALID_TOKEN` without replacement credentials.
-- **FR-008**: Logout MUST require both a valid authenticated access credential and a valid, unrevoked refresh cookie belonging to that same user. On success it MUST revoke every outstanding refresh credential for the user across all devices, record the action in the security audit, and issue no replacement credential. A missing, invalid, expired, mismatched, or already-revoked refresh cookie MUST return `401 INVALID_TOKEN` with no success audit/event and no global revocation.
+- **FR-008**: Logout MUST require valid authenticated access, derive its actor only from that access identity, clear the refresh cookie, call global revocation, and return `204` whether the refresh cookie is missing, invalid, expired, mismatched, revoked, or active. It MUST NOT issue replacement credentials. It MUST append one revocation AuditLog and OutboxEvent only when at least one active refresh is revoked; a zero-session repeat MUST create no evidence or aggregate-version advance.
 - **FR-009**: Logout, Manager password reset, self password change, and deactivation MUST each revoke every outstanding refresh credential for the affected user and record the reason; no flow MAY revoke only the submitted refresh credential.
 - **FR-010**: Revocation MUST NOT blacklist individual access credentials. An already-issued access credential MUST work before its 15-minute expiry and fail after expiry, except every request remains immediately subject to inactive-account and required-password-change gates. After self password change, the old access credential remains valid until that boundary, every old refresh credential is revoked, and the newly issued access/refresh pair works immediately.
 - **FR-011**: Self password change MUST verify the current password, require a new password of at least 12 characters that differs from the username and satisfies configured password rules, clear `must_change_password`, revoke all refresh credentials first, and then return a fresh access/refresh pair for the current device.
@@ -199,7 +209,7 @@ As a user, I see actions appropriate to my role, while the server independently 
 - **FR-031**: The canonical map MUST NOT directly duplicate implied self-actions for Manager. `location.manage` MUST NOT imply `location.view`, `config.manage_attendance` MUST NOT imply `config.view`, and no create, completion, override, holiday, user, or other mutation action may be inferred.
 - **FR-032**: Leader MUST remain read-only and MUST hold no mutation action. Helpdesk MUST hold no user-administration action. Manager MUST hold neither check-in nor check-out action. Feature 002 MUST prove those policy decisions and identity-owned user-administration denies; HTTP enforcement and side-effect absence for Attendance and Task actions are deferred to Features 004 and 006 respectively.
 - **FR-033**: Frontend capabilities MAY hide, disable, or explain unavailable actions but MUST be computed from the effective canonical action map and MUST NOT replace server authorization.
-- **FR-034**: Every protected operation MUST evaluate in this order: authentication; action permission including closed implications; body-independent target authorization; the `must_change_password` account gate for every operation except self password change; DTO/input validation; object scope/ownership in the owning business module; business invariant/state transition; atomic state change and persistence constraint; audit/outbox. The password-change gate MUST NOT precede action or target authorization.
+- **FR-034**: Every protected operation MUST evaluate in this order: authentication; action permission including closed implications; body-independent target authorization; the `must_change_password` account gate for every operation except self password change; any approved endpoint throttle; DTO/input validation; object scope/ownership in the owning business module; business invariant/state transition; atomic state change and persistence constraint; audit/outbox. The password-change gate and throttle MUST NOT precede action or target authorization. Public login/refresh throttles run before their DTO/credential business evaluation.
 - **FR-035**: An actor lacking an action MUST receive `403 PERMISSION_DENIED` even when the request body is malformed. A request against a protected Manager target MUST receive the same authorization result before DTO/input errors, including with an empty body. Precedence combinations MUST be deterministic: unauthorized plus `must_change_password` returns `403 PERMISSION_DENIED`; authorized plus `must_change_password` returns `403 PASSWORD_CHANGE_REQUIRED`; unauthorized plus invalid payload returns `403 PERMISSION_DENIED`; and a protected Manager target plus invalid payload returns `403 PERMISSION_DENIED`.
 - **FR-036**: A payload-based request for a non-assignable role MUST be evaluated after DTO/input validation but MUST still return `403 PERMISSION_DENIED`, not a generic validation outcome.
 - **FR-037**: Feature 002 MUST return a generic permission decision containing the requested action, allow/deny result, and direct `granted_by` action. It MUST prove direct decisions, exactly the five approved implications, and no implicit all-to-self grant outside that map. It MUST NOT encode or execute Task creator/assignee checks or Attendance record ownership. Feature 004 MUST enforce Attendance self object scope; Feature 006 MUST enforce Task creator/assignee object scope and business invariants using the generic decision provenance.
@@ -213,7 +223,7 @@ As a user, I see actions appropriate to my role, while the server independently 
   |---|---|---|
   | `POST /api/v1/auth/login` | Public credential check | Sign in with username and password; return access plus account/role state and set the protected refresh credential |
   | `POST /api/v1/auth/refresh` | Valid refresh credential | Rotate refresh and return a new access credential |
-  | `POST /api/v1/auth/logout` | Same-user valid access credential and valid unrevoked refresh cookie | Revoke all refresh sessions for the authenticated user |
+  | `POST /api/v1/auth/logout` | Valid authenticated self; cookie is non-authoritative | Idempotently revoke all refresh sessions for the access-token actor and clear the cookie |
   | `GET`, `PATCH /api/v1/me/` | Authenticated self | Read or update permitted personal information derived from authentication context |
   | `POST /api/v1/change-password` | Authenticated self | Change the authenticated user's password and replace the current session after global refresh revocation |
   | `GET /api/v1/users/`, `GET /api/v1/users/{id}/` | `user.view` | List, search/filter, or retrieve users, including Manager and inactive accounts |
@@ -227,6 +237,9 @@ As a user, I see actions appropriate to my role, while the server independently 
 - **FR-041**: Verification MUST cover login success/failure, refresh success/rotation/reuse, logout across devices, account-state checks on every request, first-login enforcement, password reset, Manager-target protection, Leader mutation denial, the complete direct and effective RBAC matrix, authorization-before-DTO precedence, generic permission-decision provenance, and explicit record-ownership deferral to Features 004 and 006.
 - **FR-042**: User-list pagination MUST accept `page` only, return count/next/previous/results, expose no client-selected page size, and return a field-specific validation failure rather than a missing-resource outcome when the requested page is outside the valid range.
 - **FR-043**: Every claimed User-row serialization invariant MUST have a real PostgreSQL competing-worker test covering login issuance and refresh issuance against each of logout, password reset, self password change, and account deactivation; concurrent global revocations for one User; and concurrent per-User outbox aggregate-version allocation. Each test MUST assert final persisted state, that no racing refresh issuance escapes a completed revocation, that no revoked refresh becomes usable, that access credentials retain only the canonical lifetime/account-state behavior, and that aggregate versions remain unique and correctly serialized without replacing database locking with mocks.
+- **FR-044**: Setting an eligible User to its existing active state MUST return `200` as a no-op without a User write, revocation call, AuditLog, OutboxEvent, or aggregate-version advance. A real state transition MUST append state evidence; deactivation MUST additionally invoke global revocation.
+- **FR-045**: Global refresh revocation with zero active refresh sessions MUST succeed with `revoked_count = 0` and create no blacklist row, AuditLog, OutboxEvent, or version advance. Repeated password reset MUST remain a new mutation with a new generated password and reset evidence; revocation evidence is appended only when its revoked count is positive.
+- **FR-046**: The system MUST enforce shared-cache authentication throttles through `core.cache.THROTTLE_CACHE_ALIAS`: login 10 requests per 60 seconds per canonical client IP, refresh 120 per 60 seconds per canonical client IP, and password change 5 per 60 seconds per authenticated User. Exceeding a limit MUST return canonical `429 THROTTLED` with `Retry-After`; throttle-storage failure MUST fail closed with canonical `503 SERVICE_UNAVAILABLE`. Neither failure may call the business service or append audit/outbox evidence.
 
 ### Key Entities
 
@@ -255,6 +268,8 @@ As a user, I see actions appropriate to my role, while the server independently 
 - **SC-011**: Frontend role/capability behavior matches effective server authorization for 100% of tested canonical actions, while direct unauthorized requests remain denied even if the interface is bypassed.
 - **SC-012**: The complete Definition of Done authentication, account-state, password, RBAC, Manager-target, Leader-denial, permission-provenance, and scope-deferral suites pass with zero unresolved security-critical failures.
 - **SC-013**: Across the ten required authoritative-database competing-worker scenarios, every completed revocation leaves zero usable pre-existing or racing refresh credentials, and concurrent event allocation produces one unique monotonic aggregate version per committed event.
+- **SC-014**: Logout-cookie and repeated-state tests have 100% agreement with R-110/R-111: valid-access logout always returns `204`; no-op calls create zero state/evidence/version changes; every positive revocation creates exactly one aggregate revocation evidence pair.
+- **SC-015**: Controlled-clock throttle tests prove the exact 10/120/5 limits, key isolation and shared-worker counting, canonical `429`/`Retry-After`, and fail-closed `503` with zero business side effects.
 
 ## Assumptions
 
@@ -269,7 +284,7 @@ As a user, I see actions appropriate to my role, while the server independently 
 ## Dependencies
 
 - Project Constitution Principles I, III, IV, V, VI, VII, IX, XI, and XII, plus its Definition of Done.
-- `docs/CHOT_YEU_CAU.md` §7 (User model), §8–§8.3 (canonical RBAC, implication, scope, and authorization order), §9.2–§9.2.1 (password and revocable authentication), and §10 (canonical identity/user operations and mandatory tests).
+- `docs/CHOT_YEU_CAU.md` §7 (User model), §8–§8.3 (canonical RBAC, implication, scope, and authorization order), §9.2–§9.2.2 (password, revocable authentication, and repeated-operation semantics), §9.7.1 (canonical authentication throttles), and §10 (canonical identity/user operations and mandatory tests), including R-110–R-112.
 - `docs/QUY_TAC_CLEAN_CODE.md` §5 (RBAC and identity boundary rules) and §7 (mandatory acceptance coverage).
 - `docs/phan_mem_web_cham_cong_va_quan_ly_cong_viec_helpdesk.md` §3.5 and §5 for stakeholder-facing user administration and role behavior.
 - Feature `001-project-api-foundation`, whose contract, frontend transport, configuration, test, and delivery foundations this feature consumes.

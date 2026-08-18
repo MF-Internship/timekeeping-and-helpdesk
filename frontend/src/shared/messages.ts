@@ -11,4 +11,6 @@ export const UI_MESSAGES = Object.freeze({
   permissionDenied: "Bạn không có quyền thực hiện thao tác này.",
   serverOwnedField: "Dữ liệu chứa trường do hệ thống quản lý.",
   validationFailed: "Dữ liệu không hợp lệ.",
+  throttled: "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau",
+  serviceUnavailable: "Dịch vụ tạm thời không khả dụng. Vui lòng thử lại sau.",
 });

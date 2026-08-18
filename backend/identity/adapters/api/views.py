@@ -15,7 +15,6 @@ from core.error_codes import INVALID_TOKEN, VALIDATION_FAILED
 from core.errors import IdentityAPIError
 from identity.adapters.api.permissions import (
     CanonicalIdentityPermission,
-    LogoutAuthorizer,
     TargetLookup,
 )
 from identity.adapters.api.serializers import (
@@ -37,6 +36,11 @@ from identity.adapters.api.serializers import (
     admin_user,
     self_user,
 )
+from identity.adapters.api.throttles import (
+    LoginThrottle,
+    PasswordChangeThrottle,
+    RefreshThrottle,
+)
 from identity.application.container import IdentityContainer
 from identity.application.dto import PasswordChangeRequest, ProfileUpdateRequest, UserCreateRequest
 from identity.application.queries import PAGE_SIZE, UserFilters, UserPage
@@ -49,7 +53,6 @@ REFRESH_PATH = "/api/v1/auth/"
 class IdentityView(APIView):
     container_provider: Callable[[], IdentityContainer] | None = None
     target_lookup: TargetLookup | None = None
-    logout_authorizer: LogoutAuthorizer | None = None
 
     def container(self) -> IdentityContainer:
         if self.container_provider is None:
@@ -139,6 +142,7 @@ def _page_link(request: Request, page: int) -> str:
 
 class LoginView(IdentityView):
     permission_classes = (AllowAny,)
+    throttle_classes = (LoginThrottle,)
 
     @extend_schema(
         operation_id="auth_login_create",
@@ -148,6 +152,8 @@ class LoginView(IdentityView):
             200: LoginResponseSerializer,
             400: IdentityErrorSerializer,
             401: IdentityErrorSerializer,
+            429: IdentityErrorSerializer,
+            503: IdentityErrorSerializer,
         },
     )
     def post(self, request: Request) -> Response:
@@ -171,6 +177,7 @@ class LoginView(IdentityView):
 
 class RefreshView(IdentityView):
     permission_classes = (AllowAny,)
+    throttle_classes = (RefreshThrottle,)
 
     @extend_schema(
         operation_id="auth_refresh_create",
@@ -181,6 +188,8 @@ class RefreshView(IdentityView):
             400: IdentityErrorSerializer,
             401: IdentityErrorSerializer,
             403: IdentityErrorSerializer,
+            429: IdentityErrorSerializer,
+            503: IdentityErrorSerializer,
         },
     )
     def post(self, request: Request) -> Response:
@@ -196,7 +205,6 @@ class RefreshView(IdentityView):
 
 class LogoutView(IdentityView):
     permission_classes = (CanonicalIdentityPermission,)
-    authorize_logout_target = True
 
     @extend_schema(
         operation_id="auth_logout_create",
@@ -210,10 +218,7 @@ class LogoutView(IdentityView):
     )
     def post(self, request: Request) -> Response:
         EmptySerializer(data=request.data).is_valid(raise_exception=True)
-        raw = request.COOKIES.get(REFRESH_COOKIE)
-        if not raw:
-            raise IdentityAPIError(INVALID_TOKEN, status_code=401)
-        self.container().authentication.logout(_actor_id(request), raw)
+        self.container().authentication.logout(_actor_id(request))
         response = Response(status=204)
         _clear_refresh(response)
         return _no_store(response)
@@ -257,6 +262,7 @@ class MeView(IdentityView):
 class ChangePasswordView(IdentityView):
     permission_classes = (CanonicalIdentityPermission,)
     password_change_exempt = True
+    throttle_classes = (PasswordChangeThrottle,)
 
     @extend_schema(
         operation_id="identity_change_password_create",
@@ -265,6 +271,9 @@ class ChangePasswordView(IdentityView):
             200: AccessResponseSerializer,
             400: IdentityErrorSerializer,
             401: IdentityErrorSerializer,
+            403: IdentityErrorSerializer,
+            429: IdentityErrorSerializer,
+            503: IdentityErrorSerializer,
         },
     )
     def post(self, request: Request) -> Response:

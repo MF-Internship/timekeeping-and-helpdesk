@@ -22,6 +22,7 @@ def test_quality_workflow_contains_each_required_job_once() -> None:
         "check_openapi.py --all",
         "check_contract_drift.py",
         "migration_check.py check",
+        "check_feature_002_convergence.sh --all",
     ):
         assert command in source
     for command in ("format:check", "lint", "typecheck", "test", "api:check", "build"):
@@ -46,8 +47,34 @@ def test_repository_gate_invokes_complete_feature_verification() -> None:
         "frontend run typecheck",
         "frontend run test",
         "frontend run build",
+        "check_feature_002_convergence.sh --all",
     )
     assert all(command in source for command in required)
+
+
+def test_feature_002_convergence_gate_pins_every_regression_suite() -> None:
+    source = Path("scripts/check_feature_002_convergence.sh").read_text(encoding="utf-8")
+    required = (
+        "test_authentication_services.py",
+        "test_self_service.py",
+        "test_user_admin.py",
+        "test_throttles.py",
+        "test_api_contract.py",
+        "test_logout.py",
+        "test_user_mutations.py",
+        "test_reset_password.py",
+        "test_auth_throttles.py",
+        "test_access_expiry.py",
+        "test_login_vs_logout.py",
+        "test_refresh_vs_deactivation.py",
+        "test_revocation_first_races.py",
+        "test_throttle_shared_cache.py",
+        "test_concurrent_global_revocation.py",
+        "api-error.test.ts",
+        "messages.test.ts",
+        "auth-forms.test.tsx",
+    )
+    assert all(item in source for item in required)
 
 
 def test_contract_workflow_contains_only_approved_ci_gates() -> None:

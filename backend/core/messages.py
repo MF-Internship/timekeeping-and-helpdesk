@@ -8,4 +8,6 @@ ERROR_MESSAGES = {
     "SERVER_OWNED_FIELD": "Dữ liệu chứa trường do hệ thống quản lý.",
     "NOT_FOUND": "Không tìm thấy dữ liệu yêu cầu.",
     "LOCATION_VERSION_CONFLICT": "Dữ liệu địa điểm đã được thay đổi.",
+    "THROTTLED": "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.",
+    "SERVICE_UNAVAILABLE": "Dịch vụ tạm thời không khả dụng. Vui lòng thử lại sau.",
 }

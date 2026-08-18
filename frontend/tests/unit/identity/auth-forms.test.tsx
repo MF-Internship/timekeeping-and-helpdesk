@@ -92,4 +92,24 @@ describe("identity forms", () => {
     expect(screen.getByText("Mật khẩu mới chưa đủ mạnh.")).toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent("Dữ liệu không hợp lệ.");
   });
+
+  it("presents the canonical throttle wait without retrying automatically", async () => {
+    controls.login.mockRejectedValue({
+      kind: "canonical",
+      errorCode: "THROTTLED",
+      message: "ignored server copy",
+      details: {},
+      retryAfterSeconds: 42,
+      requestId: "123e4567-e89b-42d3-a456-426614174002",
+    });
+    render(<LoginForm />);
+    fireEvent.change(screen.getByLabelText("Tên đăng nhập"), { target: { value: "worker" } });
+    fireEvent.change(screen.getByLabelText("Mật khẩu"), { target: { value: "Password123!" } });
+    fireEvent.click(screen.getByRole("button", { name: "Đăng nhập" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau 42 giây.",
+    );
+    expect(controls.login).toHaveBeenCalledTimes(1);
+  });
 });

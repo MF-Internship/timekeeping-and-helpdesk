@@ -73,10 +73,6 @@ def identity_target_lookup(raw_user_id: str) -> AccountSnapshot | None:
     return identity_container().users.get(user_id)
 
 
-def authorize_identity_logout(actor_id: int, raw_refresh: str) -> None:
-    identity_container().authentication.authorize_logout(actor_id, raw_refresh)
-
-
 @lru_cache(maxsize=1)
 def locations_container() -> LocationsContainer:
     dependencies = _locations_dependencies()

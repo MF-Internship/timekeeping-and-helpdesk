@@ -1,5 +1,7 @@
 import pytest
 
+from audit.models import AuditLog, OutboxEvent
+from identity.models import User
 from tests.integration.api.identity.helpers import create_user, manager_client
 
 
@@ -53,3 +55,21 @@ def test_admin_profile_blank_contacts_are_persisted_and_returned_as_null() -> No
     assert response.json()["email"] is None
     target.refresh_from_db()
     assert target.phone is None and target.email is None
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.integration
+@pytest.mark.parametrize("active", [True, False])
+def test_same_status_is_a_database_and_evidence_noop(active: bool) -> None:
+    api, _manager = manager_client(f"same-state-manager-{active}")
+    target = create_user(f"same-state-target-{active}", active=active)
+    before_updated_at = User.objects.get(pk=target.pk).last_login
+
+    response = api.patch(f"/api/v1/users/{target.pk}/status", {"is_active": active})
+
+    assert response.status_code == 200
+    assert response.json()["is_active"] is active
+    target.refresh_from_db()
+    assert target.last_login == before_updated_at
+    assert AuditLog.objects.filter(target_id=str(target.pk)).count() == 0
+    assert OutboxEvent.objects.filter(aggregate_id=str(target.pk)).count() == 0

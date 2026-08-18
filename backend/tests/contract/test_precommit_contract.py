@@ -12,6 +12,7 @@ def test_precommit_contains_only_fast_non_mutating_gates() -> None:
         "check_contract_drift.py",
         "typecheck",
         "api:check",
+        "check_feature_002_convergence.sh --fast",
     ):
         assert command in source
     forbidden = (

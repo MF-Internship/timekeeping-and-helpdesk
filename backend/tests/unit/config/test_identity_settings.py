@@ -14,3 +14,8 @@ def test_identity_authentication_settings_are_canonical() -> None:
         "BLACKLIST_AFTER_ROTATION": True,
         "UPDATE_LAST_LOGIN": True,
     } == settings.SIMPLE_JWT
+    assert settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] == {
+        "login": "10/min",
+        "refresh": "120/min",
+        "password_change": "5/min",
+    }

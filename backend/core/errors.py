@@ -25,6 +25,7 @@ class IdentityAPIError(Exception):
         self.error_code = error_code
         self.status_code = status_code
         self.details = dict(details or {})
+        self.headers: dict[str, str] = {}
         super().__init__(error_code)
 
 
@@ -71,6 +72,7 @@ def drf_exception_handler(exception: Exception, context: dict[str, object]) -> o
                 exception.details,
             ),
             status=exception.status_code,
+            headers=exception.headers,
         )
     if isinstance(exception, ValidationError):
         from core.correlation import get_request_id

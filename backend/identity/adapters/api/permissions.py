@@ -11,7 +11,6 @@ from identity.domain.accounts import AccountSnapshot
 from identity.domain.authorization import PermissionAction, Role, decide_permission
 
 TargetLookup = Callable[[str], AccountSnapshot | None]
-LogoutAuthorizer = Callable[[int, str], None]
 
 
 class CanonicalIdentityPermission(BasePermission):
@@ -21,7 +20,6 @@ class CanonicalIdentityPermission(BasePermission):
             raise IdentityAPIError(INVALID_TOKEN, status_code=401)
         self._require_action(user, view)
         self._protect_target(view)
-        self._authorize_logout(request, user, view)
         if user.must_change_password and not getattr(view, "password_change_exempt", False):
             raise IdentityAPIError(PASSWORD_CHANGE_REQUIRED, status_code=403)
         return True
@@ -42,12 +40,3 @@ class CanonicalIdentityPermission(BasePermission):
             target = target_lookup(target_id)
             if target is not None and target.role is Role.MANAGER:
                 raise IdentityAPIError(PERMISSION_DENIED, status_code=403)
-
-    @staticmethod
-    def _authorize_logout(request: Any, user: Any, view: Any) -> None:
-        if getattr(view, "authorize_logout_target", False):
-            raw_refresh = request.COOKIES.get("refresh_token")
-            authorizer: LogoutAuthorizer | None = view.logout_authorizer
-            if not raw_refresh or authorizer is None:
-                raise IdentityAPIError(INVALID_TOKEN, status_code=401)
-            authorizer(int(user.pk), raw_refresh)

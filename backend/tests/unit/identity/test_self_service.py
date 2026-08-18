@@ -64,3 +64,19 @@ def test_wrong_current_password_has_no_mutation_side_effect() -> None:
     users.set_password.assert_not_called()
     sessions.revoke_all.assert_not_called()
     audit.append_audit_entry.assert_not_called()
+
+
+def test_password_change_with_no_live_session_records_only_password_mutation() -> None:
+    dependencies, users, passwords, sessions, audit = dependency_mocks()
+    users.get_for_update.return_value = account(must_change=True)
+    users.password_hash.return_value = "encoded-old"
+    passwords.verify.return_value = True
+    sessions.revoke_all.return_value = 0
+    sessions.issue.return_value = IssuedSession("new-access", "new-refresh")
+
+    SelfService(dependencies).change_password(
+        7, PasswordChangeRequest("old", "CompliantPassword123!")
+    )
+
+    assert audit.append_audit_entry.call_count == 1
+    assert audit.append_outbox_event.call_count == 1

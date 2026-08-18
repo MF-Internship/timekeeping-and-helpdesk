@@ -15,6 +15,8 @@ describe("centralized foundation messages", () => {
       "permissionDenied",
       "retry",
       "serverOwnedField",
+      "serviceUnavailable",
+      "throttled",
       "unexpectedResponse",
       "validationFailed",
     ]);

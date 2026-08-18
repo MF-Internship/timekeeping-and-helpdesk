@@ -372,7 +372,7 @@ def test_negative_filters_roles_server_fields_and_leader_mutation_denials() -> N
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.integration
-def test_logout_requires_both_credentials_and_rejects_reuse_without_success_evidence() -> None:
+def test_logout_uses_access_actor_and_repeated_cookie_states_add_no_success_evidence() -> None:
     account = user("logout-contract", "HELPDESK")
     api = client()
     signed_in = login(api, account.username)
@@ -380,15 +380,14 @@ def test_logout_requires_both_credentials_and_rejects_reuse_without_success_evid
     api.credentials(HTTP_AUTHORIZATION=f"Bearer {signed_in.json()['access']}")
     del api.cookies["refresh_token"]
     missing = api.post("/api/v1/auth/logout", {})
-    assert missing.status_code == 401
-    assert missing.json()["error_code"] == "INVALID_TOKEN"
-    assert AuditLog.objects.count() == 0
+    assert missing.status_code == 204
+    assert AuditLog.objects.count() == 1
+    evidence_count = AuditLog.objects.count()
 
     api.cookies["refresh_token"] = raw_refresh
     assert api.post("/api/v1/auth/logout", {}).status_code == 204
-    evidence_count = AuditLog.objects.count()
+    assert AuditLog.objects.count() == evidence_count
     api.cookies["refresh_token"] = raw_refresh
     reused = api.post("/api/v1/auth/logout", {})
-    assert reused.status_code == 401
-    assert reused.json()["error_code"] == "INVALID_TOKEN"
+    assert reused.status_code == 204
     assert AuditLog.objects.count() == evidence_count

@@ -15,6 +15,8 @@ const canonicalMessages: Record<string, string> = {
   PERMISSION_DENIED: UI_MESSAGES.permissionDenied,
   SERVER_OWNED_FIELD: UI_MESSAGES.serverOwnedField,
   VALIDATION_FAILED: UI_MESSAGES.validationFailed,
+  THROTTLED: UI_MESSAGES.throttled,
+  SERVICE_UNAVAILABLE: UI_MESSAGES.serviceUnavailable,
 };
 
 export function identityFailureView(error: unknown): IdentityFailureView {
@@ -27,8 +29,13 @@ export function identityFailureView(error: unknown): IdentityFailureView {
       ...(error.requestId ? { requestId: error.requestId } : {}),
     };
   }
+  const baseMessage = canonicalMessages[error.errorCode] ?? UI_MESSAGES.unexpectedResponse;
+  const message =
+    error.errorCode === "THROTTLED" && error.retryAfterSeconds
+      ? `${baseMessage} ${error.retryAfterSeconds} giây.`
+      : baseMessage;
   return {
-    message: canonicalMessages[error.errorCode] ?? UI_MESSAGES.unexpectedResponse,
+    message,
     fields: detailMessages(error.details),
     requestId: error.requestId,
   };

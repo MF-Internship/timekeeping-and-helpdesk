@@ -9,6 +9,8 @@ const authorizedCodes = new Set([
   "SERVER_OWNED_FIELD",
   "NOT_FOUND",
   "LOCATION_VERSION_CONFLICT",
+  "THROTTLED",
+  "SERVICE_UNAVAILABLE",
 ]);
 
 export type ApiFailure =
@@ -18,6 +20,7 @@ export type ApiFailure =
       message: string;
       details: Record<string, unknown>;
       requestId: string;
+      retryAfterSeconds?: number;
     }
   | { kind: "unexpected_response"; status: number; requestId?: string }
   | { kind: "network" };
@@ -35,13 +38,21 @@ export async function parseApiFailure(response: Response): Promise<ApiFailure> {
     return unexpectedFailure(response.status, headerRequestId);
   }
   if (!mirrorsMatch(body, body.details)) return unexpectedFailure(response.status, headerRequestId);
+  const retryAfter = retryAfterSeconds(response.headers.get("Retry-After"));
   return {
     kind: "canonical",
     errorCode: body.error_code,
     message: body.message,
     details: body.details,
     requestId: bodyRequestId,
+    ...(retryAfter === undefined ? {} : { retryAfterSeconds: retryAfter }),
   };
+}
+
+function retryAfterSeconds(value: string | null): number | undefined {
+  if (value === null || !/^\d+$/.test(value)) return undefined;
+  const seconds = Number(value);
+  return Number.isSafeInteger(seconds) && seconds > 0 ? seconds : undefined;
 }
 
 export async function parseApiResultFailure(result: {
