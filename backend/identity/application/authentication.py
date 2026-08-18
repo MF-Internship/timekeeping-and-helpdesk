@@ -57,8 +57,7 @@ class AuthenticationService:
             except ValueError as error:
                 raise IdentityAPIError(INVALID_TOKEN, status_code=401) from error
 
-    def logout(self, actor_id: int, raw_refresh: str) -> None:
-        self.authorize_logout(actor_id, raw_refresh)
+    def logout(self, actor_id: int) -> None:
         with self.unit_of_work_factory():
             account = self.users.get_for_update(actor_id)
             if account is None or not account.is_active:
@@ -66,15 +65,8 @@ class AuthenticationService:
             if account.must_change_password:
                 raise IdentityAPIError(PASSWORD_CHANGE_REQUIRED, status_code=403)
             count = self.sessions.revoke_all(actor_id, RevocationReason.LOGOUT)
-            self._record_revocation(actor_id, count, RevocationReason.LOGOUT)
-
-    def authorize_logout(self, actor_id: int, raw_refresh: str) -> None:
-        try:
-            owner_id = self.sessions.refresh_owner(raw_refresh)
-        except ValueError as error:
-            raise IdentityAPIError(INVALID_TOKEN, status_code=401) from error
-        if owner_id != actor_id:
-            raise IdentityAPIError(INVALID_TOKEN, status_code=401)
+            if count > 0:
+                self._record_revocation(actor_id, count, RevocationReason.LOGOUT)
 
     def _record_revocation(self, actor_id: int, count: int, reason: RevocationReason) -> None:
         before = {"active_refresh_sessions": count}

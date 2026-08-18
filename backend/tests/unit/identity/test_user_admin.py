@@ -100,3 +100,32 @@ def test_deactivation_revokes_refresh_and_records_both_mutation_events() -> None
     sessions.revoke_all.assert_called_once_with(7, RevocationReason.ACCOUNT_DEACTIVATED)
     assert audit.append_audit_entry.call_count == 2
     assert audit.append_outbox_event.call_count == 2
+
+
+@pytest.mark.parametrize("active", [True, False])
+def test_same_status_is_a_noop(active: bool) -> None:
+    dependencies, users, _passwords, sessions, audit = dependency_mocks()
+    before = account(active=active)
+    users.get_for_update.return_value = before
+
+    result = UserAdminService(dependencies).change_status(1, 7, active)
+
+    assert result is before
+    users.save.assert_not_called()
+    sessions.revoke_all.assert_not_called()
+    audit.append_audit_entry.assert_not_called()
+    audit.append_outbox_event.assert_not_called()
+
+
+def test_reset_with_no_live_session_records_only_reset_mutation() -> None:
+    dependencies, users, passwords, sessions, audit = dependency_mocks()
+    users.get_for_update.return_value = account()
+    passwords.generate.return_value = "generated"
+    passwords.encode.return_value = "encoded"
+    users.set_password.return_value = account(must_change=True)
+    sessions.revoke_all.return_value = 0
+
+    UserAdminService(dependencies).reset_password(1, 7)
+
+    assert audit.append_audit_entry.call_count == 1
+    assert audit.append_outbox_event.call_count == 1

@@ -13,6 +13,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from audit.adapters.persistence.recording import DjangoAuditRecorder
 from audit.models import AuditLog, OutboxEvent
+from core.errors import IdentityAPIError
 from identity.adapters.persistence.unit_of_work import DjangoUnitOfWork
 from identity.adapters.persistence.users import DjangoUserRepository
 from identity.adapters.security.passwords import DjangoPasswordService
@@ -90,6 +91,27 @@ class SignalingUserRepository:
         self.waiting.set()
         return self.delegate.get_for_update(user_id)
 
+    def get_by_username_for_update(self, username: str) -> Any:
+        self.waiting.set()
+        return self.delegate.get_by_username_for_update(username)
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self.delegate, name)
+
+
+class BlockingAfterLockUserRepository:
+    def __init__(self, locked: Event, release: Event) -> None:
+        self.delegate = DjangoUserRepository()
+        self.locked = locked
+        self.release = release
+
+    def get_for_update(self, user_id: int) -> Any:
+        result = self.delegate.get_for_update(user_id)
+        self.locked.set()
+        if not self.release.wait(timeout=10):
+            raise TimeoutError("revocation race was not released")
+        return result
+
     def __getattr__(self, name: str) -> Any:
         return getattr(self.delegate, name)
 
@@ -144,7 +166,7 @@ def _revoke_worker(context: RaceContext) -> None:
         users = cast(MutableUserRepository, SignalingUserRepository(context.revocation_waiting))
         dependencies = _dependencies(users=users)
         if context.revocation is RevocationReason.LOGOUT:
-            AuthenticationService(dependencies).logout(context.target.pk, context.seed.refresh)
+            AuthenticationService(dependencies).logout(context.target.pk)
         elif context.revocation is RevocationReason.PASSWORD_RESET:
             context.output["reset"] = UserAdminService(dependencies).reset_password(
                 context.actor.pk, context.target.pk
@@ -229,6 +251,110 @@ def run_issuance_revocation_race(*, issuance: str, revocation: RevocationReason)
         revoke_future.result(timeout=15)
 
     _assert_final_state(context)
+    context.output["target"] = context.target
+    context.output["seed"] = seed
+    return context.output
+
+
+def _revocation_first_worker(context: RaceContext, locked: Event, release: Event) -> None:
+    close_old_connections()
+    try:
+        users = cast(MutableUserRepository, BlockingAfterLockUserRepository(locked, release))
+        dependencies = _dependencies(users=users)
+        if context.revocation is RevocationReason.LOGOUT:
+            AuthenticationService(dependencies).logout(context.target.pk)
+        elif context.revocation is RevocationReason.PASSWORD_RESET:
+            context.output["reset"] = UserAdminService(dependencies).reset_password(
+                context.actor.pk, context.target.pk
+            )
+        elif context.revocation is RevocationReason.PASSWORD_CHANGE:
+            context.output["replacement"] = SelfService(dependencies).change_password(
+                context.target.pk,
+                PasswordChangeRequest(OLD_PASSWORD, CHANGED_PASSWORD),
+            )
+        else:
+            UserAdminService(dependencies).change_status(context.actor.pk, context.target.pk, False)
+    finally:
+        close_old_connections()
+
+
+def _later_issuance_worker(context: RaceContext, waiting: Event) -> None:
+    close_old_connections()
+    try:
+        users = cast(MutableUserRepository, SignalingUserRepository(waiting))
+        service = AuthenticationService(_dependencies(users=users))
+        try:
+            if context.issuance == "login":
+                result, _account, _capabilities = service.login(
+                    context.target.username, OLD_PASSWORD
+                )
+            else:
+                result = service.refresh(context.seed.refresh)
+            context.output["racing"] = result
+        except IdentityAPIError as error:
+            context.output["issuance_error"] = error.error_code
+    finally:
+        close_old_connections()
+
+
+def _assert_revocation_first_state(context: RaceContext) -> None:
+    context.target.refresh_from_db()
+    assert_refresh_rejected(context.seed.refresh)
+    expected_error = {
+        ("login", RevocationReason.LOGOUT): None,
+        ("login", RevocationReason.PASSWORD_RESET): "INVALID_CREDENTIALS",
+        ("login", RevocationReason.PASSWORD_CHANGE): "INVALID_CREDENTIALS",
+        ("login", RevocationReason.ACCOUNT_DEACTIVATED): "INVALID_CREDENTIALS",
+        ("refresh", RevocationReason.LOGOUT): "INVALID_TOKEN",
+        ("refresh", RevocationReason.PASSWORD_RESET): "PASSWORD_CHANGE_REQUIRED",
+        ("refresh", RevocationReason.PASSWORD_CHANGE): "INVALID_TOKEN",
+        ("refresh", RevocationReason.ACCOUNT_DEACTIVATED): "ACCOUNT_INACTIVE",
+    }[(context.issuance, context.revocation)]
+    if expected_error is None:
+        RefreshToken(context.output["racing"].refresh)
+    else:
+        assert context.output["issuance_error"] == expected_error
+        assert "racing" not in context.output
+
+    expected_live = int(
+        context.revocation is RevocationReason.PASSWORD_CHANGE
+        or (context.revocation is RevocationReason.LOGOUT and context.issuance == "login")
+    )
+    outstanding = OutstandingToken.objects.filter(user_id=context.target.pk)
+    assert outstanding.filter(blacklistedtoken__isnull=True).count() == expected_live
+    expected_events = 1 if context.revocation is RevocationReason.LOGOUT else 2
+    assert AuditLog.objects.filter(target_id=str(context.target.pk)).count() == expected_events
+    assert (
+        OutboxEvent.objects.filter(aggregate_id=str(context.target.pk)).count() == expected_events
+    )
+
+
+def run_revocation_issuance_race(*, issuance: str, revocation: RevocationReason) -> dict[str, Any]:
+    target = make_user(f"target-revoke-first-{issuance}-{revocation.value.lower()}")
+    actor = (
+        target
+        if revocation in {RevocationReason.LOGOUT, RevocationReason.PASSWORD_CHANGE}
+        else make_user(f"actor-revoke-first-{issuance}-{revocation.value.lower()}", "MANAGER")
+    )
+    with transaction.atomic():
+        seed = SimpleJWTSessionRepository().issue(target.pk)
+    context = RaceContext(target, actor, issuance, revocation, seed, target.password)
+    revocation_locked = Event()
+    issuance_waiting = Event()
+    release = Event()
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        revoke_future = executor.submit(
+            _revocation_first_worker, context, revocation_locked, release
+        )
+        assert revocation_locked.wait(timeout=10)
+        issue_future = executor.submit(_later_issuance_worker, context, issuance_waiting)
+        assert issuance_waiting.wait(timeout=10)
+        release.set()
+        revoke_future.result(timeout=15)
+        issue_future.result(timeout=15)
+
+    _assert_revocation_first_state(context)
     context.output["target"] = context.target
     context.output["seed"] = seed
     return context.output

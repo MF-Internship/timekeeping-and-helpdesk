@@ -37,7 +37,7 @@ def test_refresh_rechecks_state_before_rotation_and_logout_revokes_globally() ->
 
     users.get_for_update.return_value = account()
     sessions.revoke_all.return_value = 2
-    AuthenticationService(dependencies).logout(7, "refresh")
+    AuthenticationService(dependencies).logout(7)
     sessions.revoke_all.assert_called_once_with(7, RevocationReason.LOGOUT)
     assert audit.append_audit_entry.called and audit.append_outbox_event.called
     entry = audit.append_audit_entry.call_args.args[0]
@@ -53,3 +53,16 @@ def test_refresh_rechecks_state_before_rotation_and_logout_revokes_globally() ->
         "reason": "LOGOUT",
         "revoked_refresh_session_count": 2,
     }
+
+
+def test_logout_zero_session_revocation_has_no_evidence() -> None:
+    dependencies, users, _passwords, sessions, audit = dependency_mocks()
+    users.get_for_update.return_value = account()
+    sessions.revoke_all.return_value = 0
+
+    AuthenticationService(dependencies).logout(7)
+
+    sessions.refresh_owner.assert_not_called()
+    sessions.revoke_all.assert_called_once_with(7, RevocationReason.LOGOUT)
+    audit.append_audit_entry.assert_not_called()
+    audit.append_outbox_event.assert_not_called()

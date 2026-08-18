@@ -94,7 +94,8 @@ class SelfService:
 
     def _record_password(self, actor_id: int, revoked: int) -> None:
         self._record_password_change(actor_id)
-        self._record_password_revocation(actor_id, revoked)
+        if revoked > 0:
+            self._record_password_revocation(actor_id, revoked)
 
     def _record_password_change(self, actor_id: int) -> None:
         after = {"must_change_password": False}
@@ -118,17 +119,7 @@ class SelfService:
         )
 
     def _record_password_revocation(self, actor_id: int, revoked: int) -> None:
-        before = {"active_refresh_sessions": revoked}
-        after = {
-            "active_refresh_sessions": 0,
-            "reason": RevocationReason.PASSWORD_CHANGE.value,
-            "revoked_refresh_session_count": revoked,
-        }
-        event_payload = {
-            "user_id": actor_id,
-            "reason": RevocationReason.PASSWORD_CHANGE.value,
-            "revoked_refresh_session_count": revoked,
-        }
+        before, after, event_payload = self._password_revocation_payloads(actor_id, revoked)
         self.audit.append_audit_entry(
             AuditEntry(
                 actor_id,
@@ -146,4 +137,18 @@ class SelfService:
                 str(actor_id),
                 event_payload,
             )
+        )
+
+    @staticmethod
+    def _password_revocation_payloads(
+        actor_id: int, revoked: int
+    ) -> tuple[dict[str, object], dict[str, object], dict[str, object]]:
+        shared: dict[str, object] = {
+            "reason": RevocationReason.PASSWORD_CHANGE.value,
+            "revoked_refresh_session_count": revoked,
+        }
+        return (
+            {"active_refresh_sessions": revoked},
+            {"active_refresh_sessions": 0, **shared},
+            {"user_id": actor_id, **shared},
         )

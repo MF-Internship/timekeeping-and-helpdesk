@@ -1,12 +1,12 @@
 # Phase 0 Research: Identity, Authentication and Canonical RBAC
 
-All technical-context questions are resolved. Decisions follow `CHOT_YEU_CAU.md`; R-decisions below are cited only as history/rationale.
+Technical context, repository-pattern questions, and the three former governance gaps are resolved. Decisions follow `CHOT_YEU_CAU.md`; R-decisions below are cited as accepted rationale. R-110…R-112 are synchronized into CHOT §9.2.2/§9.7.1, PRD, QUY_TAC, spec and contracts.
 
 ## Authority trace and controlling decisions
 
-**Decision**: Use CHOT §7, §8–§8.3, §9.2–§9.2.1, §9.4, and §10 as the controlling business/contract source; apply Constitution Principles I–IX/XI/XII and QUY_TAC §3/§5/§7 as mandatory architecture/test rules. Relevant accepted rationale is R-57, R-60–R-72, R-75, R-76, R-78, R-80, R-81, R-87, R-90–R-92, R-103, and R-104.
+**Decision**: Use CHOT §7, §8–§8.3, §9.2–§9.2.2, §9.4, §9.7.1, and §10 as the controlling business/contract source; apply Constitution Principles I–IX/XI/XII and QUY_TAC §3/§5/§7 as mandatory architecture/test rules. Relevant accepted rationale is R-57, R-60–R-72, R-75, R-76, R-78, R-80, R-81, R-87, R-90–R-92, R-103, R-104, and R-110–R-112.
 
-**Rationale**: These sections collectively settle role grants, target protection, validation order, user fields, token/session behavior, audit/outbox transactionality, API shape, scale, password policy, and generated-contract behavior. No current-source conflict remains.
+**Rationale**: These sections settle role grants, target protection, validation order, user fields, token/session flows including idempotent logout and repeated operations, audit/outbox transactionality, throttle limits/failures, API shape, scale, password policy, and generated-contract behavior. No Feature 002 governance ambiguity remains.
 
 **Alternatives considered**:
 
@@ -15,11 +15,11 @@ All technical-context questions are resolved. Decisions follow `CHOT_YEU_CAU.md`
 
 ## Business-module ownership
 
-**Decision**: Create `backend/identity/` for User/authentication/RBAC/user administration and `backend/audit/` for AuditLog/OutboxEvent plus append ports. Keep `backend/core/` non-app and `backend/operations/` operational-only. Cross-module callers use `audit.ports.recording`; `config.composition` wires concrete adapters.
+**Decision**: Preserve the existing `backend/identity/` owner for User/authentication/RBAC/user administration and `backend/audit/` owner for AuditLog/OutboxEvent plus append ports. Keep `backend/core/` non-app and `backend/operations/` operational-only. Cross-module callers use `audit.ports.recording`; `config.composition` wires concrete adapters.
 
 **Rationale**: Identity is the first owned business module. Audit/outbox is cross-cutting business persistence required by R-104 and future features; placing it inside identity would force later modules to import identity internals, while core may not own persistence and operations has explicitly limited ownership. Two cohesive modules preserve inward dependencies and reuse the established app/architecture gates.
 
-**Repository finding**: Feature 001 supplies correlation and payload-safety primitives but explicitly deferred AuditLog, OutboxEvent, and append ports. The feature-spec dependency statement is therefore implemented as reuse of those primitives plus creation of the concrete R-104 ports/models in feature 002; the plan does not pretend nonexistent ports already exist.
+**Repository finding**: Feature 001 supplied correlation and payload-safety primitives; the current Feature 002 implementation already supplies the concrete R-104 ports/models. Remediation reuses both layers and does not create a second audit/outbox append system.
 
 **Alternatives considered**:
 
@@ -30,9 +30,9 @@ All technical-context questions are resolved. Decisions follow `CHOT_YEU_CAU.md`
 
 ## Authentication dependency and integration
 
-**Decision**: Add only `djangorestframework-simplejwt==5.5.1`, enable its blacklist app, and wrap its token primitives in identity ports/adapters instead of exposing stock views. Keep the five CHOT settings in one `SIMPLE_JWT` block.
+**Decision**: Reuse the already pinned `djangorestframework-simplejwt==5.5.1` and enabled blacklist app, and preserve its identity ports/adapters instead of exposing stock views. Verify the CHOT settings remain in one canonical `SIMPLE_JWT` block; do not add a dependency or a second token configuration.
 
-**Rationale**: CHOT names SimpleJWT and requires outstanding/blacklisted server state. Version 5.5.1 is the latest published stable release found during planning and declares Python 3.12 and Django 5.2 support, matching the pinned repository stack. Custom adapters are necessary for cookie-only refresh, exact canonical errors/claims, row-lock serialization, and global revocation. Sources: [PyPI package metadata](https://pypi.org/project/djangorestframework-simplejwt/) and [SimpleJWT blacklist/rotation documentation](https://django-rest-framework-simplejwt.readthedocs.io/en/stable/blacklist_app.html).
+**Rationale**: CHOT names SimpleJWT and requires outstanding/blacklisted server state. Repository inspection confirms version 5.5.1, the blacklist application, 15-minute/7-day lifetimes, rotation, blacklist-after-rotation, and update-last-login already exist in `backend/config/settings.py`. Remediation therefore verifies and corrects behavior in place rather than proposing new infrastructure.
 
 **Alternatives considered**:
 
@@ -43,7 +43,7 @@ All technical-context questions are resolved. Decisions follow `CHOT_YEU_CAU.md`
 
 ## Custom User model
 
-**Decision**: Define `identity.User` from `AbstractBaseUser`, with only the canonical business fields plus the inherited password hash/last-login support; configure it as `AUTH_USER_MODEL` before enabling Django auth migrations. Do not use Django Group/Permission or a superuser bypass in API authorization.
+**Decision**: Preserve the existing `identity.User` based on `AbstractBaseUser`, with only the canonical business fields plus inherited password hash/last-login support and `AUTH_USER_MODEL` configured before Django auth migrations. Do not add Django Group/Permission or a superuser bypass to API authorization.
 
 **Rationale**: The project currently has no auth app or stock user migration, so this is the safe point to establish the custom model. AbstractBaseUser supplies secure password hashing without adding competing role/permission behavior. API Manager provisioning remains forbidden; controlled seed/management provisioning is outside this feature's public contract.
 
@@ -92,11 +92,11 @@ All technical-context questions are resolved. Decisions follow `CHOT_YEU_CAU.md`
 
 ## Session issuance, revocation, and concurrency
 
-**Decision**: All login issuance, refresh rotation, password-change replacement, and the four global-revocation flows acquire the affected User row in a caller-owned transaction. Rotation/revocation rechecks current account and blacklist state after locking. Revocation bulk-creates missing blacklist rows conflict-safely and never issues a replacement except after self password change.
+**Decision**: All login issuance, refresh rotation, password-change replacement, and the four global-revocation flows acquire the affected User row in a caller-owned transaction. Refresh rechecks current account and blacklist state after locking. Logout derives actor only from access authentication, never gates on refresh-cookie validity, and invokes global revocation after acquiring that actor's User lock. Revocation bulk-creates missing blacklist rows conflict-safely and never issues a replacement except after self password change.
 
-Logout is a protected dual-credential operation: it requires a valid bearer access credential and a valid, unrevoked refresh cookie owned by that same current User. A missing, malformed, expired, mismatched-user, or already-blacklisted refresh cookie uses the existing `INVALID_TOKEN` result and performs no global revocation or success audit/outbox append.
+Logout is an authenticated-self operation whose actor comes only from valid access. Under R-110, missing, malformed, expired, mismatched-owner, revoked, and active refresh-cookie cases all clear the cookie, invoke global revocation for that actor, and return `204`. Positive revoke count appends one aggregate evidence pair; zero count is an idempotent no-op with no version advance.
 
-**Rationale**: A shared row lock provides one serial order without a new coordination table. If refresh wins first, its replacement is outstanding before the revoker scans and is revoked; if revocation wins, refresh observes blacklist/new state and fails. The same lock prevents reset/deactivation from racing issuance.
+**Rationale**: A shared row lock provides one serial order without a new coordination table. If issuance wins first, the later revoker observes and revokes its refresh; if the mutation/revoker wins, later issuance rechecks the resulting session/account/credential state. A genuinely later login after logout remains allowed. Tests must prove both lock orders rather than generalizing from issuance-first coverage.
 
 **Alternatives considered**:
 
@@ -202,11 +202,23 @@ Logout is a protected dual-credential operation: it requires a valid bearer acce
 - Put refresh in request/response schema: rejected by the cookie-only contract.
 - Model Role/capabilities as schema enums: rejected because CHOT requires open strings to keep additions nonbreaking.
 
-## Migration and CI evolution
+## Authentication throttling
 
-**Decision**: Add identity/audit as explicit approved local persistence owners, retain one leaf per app, test migration from feature-001 state on PostgreSQL, and expand existing quality/contract jobs rather than adding a workflow or infrastructure service.
+**Decision**: Apply R-112: login 10/60s per canonical client IP, refresh 120/60s per canonical client IP, and password change 5/60s per authenticated User.id. Use only `core.cache.THROTTLE_CACHE_ALIAS`; return canonical `429 THROTTLED` with `Retry-After`, or fail closed with canonical `503 SERVICE_UNAVAILABLE` when storage is unavailable.
 
-**Rationale**: Feature-001 allowlists intentionally reject every business app until owned. Feature 002 now owns exactly identity and audit, so the checks must become policy-aware rather than be bypassed. All changes are additive and N-1 code ignores the new tables.
+**Rationale**: CHOT §9.7.1 now provides implementation authority for the rates previously present only in R-109, while preserving its shared-cache topology. IP keys cover public login/refresh attempts even when no trustworthy User exists; authenticated User.id scopes password change. Fail-closed preserves the security boundary without a second cache or dependency.
+
+## Repeated operation semantics
+
+**Decision**: Apply R-111. Same-state status returns `200` without write/revoke/evidence/version. Zero-session global revocation succeeds with count zero and no evidence/version. Logout repeats return `204` under R-110. Every authorized password reset remains a new mutation and generated-password display with reset evidence; revocation evidence is conditional on positive count.
+
+**Rationale**: Evidence now corresponds to a committed state transition or deliberate reset, rather than a no-op API call. Each committed OutboxEvent advances the User aggregate version exactly once; no-op calls create no artificial gaps.
+
+## Existing composition, migrations, and CI
+
+**Decision**: Treat `identity.0001_initial` and `audit.0001_initial` as deployed baseline, retain one leaf per app, use forward additive `0002+` only for an approved missing invariant, and reuse existing quality/contract jobs. Change typed container/interfaces before changing concrete `config.composition` wiring.
+
+**Rationale**: Repository inspection confirms both initial migrations, composition root, PostgreSQL suites, migration checker, generated-schema tooling, and CI jobs already exist. A remediation plan must not edit historical migrations, build concrete wiring before dependencies, or propose infrastructure already present. Any schema delta follows N-1 expand/migrate/contract compatibility.
 
 **Alternatives considered**:
 

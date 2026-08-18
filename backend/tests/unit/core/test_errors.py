@@ -18,6 +18,8 @@ def test_authorized_codes_are_closed() -> None:
                 "SERVER_OWNED_FIELD",
                 "NOT_FOUND",
                 "LOCATION_VERSION_CONFLICT",
+                "THROTTLED",
+                "SERVICE_UNAVAILABLE",
             }
         )
         == AUTHORIZED_FOUNDATION_ERROR_CODES

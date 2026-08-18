@@ -89,6 +89,11 @@ REST_FRAMEWORK = {
     "UNAUTHENTICATED_TOKEN": None,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "core.errors.drf_exception_handler",
+    "DEFAULT_THROTTLE_RATES": {
+        "login": "10/min",
+        "refresh": "120/min",
+        "password_change": "5/min",
+    },
 }
 AUTH_USER_MODEL = "identity.User"
 SIMPLE_JWT = {

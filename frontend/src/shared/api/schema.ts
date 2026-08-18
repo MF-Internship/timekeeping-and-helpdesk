@@ -521,6 +521,22 @@ export interface operations {
           "application/json": components["schemas"]["IdentityError"];
         };
       };
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
     };
   };
   auth_logout_create: {
@@ -606,6 +622,22 @@ export interface operations {
           "application/json": components["schemas"]["IdentityError"];
         };
       };
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
     };
   };
   identity_change_password_create: {
@@ -640,6 +672,30 @@ export interface operations {
         };
       };
       401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      503: {
         headers: {
           [name: string]: unknown;
         };

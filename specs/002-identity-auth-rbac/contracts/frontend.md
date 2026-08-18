@@ -97,4 +97,5 @@ Request IDs remain visible for support on canonical errors. Unexpected/network f
 - Manager targets remain visible while all four admin mutations are unavailable in UI.
 - Generated password disappears after every lifecycle boundary.
 - All calls use generated types and the existing API transport/client boundaries; architecture check finds no alternate fetch path.
-- Logout sends both the in-memory bearer access and protected refresh cookie; an invalid/revoked cookie clears local session state after the canonical `INVALID_TOKEN` response without claiming that global revocation succeeded.
+- Logout sends the in-memory bearer access and protected refresh cookie when present; with valid access every cookie state receives `204`, so the client clears local session state without inspecting or retrying the cookie.
+- `429 THROTTLED` displays the server-provided wait and does not retry before `Retry-After`; `503 SERVICE_UNAVAILABLE` presents a temporary-service failure and does not bypass the failed-closed throttle boundary.

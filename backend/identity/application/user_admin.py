@@ -133,6 +133,8 @@ class UserAdminService:
     def change_status(self, actor_id: int, target_id: int, is_active: bool) -> AccountSnapshot:
         with self.unit_of_work_factory():
             before = self._eligible_locked(target_id)
+            if before.is_active is is_active:
+                return before
             saved = self.users.save(replace(before, is_active=is_active))
             self._record(
                 actor_id,
@@ -228,6 +230,8 @@ class UserAdminService:
     def _record_revocation(
         self, actor_id: int, target_id: int, evidence: RevocationEvidence
     ) -> None:
+        if evidence.count == 0:
+            return
         before, after, event_payload = self._revocation_payloads(target_id, evidence)
         self.audit.append_audit_entry(
             AuditEntry(

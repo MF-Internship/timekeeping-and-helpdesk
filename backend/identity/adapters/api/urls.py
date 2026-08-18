@@ -2,7 +2,7 @@ from collections.abc import Callable
 
 from django.urls import URLPattern, path
 
-from identity.adapters.api.permissions import LogoutAuthorizer, TargetLookup
+from identity.adapters.api.permissions import TargetLookup
 from identity.adapters.api.views import (
     ChangePasswordView,
     LoginView,
@@ -21,12 +21,10 @@ from identity.application.container import IdentityContainer
 def identity_urlpatterns(
     container_provider: Callable[[], IdentityContainer],
     target_lookup: TargetLookup,
-    logout_authorizer: LogoutAuthorizer,
 ) -> list[URLPattern]:
     injected: dict[str, object] = {
         "container_provider": container_provider,
         "target_lookup": target_lookup,
-        "logout_authorizer": logout_authorizer,
     }
     return _authentication_paths(injected) + _user_admin_paths(injected)
 

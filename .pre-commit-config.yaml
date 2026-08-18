@@ -26,6 +26,11 @@ repos:
         entry: uv run --project backend pytest -q backend/tests/architecture
         language: system
         pass_filenames: false
+      - id: feature-002-convergence
+        name: Feature 002 convergence regression checks
+        entry: scripts/check_feature_002_convergence.sh --fast
+        language: system
+        pass_filenames: false
       - id: migration-safety
         name: Migration safety
         entry: uv run --project backend python scripts/migration_check.py check

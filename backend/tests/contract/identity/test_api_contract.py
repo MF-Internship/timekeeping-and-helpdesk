@@ -74,3 +74,18 @@ def test_logout_clear_cookie_matches_issued_cookie_security_attributes() -> None
         assert cleared_cookie[attribute] == issued_cookie[attribute]
     assert cleared_cookie.value == ""
     assert cleared_cookie["max-age"] == 0
+
+
+@pytest.mark.contract
+def test_authentication_throttle_responses_are_in_generated_contract() -> None:
+    from scripts.generate_openapi import schema_document
+
+    document = schema_document()
+    for path in (
+        "/api/v1/auth/login",
+        "/api/v1/auth/refresh",
+        "/api/v1/change-password",
+    ):
+        responses = document["paths"][path]["post"]["responses"]
+        assert "429" in responses
+        assert "503" in responses

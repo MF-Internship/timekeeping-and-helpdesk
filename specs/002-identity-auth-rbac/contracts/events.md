@@ -40,7 +40,7 @@ Rules:
 
 - Password/reset records never contain plaintext, hash, validator input, or generated_password.
 - Session records never contain JWT/JTI, cookie, OutstandingToken id, BlacklistedToken id, or credential fragment.
-- Logout produces sessions-revoked evidence with reason LOGOUT. Reset/change/deactivation produce sessions-revoked evidence in the same transaction as their user-operation evidence.
+- Logout produces sessions-revoked evidence with reason LOGOUT only when its global revoke count is positive. Reset/change/deactivation produce sessions-revoked evidence in the same transaction as their user-operation evidence only when they revoke at least one active refresh session.
 - Login and routine refresh rotation do not produce audit rows; last_login/outstanding/blacklist state is sufficient and avoids high-volume audit noise not required by CHOT.
 - No AuditLog row has request/correlation columns.
 
@@ -100,7 +100,7 @@ Payload:
 | `reason` | `LOGOUT`, `PASSWORD_RESET`, `PASSWORD_CHANGE`, or `ACCOUNT_DEACTIVATED`. |
 | `revoked_refresh_session_count` | Nonnegative count; no token identity. |
 
-The key `must_change_password` and session-count keys are permitted because the shared filter matches forbidden keys exactly, not substrings. A failed logout caused by a missing, invalid, mismatched, or already-revoked refresh cookie appends neither audit nor outbox success evidence.
+The key `must_change_password` and session-count keys are permitted because the shared filter matches forbidden keys exactly, not substrings. Under R-110, missing/invalid/mismatched/revoked logout cookies do not fail logout: positive revoke count appends one aggregate sessions-revoked pair, while zero count appends none.
 
 ## Aggregate ordering
 
@@ -108,6 +108,7 @@ The key `must_change_password` and session-count keys are permitted because the 
 - Create event is aggregate_version 1.
 - Later identity events increment by one while the User row is locked.
 - When one use case emits a user event and a sessions-revoked event, they receive consecutive versions in application order.
+- Same-state status and zero-count revocation append no event and consume no aggregate version. Repeated reset always appends a new password-reset event; it appends a sessions-revoked event only for positive revoke count.
 - There is no ordering promise between different Users.
 - Unique `(aggregate_type, aggregate_id, aggregate_version)` is the database backstop.
 

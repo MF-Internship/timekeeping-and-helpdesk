@@ -237,6 +237,7 @@ create/reset ──> active + must_change_password
 password change ──> active + password changed + must_change_password=false
 status(false) ──> inactive (all refresh revoked immediately)
 status(true) ──> active (password-change flag preserved)
+status(current value) ──> no-op (no write/evidence/version)
 ```
 
 - Deactivation changes only Identity-owned state and refresh-blacklist/evidence state. Identity must not call or write Task, Attendance, Reporting, or another business module; integration proof for those modules' row preservation is deferred to their owning features.
@@ -275,33 +276,37 @@ The issue operation is ordered after revocation and inside the same serialized U
 |---|---|---|
 | Login | User | last_login + OutstandingToken; no audit/outbox required |
 | Refresh | User | old BlacklistedToken + new OutstandingToken only when active and must_change_password=false |
-| Logout | User | all missing BlacklistedToken rows + session-revocation AuditLog/OutboxEvent |
+| Logout | User | Always scan/revoke by access actor; positive count writes blacklist + one session AuditLog/OutboxEvent, zero count writes none; always `204` and clear cookie |
 | Change password | User | password hash + must_change flag + all blacklist rows + user/session audit/events + new OutstandingToken |
 | Create user | Uniqueness constraint; new User becomes aggregate | User + AuditLog + OutboxEvent version 1 |
 | Admin profile | Target User | profile fields + AuditLog + OutboxEvent |
 | Assign role | Target User | role + AuditLog + OutboxEvent |
-| Set status true | Target User | active flag + AuditLog + OutboxEvent |
-| Set status false | Target User | active flag + all blacklist rows + user/session audit/events |
-| Reset password | Target User | new hash + must_change flag + all blacklist rows + user/session audit/events |
+| Set status true | Target User | Transition only: active flag + AuditLog + OutboxEvent; already true is no-op |
+| Set status false | Target User | Transition only: active flag + user state evidence; positive revoke count additionally writes blacklist + session evidence; already false is no-op |
+| Reset password | Target User | Always new hash + must_change flag + reset evidence; positive revoke count additionally writes blacklist + session evidence |
 
 Any exception after append rolls back every row in the use case. Audit/outbox adapters do not create nested independent commit boundaries.
 
 ## Concurrency invariants
 
 1. One refresh token can rotate successfully at most once, including simultaneous requests.
-2. Login issuance and refresh issuance each serialize against logout, Manager reset, self password change, and deactivation through the same User lock, so no pre-existing or racing refresh survives a completed revocation.
+2. Login issuance and refresh issuance each serialize against logout, Manager reset, self password change, and deactivation through the same User lock. Tests prove both lock orders: issuance-first refresh state is observed by the later revoker; revocation/mutation-first issuance rechecks the resulting session/account/credential state. Logout does not prohibit a genuinely later login.
 3. A later fresh login after logout is allowed; a later login after reset is allowed but remains forced-change; a later login after deactivation is denied.
 4. A user-admin target promoted to Manager before a competing mutation obtains its lock is protected; if the eligible mutation commits first, the later promotion observes that committed state. No write occurs after observing Manager under lock.
 5. Exactly one concurrent create with a duplicate username commits.
-6. Concurrent global revocations for one User serialize and remain conflict-safe without leaving a usable refresh credential.
+6. Concurrent global revocations for one User serialize and remain conflict-safe without leaving a usable refresh credential. Exactly the positive-count winner appends aggregate revocation evidence; zero-count followers append none.
 7. Concurrent OutboxEvent allocation for one User serializes on that User and produces strictly increasing unique aggregate versions; different Users need no global order.
+
+Logout never uses submitted refresh owner as authority. After locking the access-token actor it revokes all active refresh rows regardless of missing/invalid/mismatched/revoked cookie state, then returns `204`; cookie clearing is an HTTP-adapter effect. Positive count creates one aggregate AuditLog/OutboxEvent pair, while zero count creates none.
+
+Repeated `active→active`, `inactive→inactive`, and zero-session revocation are approved no-ops without evidence/version. Successive deliberate password resets remain distinct mutations with new reset evidence. Aggregate version advances once per committed OutboxEvent and never advances for a no-op.
 
 ## Migration design
 
 1. Extend approved local apps/migration owners to `operations`, `identity`, and `audit`; keep config/core non-apps.
 2. Configure `AUTH_USER_MODEL` before applying `django.contrib.auth` and token-blacklist migrations.
-3. `identity.0001_initial` creates User, checks, indexes, and username-immutability trigger.
-4. `audit.0001_initial` depends on the swappable User model, creates AuditLog/OutboxEvent, checks/indexes, and AuditLog-immutability trigger.
+3. Existing deployed `identity.0001_initial` creates User, checks, indexes, and username-immutability trigger; remediation never edits it and uses additive `0002+` only for an approved missing invariant.
+4. Existing deployed `audit.0001_initial` depends on the swappable User model, creates AuditLog/OutboxEvent, checks/indexes, and AuditLog-immutability trigger; remediation never edits it.
 5. Third-party blacklist migrations create OutstandingToken/BlacklistedToken against the custom User.
 6. All operations are additive. No rename/remove/alter contraction occurs; no business data backfill is needed because the prior feature had no User/audit/token tables.
 7. A PostgreSQL MigrationExecutor test applies the exact feature-001 migration state, advances to feature 002, verifies the schema and behavior, and confirms one leaf per local app.

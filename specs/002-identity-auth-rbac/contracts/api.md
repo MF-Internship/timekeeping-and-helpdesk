@@ -98,15 +98,24 @@ No JSON refresh field is accepted or returned.
 
 **Operation ID**: `auth_logout_create`
 
-**Authorization**: both a valid bearer access credential and a valid, unrevoked refresh cookie owned by the same current User; no body.
+**Authorization**: valid bearer access for the current User; no body. Refresh cookie state never selects the actor and does not block logout.
 
-Success `204`: no body; all outstanding refresh credentials for the user are blacklisted, audit/outbox evidence is committed, and the refresh cookie is cleared with matching cookie attributes. No new credential is issued.
+Success `204`: no body; the refresh cookie is always cleared with matching attributes and global revocation always runs for the access-token actor. No new credential is issued.
+
+| Refresh cookie | Global revoke | Audit/outbox/version |
+|---|---|---|
+| Missing | Run for actor | One aggregate pair only if revoked count > 0; otherwise none |
+| Malformed, invalid, expired, or belongs to another User | Run for actor | One aggregate pair only if revoked count > 0; otherwise none |
+| Valid but already revoked | Run for actor | Evidence only if another active refresh is revoked |
+| Valid and active | Run for actor | Exactly one aggregate revocation AuditLog/OutboxEvent pair |
+
+Logout is idempotent: a repeated zero-session call remains `204`, clears the cookie, and creates no state write, AuditLog, OutboxEvent, or aggregate-version advance.
 
 Errors:
 
-- `401 INVALID_TOKEN` for a missing/invalid/expired access credential or for a missing, malformed, expired, mismatched-user, or already-blacklisted refresh cookie. The failure performs no global revocation, creates no success audit/outbox evidence, and issues no credential.
-- `401 ACCOUNT_INACTIVE` when both credentials are otherwise valid but the current User is inactive.
-- `403 PASSWORD_CHANGE_REQUIRED` when both credentials and self authorization pass but the current User still requires password change. Logout is not the password-change exemption.
+- `401 INVALID_TOKEN` for a missing/invalid/expired access credential; refresh-cookie defects do not produce this logout error.
+- `401 ACCOUNT_INACTIVE` when access is valid but the current User is inactive.
+- `403 PASSWORD_CHANGE_REQUIRED` when self authorization passes but the current User still requires password change. Logout is not the password-change exemption.
 
 An unexpired access credential remains valid until expiry unless the account-state gates block it.
 
@@ -243,7 +252,7 @@ Request is exactly `{role}`. Leader/Helpdesk values succeed with `200` AdminUser
 
 Request is exactly `{is_active: boolean}`. Success `200`: AdminUser. Deactivation globally revokes refresh sessions in the same transaction and causes the next access request to return ACCOUNT_INACTIVE; reactivation issues no credential and preserves must_change_password.
 
-The authoritative documents define the active-to-inactive and inactive-to-active transitions but no idempotency-key or duplicate-request evidence contract. Feature 002 therefore adds no promise about the response or audit/outbox count for repeating the already-current status; tests must not invent one.
+Repeating the already-current status returns `200` with the current AdminUser and is a no-op: no User write, revocation, AuditLog, OutboxEvent, or aggregate-version advance. A real transition writes one status AuditLog/OutboxEvent; deactivation additionally writes aggregate revocation evidence only when it revokes at least one active refresh.
 
 ### POST `/api/v1/users/{id}/reset-password`
 
@@ -265,18 +274,29 @@ Success `200`:
 
 Generated OpenAPI MUST omit the secret example. All previous refresh credentials are blacklisted; audit/outbox excludes plaintext/hash/token identifiers. The current access credential remains usable for at most its original 15 minutes but the forced-change gate applies immediately.
 
+Every authorized reset is a new attributable mutation, even if `must_change_password` is already true: it generates a different password/hash and appends reset AuditLog/OutboxEvent. Its global-revocation append occurs only when at least one active refresh is actually revoked.
+
 ## Canonical error precedence
 
-| Order | Gate | Example |
-|---:|---|---|
-| 1 | Credential validity/current active account | Invalid token → 401 INVALID_TOKEN; valid token/inactive current User → 401 ACCOUNT_INACTIVE. |
-| 2 | Required action | Helpdesk with `must_change_password=true` POST users with empty or malformed body → 403 PERMISSION_DENIED. |
-| 3 | Body-independent target authorization | Manager target PATCH containing a forbidden field or empty body → 403 PERMISSION_DENIED. |
-| 4 | Forced password change | Actor authorized for the action/target but still flagged on a non-change endpoint → 403 PASSWORD_CHANGE_REQUIRED. |
-| 5 | DTO/server-owned fields and value syntax | Eligible target profile PATCH containing role → 400 SERVER_OWNED_FIELD. |
-| 6 | Payload authorization | Authorized create/role DTO with role Manager → 403 PERMISSION_DENIED. |
-| 7 | Object scope in the owning business module | Deferred: Feature 004 Attendance and Feature 006 Task consume generic permission provenance. |
-| 8 | Business invariant/transaction/audit-outbox | Identity-owned state transition and atomic evidence. |
+| Earlier condition | Later competing condition | Required result | Owner |
+|---|---|---|---|
+| Missing/malformed/expired access | Any action, target, forced-state, or DTO condition | `401 INVALID_TOKEN` | Authentication class |
+| Valid access but current User inactive | Any action, target, forced-state, or DTO condition | `401 ACCOUNT_INACTIVE` | Authentication class after User reload |
+| Actor lacks required action | Forced-change and malformed body/filter/route identifier | `403 PERMISSION_DENIED`; DTO/identifier detail is not exposed | DRF permission action gate |
+| Existing Manager target on profile/role/status/reset | Forced-change, empty/malformed body, or server-owned field | `403 PERMISSION_DENIED` | DRF body-independent target gate |
+| Action and target pass; forced-change true | Malformed DTO or route identifier | `403 PASSWORD_CHANGE_REQUIRED` | DRF post-authorization account gate |
+| All permission/account gates pass | Server-owned field | `400 SERVER_OWNED_FIELD` | Operation serializer |
+| All permission/account gates pass | Unknown role, invalid filter/type/email, or malformed identifier | `400 VALIDATION_FAILED` or canonical `404` for route target | View/operation serializer |
+| DTO parses canonical `MANAGER` role | Role is outside `ASSIGNABLE_ROLES` | `403 PERMISSION_DENIED` | Application payload authorization |
+| Authorized, non-forced actor has malformed route identifier | Malformed body | Canonical `404` before body validation | View target lookup |
+| Authorized forced-change actor has malformed route identifier | Route syntax | `403 PASSWORD_CHANGE_REQUIRED` before route validation | DRF permission account gate |
+| Valid target identifier does not exist | Body validation | Canonical `404`, only after authentication/action/forced gates | View target lookup |
+| Target becomes Manager after precheck | Otherwise valid mutation | `403 PERMISSION_DENIED`; rollback | Application locked target recheck |
+| Login/refresh scope is over quota | DTO or credential evaluation | `429 THROTTLED` + `Retry-After` | Public DRF throttle gate |
+| Authenticated password-change actor is over quota | Password-change DTO | `429 THROTTLED` + `Retry-After` after authentication/permission gates | Protected DRF throttle gate |
+| Shared throttle store fails | Any scoped service call | `503 SERVICE_UNAVAILABLE`; no service/evidence side effect | Throttle adapter, fail closed |
+
+The `must_change_password` check never precedes action RBAC or applicable target authorization. Self endpoints and logout are authenticated-self/session operations and do not invent a User RBAC action.
 
 ## Canonical identity error registry
 
@@ -289,11 +309,13 @@ Generated OpenAPI MUST omit the secret example. All previous refresh credentials
 | 401 | `ACCOUNT_INACTIVE` | Clear in-memory access, stop refresh, show locked-account message. |
 | 403 | `PASSWORD_CHANGE_REQUIRED` | Route directly to password change; do not retry business request. |
 | 403 | `PERMISSION_DENIED` | Hide/disable capability and show insufficient-permission message. |
+| 429 | `THROTTLED` | Honor `Retry-After`; do not retry before the server-provided delay. |
+| 503 | `SERVICE_UNAVAILABLE` | Stop the operation and retry later; throttle storage failed closed. |
 
 ## Security and schema assertions
 
 - No operation accepts user_id for self behavior.
-- Logout accepts no JSON credential and requires the same-user bearer access plus protected refresh cookie; every invalid-cookie variant uses `INVALID_TOKEN`.
+- Logout accepts no JSON credential, derives actor only from bearer access, and follows the idempotent cookie matrix above.
 - No user response contains password hash.
 - Only create/reset success schemas contain generated_password; no example value.
 - The exact `password` schema property exists only in the login request; it is absent from every response and every user create/reset/profile request. No schema has a JSON `refresh_token` property.
@@ -301,3 +323,13 @@ Generated OpenAPI MUST omit the secret example. All previous refresh credentials
 - Role/capabilities remain OpenAPI string/string-array, not enum.
 - All operation IDs are explicit/unique and generated twice byte-identically.
 - Backend/OpenAPI/generated-schema drift, handwritten-client type/static verification, and merge-base compatibility must pass.
+
+## Authentication throttle contract
+
+| Scope | Limit/key | Placement |
+|---|---|---|
+| Login | 10 requests per 60 seconds per canonical client IP | Before login DTO/business credential evaluation |
+| Refresh | 120 requests per 60 seconds per canonical client IP | Before cookie/business rotation evaluation |
+| Password change | 5 requests per 60 seconds per authenticated User.id | After authentication/permission/account gates; before DTO |
+
+Every attempt reaching a scope counts. All scopes use `core.cache.THROTTLE_CACHE_ALIAS`. Over-limit responses are canonical `429 THROTTLED` with `Retry-After`; shared-store failure is canonical fail-closed `503 SERVICE_UNAVAILABLE`. Neither response invokes an application service or creates audit/outbox evidence.

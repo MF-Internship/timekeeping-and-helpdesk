@@ -1,5 +1,6 @@
 import pytest
 
+from audit.models import AuditLog, OutboxEvent
 from tests.integration.api.identity.helpers import api_client, create_user, manager_client
 
 
@@ -26,3 +27,5 @@ def test_reset_is_empty_body_owned_revokes_all_refresh_and_generates_new_value_e
     assert residual.json()["error_code"] == "PASSWORD_CHANGE_REQUIRED"
     injected = api.post(f"/api/v1/users/{target.pk}/reset-password", {"password": "client"})
     assert injected.json()["error_code"] == "SERVER_OWNED_FIELD"
+    assert AuditLog.objects.filter(target_id=str(target.pk)).count() == 3
+    assert OutboxEvent.objects.filter(aggregate_id=str(target.pk)).count() == 3

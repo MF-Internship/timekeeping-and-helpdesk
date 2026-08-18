@@ -49,7 +49,7 @@ HTTP contract tests:
 uv run --project backend pytest backend/tests/integration/api/identity
 ```
 
-Expected: login/refresh/logout, self/password flows, user administration, action-before-forced-password-before-DTO, target-before-forced-password-before-DTO, canonical errors, cookie attributes, list filters/pagination, and allow/deny scenarios pass. Logout succeeds only with a valid bearer access credential plus a valid, unrevoked, same-user refresh cookie; missing, malformed, expired, mismatched, or already-revoked refresh returns `INVALID_TOKEN` without success evidence.
+Expected: login/refresh/logout, self/password flows, user administration, action-before-forced-password-before-DTO, target-before-forced-password-before-DTO, canonical errors, cookie attributes, list filters/pagination, and allow/deny scenarios pass. Every valid-access logout cookie variant returns `204`, clears the cookie, and revokes by actor; positive count creates one evidence pair while a zero-count repeat creates none. Same-state status is a `200` no-op, and repeated reset remains a new mutation.
 
 Real PostgreSQL evidence:
 
@@ -57,7 +57,7 @@ Real PostgreSQL evidence:
 POSTGRES_TEST_DATABASE_URL="$DATABASE_URL" uv run --project backend pytest -m postgres backend/tests/integration/postgres/identity backend/tests/integration/postgres/audit
 ```
 
-Expected: tests assert PostgreSQL vendor and use real competing workers/transactions to prove migrations, constraints/triggers, duplicate-username race, same-refresh reuse/race, login issuance versus each of logout/reset/self-change/deactivation, refresh issuance versus each of those four revocations, concurrent global revocations for one User, concurrent unique monotonic per-User outbox aggregate-version allocation, Manager-target race protection, audit immutability, and full rollback after append. Final persisted state and credential usability are asserted; no SQLite/mock result counts as evidence.
+Expected: tests assert PostgreSQL vendor and use real competing workers/transactions to prove migrations, constraints/triggers, duplicate-username race, same-refresh reuse/race, **both lock orders** for login issuance versus each of logout/reset/self-change/deactivation and refresh issuance versus each revoker, production-service concurrent global revocations, concurrent unique monotonic per-User outbox aggregate-version allocation, Manager-target race protection, AuditLog.actor protective deletion behavior, audit immutability, and full rollback after append. Final persisted state and credential usability are asserted; no SQLite/mock result counts as evidence.
 
 ## Validate the Definition of Done scenarios
 
@@ -79,6 +79,7 @@ The suite must prove together:
 8. Existing Manager targets remain readable and reject profile/role/status/reset writes, including malformed and empty bodies.
 9. Leader mutations and Helpdesk user administration are denied without side effects.
 10. The complete direct/effective RBAC matrix and generic grant provenance match CHOT, with no implicit all-to-self grant beyond the five approved pairs and no Task/Attendance record-ownership behavior in Identity.
+11. Controlled time proves access validity immediately before 15 minutes and expiry at/after 15 minutes for logout, reset, self change, and deactivation, including the distinct current-account gates.
 
 ## Validate generated contracts
 
@@ -144,8 +145,11 @@ Expected:
 - config/core remain non-apps;
 - domain code has no framework imports;
 - no cross-module models/domain/adapters imports occur;
+- Identity contains none of `is_task_creator`, `is_task_assignee`, `can_view_task`, `can_update_task`, or `owns_attendance`;
 - audit/outbox are not hidden in identity/core/operations;
 - all quality, tests, contracts, migrations, isolation, generated artifacts, and frontend build checks pass.
+
+Controlled-clock throttle tests must prove login 10/60s per canonical client IP, refresh 120/60s per canonical client IP, and password change 5/60s per authenticated User. They must use `core.cache.THROTTLE_CACHE_ALIAS`, prove counters are shared across workers, assert `429 THROTTLED` plus `Retry-After`, and assert cache failure returns fail-closed `503 SERVICE_UNAVAILABLE` with no business/audit/outbox side effect.
 
 ## Security inspection
 
