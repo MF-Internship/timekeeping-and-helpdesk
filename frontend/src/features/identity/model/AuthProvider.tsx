@@ -33,6 +33,7 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+let bootstrapFlight: Promise<Account> | undefined;
 
 function failureCode(error: unknown): string | undefined {
   if (typeof error !== "object" || error === null) return undefined;
@@ -45,20 +46,30 @@ function asAccount(value: Awaited<ReturnType<typeof identityApi.getMe>>): Accoun
   return value as Account;
 }
 
+function bootstrapAccount(): Promise<Account> {
+  if (bootstrapFlight) return bootstrapFlight;
+  const promise = identityApi
+    .refresh()
+    .then((session) => {
+      setMemoryAccessToken(session.access);
+      return identityApi.getMe();
+    })
+    .then(asAccount)
+    .finally(() => {
+      if (bootstrapFlight === promise) bootstrapFlight = undefined;
+    });
+  bootstrapFlight = promise;
+  return promise;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const state = useSyncExternalStore(subscribeSession, getSessionState, getSessionState);
 
   useEffect(() => {
     let current = true;
-    void identityApi
-      .refresh()
-      .then((session) => {
-        setMemoryAccessToken(session.access);
-        return identityApi.getMe();
-      })
-      .then((account) => {
+    void bootstrapAccount()
+      .then((next) => {
         if (!current) return;
-        const next = asAccount(account);
         setSessionState(
           next.must_change_password
             ? { kind: "forced_change", account: next }

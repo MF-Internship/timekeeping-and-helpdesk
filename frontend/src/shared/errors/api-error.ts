@@ -7,6 +7,8 @@ const authorizedCodes = new Set([
   "ACCOUNT_INACTIVE",
   "PASSWORD_CHANGE_REQUIRED",
   "SERVER_OWNED_FIELD",
+  "NOT_FOUND",
+  "LOCATION_VERSION_CONFLICT",
 ]);
 
 export type ApiFailure =
@@ -40,6 +42,19 @@ export async function parseApiFailure(response: Response): Promise<ApiFailure> {
     details: body.details,
     requestId: bodyRequestId,
   };
+}
+
+export async function parseApiResultFailure(result: {
+  error?: unknown;
+  response: Response;
+}): Promise<ApiFailure> {
+  if (result.error === undefined) return await parseApiFailure(result.response);
+  const response = new Response(JSON.stringify(result.error), {
+    status: result.response.status,
+    statusText: result.response.statusText,
+    headers: result.response.headers,
+  });
+  return await parseApiFailure(response);
 }
 
 async function readJson(response: Response): Promise<unknown> {

@@ -6,7 +6,14 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/features/identity/model/AuthProvider";
 import { UI_MESSAGES } from "@/shared/messages";
 
-type IdentityRoute = "login" | "change-password" | "users";
+type IdentityRoute = "login" | "change-password" | "users" | "locations" | "config" | "holidays";
+
+const REQUIRED_CAPABILITY = {
+  users: "user.view",
+  locations: "location.view",
+  config: "config.view",
+  holidays: "holiday.manage",
+} as const;
 
 function destination(
   route: IdentityRoute,
@@ -26,8 +33,8 @@ function authenticatedDestination(
   route: IdentityRoute,
   state: Extract<ReturnType<typeof useAuth>["state"], { kind: "authenticated" }>,
 ): string | null {
-  if (route !== "users") return "/";
-  return state.account.capabilities.includes("user.view") ? null : "/";
+  if (route === "login" || route === "change-password") return "/";
+  return state.account.capabilities.includes(REQUIRED_CAPABILITY[route]) ? null : "/";
 }
 
 export function IdentityRouteBoundary({

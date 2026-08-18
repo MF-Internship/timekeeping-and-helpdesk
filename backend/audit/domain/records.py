@@ -30,7 +30,7 @@ class IdentityEventType(StrEnum):
 @dataclass(frozen=True, slots=True)
 class AuditEntry:
     actor_id: int
-    action: AuditAction
+    action: StrEnum
     target_type: str
     target_id: str
     before: dict[str, Any]
@@ -43,7 +43,7 @@ class AuditEntry:
 
 @dataclass(frozen=True, slots=True)
 class OutboxRecord:
-    event_type: IdentityEventType
+    event_type: StrEnum
     aggregate_type: str
     aggregate_id: str
     payload: dict[str, Any]

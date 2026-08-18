@@ -68,6 +68,86 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/config/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["config_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations["config_partial_update"];
+    trace?: never;
+  };
+  "/api/v1/holidays/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["holidays_list"];
+    put?: never;
+    post: operations["holidays_create"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/holidays/{holiday_id}/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: operations["holidays_destroy"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/locations/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["locations_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/locations/{location_id}/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations["locations_partial_update"];
+    trace?: never;
+  };
   "/api/v1/me/": {
     parameters: {
       query?: never;
@@ -203,6 +283,54 @@ export interface components {
       readonly role: string;
       readonly username: string;
     };
+    /** @enum {string} */
+    CodeEnum: "GEOFENCE_OVERLAP" | "RADIUS_BELOW_ATTENDANCE_ACCURACY";
+    Config: {
+      /** Format: decimal */
+      readonly default_radius_m: string;
+      readonly early_checkout_grace_minutes: number;
+      readonly id: number;
+      readonly late_checkout_grace_minutes: number;
+      readonly late_grace_minutes: number;
+      /** Format: decimal */
+      readonly max_attendance_accuracy_m: string;
+      /** Format: decimal */
+      readonly max_radius_m: string;
+      /** Format: time */
+      readonly shift_end: string;
+      /** Format: time */
+      readonly shift_start: string;
+      /** Format: decimal */
+      readonly task_gps_good_accuracy_m: string;
+      /** Format: decimal */
+      readonly task_gps_low_accuracy_m: string;
+      readonly timezone: string;
+      readonly working_weekdays: number[];
+    };
+    ConfigUpdate: {
+      /** Format: decimal */
+      default_radius_m?: string;
+      early_checkout_grace_minutes?: number;
+      late_checkout_grace_minutes?: number;
+      late_grace_minutes?: number;
+      /** Format: decimal */
+      max_attendance_accuracy_m?: string;
+      /** Format: decimal */
+      max_radius_m?: string;
+      /** Format: time */
+      shift_end?: string;
+      /** Format: time */
+      shift_start?: string;
+      /** Format: decimal */
+      task_gps_good_accuracy_m?: string;
+      /** Format: decimal */
+      task_gps_low_accuracy_m?: string;
+      working_weekdays?: number[];
+    };
+    ConfigUpdateResult: {
+      readonly config: components["schemas"]["Config"];
+      readonly warnings: components["schemas"]["Warning"][];
+    };
     FoundationError: {
       details: {
         [key: string]: string[];
@@ -219,6 +347,17 @@ export interface components {
       readonly generated_password: string;
       readonly user: components["schemas"]["AdminUser"];
     };
+    Holiday: {
+      /** Format: date */
+      readonly date: string;
+      readonly id: number;
+      readonly name: string;
+    };
+    HolidayCreate: {
+      /** Format: date */
+      date: string;
+      name: string;
+    };
     IdentityError: {
       readonly details: {
         [key: string]: unknown;
@@ -228,6 +367,40 @@ export interface components {
       readonly message: string;
       /** Format: uuid */
       readonly request_id: string;
+    };
+    Location: {
+      readonly address: string;
+      readonly code: string;
+      readonly id: number;
+      readonly is_active: boolean;
+      readonly kind: string;
+      /** Format: decimal */
+      readonly latitude: string;
+      /** Format: decimal */
+      readonly longitude: string;
+      readonly name: string;
+      readonly parent_code: string | null;
+      readonly parent_id: number | null;
+      /** Format: decimal */
+      readonly radius_m: string;
+      readonly version: number;
+    };
+    LocationUpdate: {
+      address?: string;
+      is_active?: boolean;
+      /** Format: decimal */
+      latitude?: string;
+      /** Format: decimal */
+      longitude?: string;
+      name?: string;
+      /** Format: decimal */
+      radius_m?: string;
+      reason?: string;
+      version: number;
+    };
+    LocationUpdateResult: {
+      readonly location: components["schemas"]["Location"];
+      readonly warnings: components["schemas"]["Warning"][];
     };
     Login: {
       password: string;
@@ -244,22 +417,19 @@ export interface components {
       current_password: string;
       new_password: string;
     };
-    PatchedProfile: {
+    Profile: {
       /** Format: email */
       email?: string | null;
       full_name?: string;
       phone?: string | null;
     };
-    PatchedRole: {
-      role?: string;
-    };
-    PatchedStatus: {
-      is_active?: boolean;
-    };
     ResetPasswordResult: {
       readonly generated_password: string;
       readonly must_change_password: boolean;
       readonly user_id: number;
+    };
+    Role: {
+      role: string;
     };
     SelfUser: {
       readonly capabilities: string[];
@@ -277,6 +447,9 @@ export interface components {
       readonly role: string;
       readonly username: string;
     };
+    Status: {
+      is_active: boolean;
+    };
     UserCreate: {
       /** Format: email */
       email?: string | null;
@@ -290,6 +463,15 @@ export interface components {
       readonly next: string | null;
       readonly previous: string | null;
       readonly results: components["schemas"]["AdminUser"][];
+    };
+    Warning: {
+      readonly code: components["schemas"]["CodeEnum"];
+      /** Format: decimal */
+      radius_m?: string;
+      related_location_codes?: string[];
+      related_location_ids?: number[];
+      /** Format: decimal */
+      threshold_m?: string;
     };
   };
   responses: never;
@@ -467,6 +649,348 @@ export interface operations {
       };
     };
   };
+  config_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Config"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+    };
+  };
+  config_partial_update: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["ConfigUpdate"];
+        "application/x-www-form-urlencoded": components["schemas"]["ConfigUpdate"];
+        "multipart/form-data": components["schemas"]["ConfigUpdate"];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ConfigUpdateResult"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+    };
+  };
+  holidays_list: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Holiday"][];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+    };
+  };
+  holidays_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["HolidayCreate"];
+        "application/x-www-form-urlencoded": components["schemas"]["HolidayCreate"];
+        "multipart/form-data": components["schemas"]["HolidayCreate"];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Holiday"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+    };
+  };
+  holidays_destroy: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        holiday_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No response body */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+    };
+  };
+  locations_list: {
+    parameters: {
+      query?: {
+        is_active?: boolean;
+        kind?: "BUSINESS_CENTER" | "SHOP";
+        parent?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Location"][];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+    };
+  };
+  locations_partial_update: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        location_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LocationUpdate"];
+        "application/x-www-form-urlencoded": components["schemas"]["LocationUpdate"];
+        "multipart/form-data": components["schemas"]["LocationUpdate"];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LocationUpdateResult"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+    };
+  };
   identity_me_retrieve: {
     parameters: {
       query?: never;
@@ -511,9 +1035,9 @@ export interface operations {
     };
     requestBody?: {
       content: {
-        "application/json": components["schemas"]["PatchedProfile"];
-        "application/x-www-form-urlencoded": components["schemas"]["PatchedProfile"];
-        "multipart/form-data": components["schemas"]["PatchedProfile"];
+        "application/json": components["schemas"]["Profile"];
+        "application/x-www-form-urlencoded": components["schemas"]["Profile"];
+        "multipart/form-data": components["schemas"]["Profile"];
       };
     };
     responses: {
@@ -836,9 +1360,9 @@ export interface operations {
     };
     requestBody?: {
       content: {
-        "application/json": components["schemas"]["PatchedProfile"];
-        "application/x-www-form-urlencoded": components["schemas"]["PatchedProfile"];
-        "multipart/form-data": components["schemas"]["PatchedProfile"];
+        "application/json": components["schemas"]["Profile"];
+        "application/x-www-form-urlencoded": components["schemas"]["Profile"];
+        "multipart/form-data": components["schemas"]["Profile"];
       };
     };
     responses: {
@@ -946,11 +1470,11 @@ export interface operations {
       };
       cookie?: never;
     };
-    requestBody?: {
+    requestBody: {
       content: {
-        "application/json": components["schemas"]["PatchedRole"];
-        "application/x-www-form-urlencoded": components["schemas"]["PatchedRole"];
-        "multipart/form-data": components["schemas"]["PatchedRole"];
+        "application/json": components["schemas"]["Role"];
+        "application/x-www-form-urlencoded": components["schemas"]["Role"];
+        "multipart/form-data": components["schemas"]["Role"];
       };
     };
     responses: {
@@ -1005,11 +1529,11 @@ export interface operations {
       };
       cookie?: never;
     };
-    requestBody?: {
+    requestBody: {
       content: {
-        "application/json": components["schemas"]["PatchedStatus"];
-        "application/x-www-form-urlencoded": components["schemas"]["PatchedStatus"];
-        "multipart/form-data": components["schemas"]["PatchedStatus"];
+        "application/json": components["schemas"]["Status"];
+        "application/x-www-form-urlencoded": components["schemas"]["Status"];
+        "multipart/form-data": components["schemas"]["Status"];
       };
     };
     responses: {

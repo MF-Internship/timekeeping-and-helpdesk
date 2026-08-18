@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     "operations",
     "identity",
     "audit",
+    "locations",
 ]
 
 MIDDLEWARE = [
@@ -101,7 +102,9 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "Timekeeping and Helpdesk API",
     "VERSION": "1.0.0",
     "OAS_VERSION": "3.0.3",
+    "COMPONENT_SPLIT_PATCH": False,
     "SERVE_INCLUDE_SCHEMA": True,
+    "ENUM_GENERATE_CHOICE_DESCRIPTION": False,
     "APPEND_COMPONENTS": {
         "schemas": {
             "FoundationError": {

@@ -32,7 +32,18 @@ không được tự biến trạng thái đó thành bằng chứng production-
 3. Xác nhận bảng cache `throttle_cache` đã được provision bởi migration của
    `operations`; staging/production dùng shared database cache, không dùng
    process-local cache.
-4. Rollout dần, giữ tương thích N-1, kiểm tra status-only smoke và rollback
+4. Trước khi enable route/UI của Feature 003, dùng Manager có attribution để chạy
+   `uv run --project backend python backend/manage.py initialize_location_config ...`,
+   sau đó chạy
+   `uv run --project backend python backend/manage.py seed_locations --actor-id <manager-id>`.
+   Không đảo thứ tự và không thay hai command này bằng data migration.
+5. Chạy gate read-only
+   `uv run --project backend python backend/manage.py verify_location_reference_ready`.
+   Chỉ exit code `0` mới cho phép enable route/UI Feature 003. Exit khác `0`, Config
+   chưa hoàn chỉnh, hoặc Location lệch canonical 76/7/69/code/hierarchy/source
+   coordinates đều phải dừng rollout; gate không tự sửa dữ liệu, không ghi AuditLog
+   hay OutboxEvent. Operator sửa bằng hai command attributable ở bước 4 rồi chạy lại gate.
+6. Rollout dần, giữ tương thích N-1, kiểm tra status-only smoke và rollback
    application trước khi thực hiện bất kỳ contract migration phá hủy nào.
 
 ## Credential rotation và sự cố

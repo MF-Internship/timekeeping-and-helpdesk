@@ -7,7 +7,6 @@ import pytest
 BACKEND_ROOT = Path(__file__).parents[2]
 BUSINESS_NAMES = {
     "auth",
-    "locations",
     "attendance",
     "tasks",
     "reporting",
@@ -48,5 +47,24 @@ def test_identity_has_no_future_business_dependencies() -> None:
         "reporting.models",
         "locations.models",
         "notifications.models",
+    )
+    assert not [name for name in forbidden if name in source]
+
+
+@pytest.mark.architecture
+def test_locations_has_no_attendance_or_task_workflow_helpers() -> None:
+    source = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in (BACKEND_ROOT / "locations").rglob("*.py")
+        if "migrations" not in path.parts
+    )
+    forbidden = (
+        "UNCERTAIN",
+        "attendance.models",
+        "tasks.models",
+        "owns_attendance",
+        "is_task_creator",
+        "is_task_assignee",
+        "can_update_task",
     )
     assert not [name for name in forbidden if name in source]

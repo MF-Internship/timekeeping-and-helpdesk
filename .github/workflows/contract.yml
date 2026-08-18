@@ -41,6 +41,7 @@ jobs:
       - run: npm --prefix frontend ci
       - run: uv run --project backend pytest backend/tests/integration/api
       - run: uv run --project backend pytest -m postgres backend/tests/integration/postgres
+      - run: uv run --project backend pytest backend/tests/integration/postgres/locations/test_reference_readiness.py
       - run: uv run --project backend pytest backend/tests/contract
       - run: uv run --project backend python scripts/generate_openapi.py --check
       - run: uv run --project backend python scripts/check_openapi.py --all

@@ -135,6 +135,303 @@ paths:
       - bearerAuth: []
       tags:
       - change-password
+  /api/v1/config/:
+    get:
+      operationId: config_retrieve
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - config
+    patch:
+      operationId: config_partial_update
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfigUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConfigUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConfigUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigUpdateResult'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - config
+  /api/v1/holidays/:
+    get:
+      operationId: holidays_list
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Holiday'
+                type: array
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - holidays
+    post:
+      operationId: holidays_create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HolidayCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HolidayCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HolidayCreate'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Holiday'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - holidays
+  /api/v1/holidays/{holiday_id}/:
+    delete:
+      operationId: holidays_destroy
+      parameters:
+      - in: path
+        name: holiday_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: No response body
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - holidays
+  /api/v1/locations/:
+    get:
+      operationId: locations_list
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: kind
+        schema:
+          enum:
+          - BUSINESS_CENTER
+          - SHOP
+          type: string
+      - in: query
+        name: parent
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Location'
+                type: array
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - locations
+  /api/v1/locations/{location_id}/:
+    patch:
+      operationId: locations_partial_update
+      parameters:
+      - in: path
+        name: location_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LocationUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LocationUpdate'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationUpdateResult'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - locations
   /api/v1/me/:
     get:
       operationId: identity_me_retrieve
@@ -167,13 +464,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedProfile'
+              $ref: '#/components/schemas/Profile'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedProfile'
+              $ref: '#/components/schemas/Profile'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedProfile'
+              $ref: '#/components/schemas/Profile'
       responses:
         '200':
           content:
@@ -486,13 +783,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedProfile'
+              $ref: '#/components/schemas/Profile'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedProfile'
+              $ref: '#/components/schemas/Profile'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedProfile'
+              $ref: '#/components/schemas/Profile'
       responses:
         '200':
           content:
@@ -585,13 +882,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedRole'
+              $ref: '#/components/schemas/Role'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedRole'
+              $ref: '#/components/schemas/Role'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedRole'
+              $ref: '#/components/schemas/Role'
+        required: true
       responses:
         '200':
           content:
@@ -640,13 +938,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedStatus'
+              $ref: '#/components/schemas/Status'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedStatus'
+              $ref: '#/components/schemas/Status'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedStatus'
+              $ref: '#/components/schemas/Status'
+        required: true
       responses:
         '200':
           content:
@@ -742,6 +1041,138 @@ components:
       - role
       - username
       type: object
+    CodeEnum:
+      enum:
+      - GEOFENCE_OVERLAP
+      - RADIUS_BELOW_ATTENDANCE_ACCURACY
+      type: string
+    Config:
+      properties:
+        default_radius_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          readOnly: true
+          type: string
+        early_checkout_grace_minutes:
+          readOnly: true
+          type: integer
+        id:
+          readOnly: true
+          type: integer
+        late_checkout_grace_minutes:
+          readOnly: true
+          type: integer
+        late_grace_minutes:
+          readOnly: true
+          type: integer
+        max_attendance_accuracy_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          readOnly: true
+          type: string
+        max_radius_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          readOnly: true
+          type: string
+        shift_end:
+          format: time
+          readOnly: true
+          type: string
+        shift_start:
+          format: time
+          readOnly: true
+          type: string
+        task_gps_good_accuracy_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          readOnly: true
+          type: string
+        task_gps_low_accuracy_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          readOnly: true
+          type: string
+        timezone:
+          readOnly: true
+          type: string
+        working_weekdays:
+          items:
+            type: integer
+          readOnly: true
+          type: array
+      required:
+      - default_radius_m
+      - early_checkout_grace_minutes
+      - id
+      - late_checkout_grace_minutes
+      - late_grace_minutes
+      - max_attendance_accuracy_m
+      - max_radius_m
+      - shift_end
+      - shift_start
+      - task_gps_good_accuracy_m
+      - task_gps_low_accuracy_m
+      - timezone
+      - working_weekdays
+      type: object
+    ConfigUpdate:
+      properties:
+        default_radius_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          type: string
+        early_checkout_grace_minutes:
+          minimum: 0
+          type: integer
+        late_checkout_grace_minutes:
+          minimum: 0
+          type: integer
+        late_grace_minutes:
+          minimum: 0
+          type: integer
+        max_attendance_accuracy_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          type: string
+        max_radius_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          type: string
+        shift_end:
+          format: time
+          type: string
+        shift_start:
+          format: time
+          type: string
+        task_gps_good_accuracy_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          type: string
+        task_gps_low_accuracy_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          type: string
+        working_weekdays:
+          items:
+            type: integer
+          type: array
+      type: object
+    ConfigUpdateResult:
+      properties:
+        config:
+          allOf:
+          - $ref: '#/components/schemas/Config'
+          readOnly: true
+        warnings:
+          items:
+            $ref: '#/components/schemas/Warning'
+          readOnly: true
+          type: array
+      required:
+      - config
+      - warnings
+      type: object
     FoundationError:
       properties:
         details:
@@ -781,6 +1212,35 @@ components:
       - generated_password
       - user
       type: object
+    Holiday:
+      properties:
+        date:
+          format: date
+          readOnly: true
+          type: string
+        id:
+          readOnly: true
+          type: integer
+        name:
+          readOnly: true
+          type: string
+      required:
+      - date
+      - id
+      - name
+      type: object
+    HolidayCreate:
+      properties:
+        date:
+          format: date
+          type: string
+        name:
+          maxLength: 255
+          type: string
+      required:
+      - date
+      - name
+      type: object
     IdentityError:
       properties:
         details:
@@ -806,6 +1266,110 @@ components:
       - error_code
       - message
       - request_id
+      type: object
+    Location:
+      properties:
+        address:
+          readOnly: true
+          type: string
+        code:
+          readOnly: true
+          type: string
+        id:
+          readOnly: true
+          type: integer
+        is_active:
+          readOnly: true
+          type: boolean
+        kind:
+          readOnly: true
+          type: string
+        latitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          readOnly: true
+          type: string
+        longitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          readOnly: true
+          type: string
+        name:
+          readOnly: true
+          type: string
+        parent_code:
+          nullable: true
+          readOnly: true
+          type: string
+        parent_id:
+          nullable: true
+          readOnly: true
+          type: integer
+        radius_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          readOnly: true
+          type: string
+        version:
+          readOnly: true
+          type: integer
+      required:
+      - address
+      - code
+      - id
+      - is_active
+      - kind
+      - latitude
+      - longitude
+      - name
+      - parent_code
+      - parent_id
+      - radius_m
+      - version
+      type: object
+    LocationUpdate:
+      properties:
+        address:
+          type: string
+        is_active:
+          type: boolean
+        latitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          type: string
+        longitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          type: string
+        name:
+          type: string
+        radius_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          type: string
+        reason:
+          maxLength: 500
+          type: string
+        version:
+          minimum: 1
+          type: integer
+      required:
+      - version
+      type: object
+    LocationUpdateResult:
+      properties:
+        location:
+          allOf:
+          - $ref: '#/components/schemas/Location'
+          readOnly: true
+        warnings:
+          items:
+            $ref: '#/components/schemas/Warning'
+          readOnly: true
+          type: array
+      required:
+      - location
+      - warnings
       type: object
     Login:
       properties:
@@ -856,7 +1420,7 @@ components:
       - current_password
       - new_password
       type: object
-    PatchedProfile:
+    Profile:
       properties:
         email:
           format: email
@@ -867,16 +1431,6 @@ components:
         phone:
           nullable: true
           type: string
-      type: object
-    PatchedRole:
-      properties:
-        role:
-          type: string
-      type: object
-    PatchedStatus:
-      properties:
-        is_active:
-          type: boolean
       type: object
     ResetPasswordResult:
       properties:
@@ -893,6 +1447,13 @@ components:
       - generated_password
       - must_change_password
       - user_id
+      type: object
+    Role:
+      properties:
+        role:
+          type: string
+      required:
+      - role
       type: object
     SelfUser:
       properties:
@@ -950,6 +1511,13 @@ components:
       - role
       - username
       type: object
+    Status:
+      properties:
+        is_active:
+          type: boolean
+      required:
+      - is_active
+      type: object
     UserCreate:
       properties:
         email:
@@ -993,6 +1561,31 @@ components:
       - next
       - previous
       - results
+      type: object
+    Warning:
+      properties:
+        code:
+          allOf:
+          - $ref: '#/components/schemas/CodeEnum'
+          readOnly: true
+        radius_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          type: string
+        related_location_codes:
+          items:
+            type: string
+          type: array
+        related_location_ids:
+          items:
+            type: integer
+          type: array
+        threshold_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          type: string
+      required:
+      - code
       type: object
   securitySchemes:
     bearerAuth:

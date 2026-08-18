@@ -24,15 +24,16 @@ export async function authenticatedFetch(
   input: RequestInfo | URL,
   init: RequestInit = {},
 ): Promise<Response> {
-  if (typeof input !== "string" || !isApiTarget(input)) {
+  const target = apiTarget(input);
+  if (!target) {
     throw new TypeError("API target must be a relative /api/v1/ path");
   }
-  const response = await fetch(input, requestOptions(init));
+  const response = await fetch(fetchInput(input), requestOptions(input, init));
   const errorCode = await responseErrorCode(response);
   if (handleAuthenticationFailure(errorCode)) return response;
-  if (!shouldRefresh(input, response, errorCode)) return response;
+  if (!shouldRefresh(target, response, errorCode)) return response;
   if (!(await refreshOnce())) return response;
-  return fetch(input, requestOptions(init));
+  return fetch(fetchInput(input), requestOptions(input, init));
 }
 
 function handleAuthenticationFailure(errorCode: string | undefined): boolean {
@@ -48,8 +49,9 @@ function handleAuthenticationFailure(errorCode: string | undefined): boolean {
   return false;
 }
 
-function requestOptions(init: RequestInit): RequestInit {
-  const headers = new Headers(init.headers);
+function requestOptions(input: RequestInfo | URL, init: RequestInit): RequestInit {
+  const headers = new Headers(input instanceof Request ? input.headers : undefined);
+  new Headers(init.headers).forEach((value, key) => headers.set(key, value));
   if (!headers.has("Accept")) headers.set("Accept", "application/json");
   if (accessToken && !headers.has("Authorization")) {
     headers.set("Authorization", `Bearer ${accessToken}`);
@@ -60,6 +62,19 @@ function requestOptions(init: RequestInit): RequestInit {
     credentials: "include",
     cache: "no-store",
   };
+}
+
+function apiTarget(input: RequestInfo | URL): string | undefined {
+  if (typeof input === "string") return isApiTarget(input) ? input : undefined;
+  if (!(input instanceof Request) || globalThis.location === undefined) return undefined;
+  const url = new URL(input.url);
+  if (url.origin !== globalThis.location.origin) return undefined;
+  const target = `${url.pathname}${url.search}`;
+  return isApiTarget(target) ? target : undefined;
+}
+
+function fetchInput(input: RequestInfo | URL): RequestInfo | URL {
+  return input instanceof Request ? input.clone() : input;
 }
 
 function isApiTarget(target: string): boolean {

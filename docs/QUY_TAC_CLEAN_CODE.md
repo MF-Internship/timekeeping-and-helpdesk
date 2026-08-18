@@ -63,6 +63,9 @@ class LocationResolutionMethod(models.TextChoices):
 §4.2); cấm thêm lại giá trị thứ ba dưới bất kỳ tên nào.
 
 - Seed đúng 76 `Location` từ hai file CSV; không gộp, dẫn xuất hay thay tọa độ.
+- Tập `Location` là tập đóng đúng 76 dòng: không tạo endpoint/serializer/service
+  `POST /api/v1/locations/`; `location.manage` chỉ cho phép sửa qua `PATCH`
+  (R-113).
   `parent` suy từ tiền tố mã theo CHOT §2; tiền tố không khớp TTKD nào thì
   `parent = NULL`, không đoán theo tên hay khoảng cách.
 - Hai CSV **khác header** (`Mã TTKD`/`Tên` với `SHOP_CODE`/`NAME`). Khai báo hai
@@ -95,6 +98,14 @@ class LocationResolutionMethod(models.TextChoices):
   task_gps_low_accuracy_m`, `late_checkout_grace_minutes >= 0`,
   `shift_start < shift_end`. Ranh giới “dừng hay cảnh báo” theo đúng bảng §4.3;
   `radius_m < max_attendance_accuracy_m` **chỉ cảnh báo**, không chặn.
+- Khi PATCH Config hạ `max_radius_m`, service phải khóa Config rồi kiểm toàn bộ
+  Location (kể cả inactive). Có Location `radius_m > candidate.max_radius_m` thì
+  trả `400 VALIDATION_FAILED`, chỉ nêu id/code, không tự rewrite và không tạo
+  audit/outbox/version (R-114). Giá trị bằng maximum hiện hữu là hợp lệ.
+- Location/Config PATCH phải dựng complete candidate dưới lock và phát hiện
+  same-value no-op (R-115). No-op trả `200` nhưng không gọi save/append; Location
+  luôn so optimistic version **trước** khi xét no-op nên stale không được biến
+  thành thành công. `reason` riêng lẻ không phải mutation.
 - Hàm hình học thuần, không gọi DB/HTTP. Luật geofence là **hai cổng độc lập**:
   cổng chất lượng `accuracy_m <= threshold` và cổng vị trí `distance_m <=
   radius_m`. `accuracy_m` không bao giờ bị trừ vào `radius_m`.
@@ -533,10 +544,21 @@ lời “anh được làm gì”; giữ hai tầng tách bạch.
   hình refresh stateless là lỗi review vì mất khả năng thu hồi.
 - Thu hồi đi qua **một** helper (ví dụ `revoke_all_refresh_tokens(user, reason)`),
   gọi ở đúng bốn chỗ: logout, Manager reset mật khẩu, user tự đổi mật khẩu, và
-  `is_active = False`. Helper tự ghi `AuditLog`; cấm mỗi view tự blacklist một
-  kiểu. **Logout không phải ngoại lệ**: nó cũng thu hồi toàn bộ refresh token của
+  `is_active = False`. Helper chỉ ghi evidence tổng hợp khi `revoked_count > 0`;
+  cấm mỗi view tự blacklist một kiểu. **Logout không phải ngoại lệ**: nó cũng thu hồi toàn bộ refresh token của
   user chứ không chỉ token gửi kèm request — view logout gọi đúng helper này,
   không tự `RefreshToken(token).blacklist()`.
+- Logout lấy actor **chỉ** từ access token đã xác thực. Refresh cookie thiếu,
+  sai/hết hạn/blacklist/khác owner không được chặn logout và không được chọn
+  actor: endpoint vẫn clear cookie, gọi helper theo actor và trả `204` (R-110).
+  Helper trả `revoked_count`; count > 0 mới append đúng một audit + một outbox
+  tổng hợp, count = 0 là no-op không evidence/version. Vì vậy logout lặp không
+  được tạo dòng attributable giả.
+- Helper thu hồi count = 0 là success no-op ở mọi caller. `PATCH .../status`
+  đặt lại đúng state hiện có trả `200` nhưng không save/audit/outbox/revoke;
+  transition thật mới ghi state evidence. Reset mật khẩu lặp vẫn là mutation mới,
+  luôn sinh hash/password display mới và reset evidence; chỉ revocation evidence
+  phụ thuộc count > 0 (R-111).
 - Mô tả hành vi thu hồi ở docstring/comment/tài liệu phải dùng đúng câu canonical
   ở CHOT §9.2.1: thu hồi toàn bộ refresh token, access token không blacklist
   riêng, trừ request bị chặn bởi `is_active`/`must_change_password`. Viết “mọi
@@ -560,6 +582,23 @@ lời “anh được làm gì”; giữ hai tầng tách bạch.
   là `403 PASSWORD_CHANGE_REQUIRED`; thiếu quyền là `403 PERMISSION_DENIED`.
   Riêng `/api/v1/auth/login` giữ chung `401 INVALID_CREDENTIALS` cho cả sai mật khẩu
   lẫn tài khoản khóa, không tiết lộ tài khoản có tồn tại hay không.
+
+**Throttle xác thực (CHOT §9.7.1, R-112).**
+
+- Khai đúng ba DRF scope: `login = 10/min` theo canonical client IP,
+  `refresh = 120/min` theo canonical client IP, `password_change = 5/min` theo
+  authenticated `User.id`. Không đọc tùy ý `X-Forwarded-For`; chỉ dùng kết quả
+  trusted-proxy normalization do deployment sở hữu.
+- Mọi attempt tới scope đều tính. Login/refresh throttle trước DTO/nghiệp vụ;
+  password-change throttle sau authentication/permission gate và trước DTO.
+- Mọi throttle import `core.cache.THROTTLE_CACHE_ALIAS`; cấm string alias lặp,
+  cache alias thứ hai hoặc backend cục bộ ngoài development. Vượt quota trả
+  canonical `429 THROTTLED` + `Retry-After`. Cache exception được đổi thành
+  canonical `503 SERVICE_UNAVAILABLE` và dừng request; tuyệt đối không catch rồi
+  cho qua. Hai lỗi không tạo AuditLog/OutboxEvent.
+- Test dùng clock kiểm soát, kiểm key isolation/shared scope và backend cache
+  dùng chung qua hai worker. Cache unavailable phải fail-closed và số dòng
+  User/token/audit/outbox trước/sau bằng nhau.
 
 ## 6. Ảnh và dữ liệu nhạy cảm
 
@@ -641,6 +680,7 @@ lời “anh được làm gì”; giữ hai tầng tách bạch.
 | Xoay vòng refresh | Refresh token đã dùng một lần bị blacklist; dùng lại trả `401`, không cấp token mới |
 | Thu hồi truy cập | Logout, Manager reset mật khẩu, user tự đổi mật khẩu, `is_active = False` — mỗi trường hợp blacklist toàn bộ refresh token của user và ghi `AuditLog`; refresh sau đó `401` |
 | Logout thu hồi toàn bộ | User đăng nhập trên hai thiết bị rồi logout ở thiết bị A: refresh token của **cả hai** thiết bị đều `401`, không chỉ token gửi kèm request logout |
+| Logout idempotent | Access hợp lệ với cookie thiếu/sai/hết hạn/đã blacklist/khác user đều `204`, clear cookie và revoke theo actor; có phiên active thì đúng một audit+outbox, không còn phiên thì không evidence/version mới; logout lặp vẫn `204` |
 | Access token sau khi thu hồi | Sau logout/đổi mật khẩu, access token cũ **vẫn** gọi được endpoint nghiệp vụ cho tới khi hết 15 phút (hành vi đã chốt, không phải bug); nhưng sau `is_active = False` thì request kế tiếp trả ngay `401 ACCOUNT_INACTIVE` |
 | Khóa tài khoản giữa chừng | Access token còn hạn nhưng `is_active = False`: request tiếp theo trả đúng `401 ACCOUNT_INACTIVE` (không phải `INVALID_TOKEN`, không phải `403`); server kiểm `is_active` sau khi giải mã |
 | Bắt đổi mật khẩu | `must_change_password = True` gọi endpoint nghiệp vụ trả `403 PASSWORD_CHANGE_REQUIRED`; endpoint đổi mật khẩu vẫn gọi được và sau khi đổi thì cờ tắt, refresh token cũ bị thu hồi |
@@ -664,6 +704,12 @@ lời “anh được làm gì”; giữ hai tầng tách bạch.
 | Dashboard denominator | Trả numerator/eligible denominator/excluded choice/observed/nearest coverage; denominator 0 là `NULL`/`N/A` |
 | Job health | Có last run/scanned/closed/anomaly/overdue-open/invariant; LEADER read-only không có account/AuditLog deep-link |
 | Location concurrent edit | PATCH version cũ trả `409`; overlap recompute cùng transaction; reason giữ qua conflict; AuditLog before/after |
+| Location/Config same-value PATCH | Current Location version trả `200` no-op; không save/audit/outbox/version. Location stale vẫn `409`; Config same-value cũng không evidence (R-115) |
+| Hạ Config max radius | Bằng radius lớn nhất thì pass; thấp hơn Location active hoặc inactive trả `400`, không rewrite/partial/evidence. Race với Location update và hai Location update khác nhau chạy PostgreSQL hai connection/barrier (R-114) |
+| Constraint Location | PostgreSQL chứng minh name/address nonblank, `is_active` NOT NULL/default và mọi check/unique/FK/trigger/index; không gom vào SQLite test |
+| Route id Feature 003 | String converter giữ RBAC trước parse; đủ quyền + malformed/nonexistent id đều `404 NOT_FOUND`, thiếu quyền vẫn `403`, không side effect (R-116) |
+| Reference readiness | Check read-only fail closed nếu thiếu Config hoặc không đúng 76/7/69/code/hierarchy/source coordinates; pass sau initialize+seed và không tự sửa state (R-117) |
+| Cache Feature 003 | Mọi success/error/conflict trả `Cache-Control: private, no-store`; `request_id` lỗi khớp `X-Request-Id` |
 | Notification | Đúng recipient, dedupe, quiet-hours/TTL/suppression; logout/khóa revoke push; deep-link kiểm RBAC; không email/SMS |
 | Export tọa độ | Mặc định loại tọa độ/Maps/photo/presigned URL; opt-in MANAGER/LEADER có audit metadata và `Cache-Control: no-store` |
 | Địa chỉ xác nhận | `resolved_address` = tên + địa chỉ Location khi có `location`, `null` khi không; không có HTTP call ra dịch vụ geocoding |
@@ -682,6 +728,8 @@ lời “anh được làm gì”; giữ hai tầng tách bạch.
 | Kiểm quyền chạy trước kiểm trường | `PATCH /api/users/{id}/` lên target `MANAGER` mà payload có kèm `role` trả `403 PERMISSION_DENIED`, **không** phải `400 SERVER_OWNED_FIELD` (thứ tự action → target → payload, CHOT §8) |
 | Luật target không đọc body | Cùng `PATCH` lên target `MANAGER` nhưng body **rỗng** cũng trả `403 PERMISSION_DENIED`: luật target nằm trong cổng phân quyền nên kết quả không phụ thuộc nội dung payload; guard đặt ở `permission_classes`/`has_object_permission`, không ở `serializer.validate()` (R-87) |
 | Reset mật khẩu | `POST /api/users/{id}/reset-password` bật `must_change_password`, thu hồi toàn bộ refresh token của target, ghi `AuditLog` **không** chứa mật khẩu; target đăng nhập lại thì mọi endpoint nghiệp vụ trả `403 PASSWORD_CHANGE_REQUIRED` |
+| Lặp trạng thái và revoke rỗng | `active→active`/`inactive→inactive` trả `200` no-op không write/evidence/version; revoke count 0 không evidence; reset lặp sinh password mới và reset evidence mới |
+| Throttle xác thực | Request thứ 11 login/IP, 121 refresh/IP và 6 password-change/User trong 60 giây trả `429 THROTTLED` + `Retry-After`; key khác còn quota; hai worker dùng chung counter; cache failure trả `503 SERVICE_UNAVAILABLE`; mọi nhánh không side effect |
 | Self tách khỏi quản trị | Manager đổi được mật khẩu và thông tin cá nhân của mình qua `/api/change-password/` và `/api/me/` dù mọi thao tác quản trị lên `MANAGER` bị chặn; hai endpoint self **từ chối** `user_id` gửi kèm payload bằng `400 SERVER_OWNED_FIELD` (không phải bỏ qua rồi trả `200`), luôn tác động đúng `request.user` (R-76) |
 | Tự đổi mật khẩu cấp token mới | Sau `POST /api/change-password/`: refresh token **cũ** trả `401`, cặp `access` + `refresh` **mới** trong response dùng được ngay ở request kế tiếp; cả hai khẳng định trong cùng một test (R-78) |
 | RBAC trước DTO | Actor thiếu quyền gửi body sai định dạng nhận `403 PERMISSION_DENIED`, **không** phải `400`: `HELPDESK` gọi `POST /api/users/` với body rỗng trả `403`, không trả lỗi `username field-required` (R-72) |

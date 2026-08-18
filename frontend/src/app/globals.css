@@ -13,3 +13,78 @@ main {
   width: min(56rem, calc(100% - 2rem));
   margin: 4rem auto;
 }
+
+label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+input,
+select,
+textarea,
+button {
+  box-sizing: border-box;
+  min-height: 2.5rem;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+.filter-grid,
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1rem;
+}
+.editor-card,
+.summary-card {
+  margin: 1.5rem 0;
+  padding: 1.25rem;
+  border: 1px solid #cbd3e1;
+  border-radius: 0.75rem;
+  background: white;
+}
+.record-list {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+.record-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #d8deea;
+  border-radius: 0.5rem;
+  background: white;
+}
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.checkbox input {
+  min-height: auto;
+}
+.weekday-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+small[role="alert"],
+p[role="alert"] {
+  color: #9b1c1c;
+}
