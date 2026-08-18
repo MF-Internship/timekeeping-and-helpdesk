@@ -18,3 +18,57 @@ def test_protected_schema_fixture_fails_with_path_only(fixture: Path) -> None:
     assert fixture.name in diagnostic
     for value in ("do-not-print-this", "user:password", "10.785850", "private/image.png"):
         assert value not in diagnostic
+
+
+def test_canonical_credential_schema_properties_are_narrow_exceptions() -> None:
+    from scripts.check_openapi import OpenAPISafetyError, check_openapi_text
+
+    prefix = """openapi: 3.0.3
+components:
+  schemas:
+"""
+    for schema, field in (
+        ("Login", "password"),
+        ("GeneratedUserResult", "generated_password"),
+        ("ResetPasswordResult", "generated_password"),
+    ):
+        check_openapi_text(
+            prefix
+            + f"""    {schema}:
+      type: object
+      properties:
+        {field}: {{type: string}}
+""",
+            "credential.yaml",
+        )
+
+    with pytest.raises(OpenAPISafetyError):
+        check_openapi_text(
+            prefix
+            + """    UnapprovedResult:
+      type: object
+      properties:
+        generated_password: {type: string}
+""",
+            "unapproved.yaml",
+        )
+
+
+def test_login_password_exception_does_not_allow_nested_password_keys() -> None:
+    from scripts.check_openapi import OpenAPISafetyError, check_openapi_text
+
+    with pytest.raises(OpenAPISafetyError):
+        check_openapi_text(
+            """openapi: 3.0.3
+components:
+  schemas:
+    Login:
+      type: object
+      properties:
+        nested:
+          type: object
+          properties:
+            password: {type: string}
+""",
+            "nested.yaml",
+        )

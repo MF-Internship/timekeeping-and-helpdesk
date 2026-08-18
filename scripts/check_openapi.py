@@ -19,6 +19,13 @@ from core.event_payload import (  # noqa: E402
 )
 
 _SNAKE_CASE = re.compile(r"^[a-z][a-z0-9_]*$")
+_ALLOWED_PROTECTED_SCHEMA_PATHS = frozenset(
+    {
+        "$.components.schemas.Login.properties.password",
+        "$.components.schemas.GeneratedUserResult.properties.generated_password",
+        "$.components.schemas.ResetPasswordResult.properties.generated_password",
+    }
+)
 
 
 class OpenAPISafetyError(ValueError):
@@ -28,7 +35,7 @@ class OpenAPISafetyError(ValueError):
 def check_openapi_text(text: str, artifact: str) -> None:
     try:
         document = yaml.safe_load(text)
-        validate_event_payload(document)
+        validate_event_payload(document, allowed_paths=_ALLOWED_PROTECTED_SCHEMA_PATHS)
         _check_strings(document, "$")
         _check_property_names(document, "$")
     except (yaml.YAMLError, ProtectedPayloadError, ValueError) as error:

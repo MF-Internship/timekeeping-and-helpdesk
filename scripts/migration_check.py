@@ -19,6 +19,7 @@ _DESTRUCTIVE = {
     "AlterField",
 }
 _EXPANSION = {"AddField", "CreateModel"}
+_ALLOWED_OWNERS = frozenset({"operations", "identity", "audit"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,7 +38,7 @@ def check_tree(root: Path) -> list[Finding]:
     for path in files:
         tree = ast.parse(path.read_text(encoding="utf-8"))
         owner = path.parts[path.parts.index("migrations") - 1]
-        if owner != "operations":
+        if owner not in _ALLOWED_OWNERS:
             findings.append(Finding("MIGRATION-OWNER", str(path), 1))
         dependencies = _dependencies(tree, owner)
         graphs.setdefault(owner, {})[path.stem] = dependencies

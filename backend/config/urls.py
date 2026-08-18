@@ -1,7 +1,21 @@
 from django.conf import settings
-from django.urls import URLPattern, URLResolver, path
+from django.urls import URLPattern, URLResolver, include, path
 
-urlpatterns: list[URLPattern | URLResolver] = []
+from config.composition import authorize_identity_logout, identity_container, identity_target_lookup
+from identity.adapters.api.urls import identity_urlpatterns
+
+urlpatterns: list[URLPattern | URLResolver] = [
+    path(
+        "api/v1/",
+        include(
+            identity_urlpatterns(
+                identity_container,
+                identity_target_lookup,
+                authorize_identity_logout,
+            )
+        ),
+    ),
+]
 
 if settings.API_DOCS_ENABLED:
     from config.schema import MachineSchemaView

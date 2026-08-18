@@ -8,10 +8,46 @@ def test_quality_workflow_contains_each_required_job_once() -> None:
     source = Path(".github/workflows/quality.yml").read_text(encoding="utf-8")
     assert source.count("  backend-quality:") == 1
     assert source.count("  frontend-quality:") == 1
-    for command in ("--locked", "ruff format --check", "ruff check", "mypy", "pytest"):
+    for command in (
+        "--locked",
+        "ruff format --check",
+        "ruff check",
+        "mypy",
+        "check_function_length.py",
+        "tests/architecture",
+        "tests/contract",
+        "integration/api",
+        "-m postgres backend/tests/integration/postgres",
+        "generate_openapi.py --check",
+        "check_openapi.py --all",
+        "check_contract_drift.py",
+        "migration_check.py check",
+    ):
         assert command in source
-    for command in ("format:check", "lint", "typecheck", "test", "build"):
+    for command in ("format:check", "lint", "typecheck", "test", "api:check", "build"):
         assert f"frontend run {command}" in source
+
+
+def test_repository_gate_invokes_complete_feature_verification() -> None:
+    source = Path("scripts/check_all.sh").read_text(encoding="utf-8")
+    required = (
+        "check_function_length.py",
+        "backend/tests/architecture",
+        "backend/tests/contract",
+        "backend/tests/integration/api",
+        "-m postgres backend/tests/integration/postgres",
+        "generate_openapi.py --check",
+        "check_openapi.py --all",
+        "check_contract_drift.py",
+        "migration_check.py check",
+        "api:check",
+        "format:check",
+        "frontend run lint",
+        "frontend run typecheck",
+        "frontend run test",
+        "frontend run build",
+    )
+    assert all(command in source for command in required)
 
 
 def test_contract_workflow_contains_only_approved_ci_gates() -> None:

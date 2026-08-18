@@ -1,5 +1,13 @@
 const requestIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
-const authorizedCodes = new Set(["VALIDATION_FAILED", "PERMISSION_DENIED"]);
+const authorizedCodes = new Set([
+  "VALIDATION_FAILED",
+  "PERMISSION_DENIED",
+  "INVALID_CREDENTIALS",
+  "INVALID_TOKEN",
+  "ACCOUNT_INACTIVE",
+  "PASSWORD_CHANGE_REQUIRED",
+  "SERVER_OWNED_FIELD",
+]);
 
 export type ApiFailure =
   | {

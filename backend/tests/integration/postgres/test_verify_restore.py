@@ -50,6 +50,9 @@ def prepared_connection(
             "INSERT INTO django_migrations (app, name) VALUES (%s, %s)",
             ("operations", "0001_throttle_cache_table"),
         )
+    # Keep this fixture isolated from relations installed in the development
+    # database; omitted relations must remain genuinely absent for the probe.
+    connection.execute("SET search_path TO pg_temp")
     connection.commit()
     return connection
 
