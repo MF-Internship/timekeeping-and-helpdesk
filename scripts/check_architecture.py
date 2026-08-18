@@ -13,7 +13,9 @@ from core.event_payload import sanitize_failure_reason  # noqa: E402
 
 FRAMEWORK_PREFIXES = ("django", "rest_framework", "psycopg", "boto3")
 INTERNAL_MODULE_NAMES = frozenset({"models", "domain", "adapters"})
-BUSINESS_MODULE_NAMES = frozenset({"identity", "audit", "operations", "locations"})
+BUSINESS_MODULE_NAMES = frozenset(
+    {"identity", "audit", "operations", "locations", "attendance"}
+)
 BUSINESS_CORE_NAMES = ("Attendance", "Task", "Location", "Report", "Notification")
 
 

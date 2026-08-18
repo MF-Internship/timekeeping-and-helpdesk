@@ -141,7 +141,8 @@ def classify_geofence(distance_m: float,
   ở chính mẫu GPS đó. Lựa chọn nằm ngoài tập vừa tính lại bị từ chối
   `422 INVALID_LOCATION_CHOICE` ở cả hai luồng; cấm im lặng bỏ qua lựa chọn sai
   rồi rơi về `AUTO_SINGLE`/`GPS_ONLY`.
-- Mọi request chấm công **đã qua xác thực + phân quyền** ghi đúng một
+- Mọi request chấm công **đã qua xác thực + phân quyền và kết thúc bằng một trong
+  bảy outcome nghiệp vụ đóng** ghi đúng một
   `AttendanceAttempt` với `outcome` thuộc `AttendanceAttemptOutcome` (CHOT §5.2),
   kể cả request thành công (`outcome = ACCEPTED`). Đây là **nhật ký request chấm
   công của Helpdesk**, không phải bảng “lần bị từ chối” và cũng không phải access
@@ -154,12 +155,17 @@ def classify_geofence(distance_m: float,
   của một luồng đúng — hệ thống hỏi lại địa điểm, user chọn, lượt sau `ACCEPTED`
   — nên đếm nó ở bất kỳ vế nào cũng làm tỉ lệ sai lệch. Cấm chỉ log text.
 - Dòng `AttendanceAttempt` được ghi **ngoài transaction nghiệp vụ**, sau khi
-  transaction đó đã kết thúc, ở **cả nhánh commit lẫn nhánh `except`** (CHOT §5.2,
+  transaction đó đã kết thúc, ở nhánh commit và nhánh `except` nghiệp vụ đã phân
+  loại (CHOT §5.2,
   R-74). Lý do: `uniq_open_session_per_user` bắn `IntegrityError` làm abort
   transaction, nên attempt ghi bên trong sẽ bị rollback cùng — mất đúng dòng cần
   nhất cho `SESSION_ALREADY_OPEN`. Viết `attempt = ...create(...)` bên trong
   `with transaction.atomic():` của luồng chấm công là lỗi review, kể cả khi test
   đang xanh.
+- Audit punch thành công target đúng `Attendance` vừa tạo, `before = {}` và
+  `after` có đúng năm khóa `attendance_id`, `kind`, `work_date`, `location_id`,
+  `session_id`; thêm GPS/accuracy/device/IP/maps URL hoặc khóa tùy tiện là lỗi
+  review. Audit/Attendance/Session/anomaly cùng commit hoặc cùng rollback (R-121).
 - Ngược lại, request chết **trước** cổng nghiệp vụ (bước 1–2 của CHOT §5.1) thì
   **không** ghi attempt: `401`, `403 PERMISSION_DENIED` (`MANAGER` gọi check-in),
   `403 PASSWORD_CHANGE_REQUIRED`, `400 SERVER_OWNED_FIELD` do payload mang `kind`.
@@ -168,11 +174,28 @@ def classify_geofence(distance_m: float,
   sinh ra những dòng attempt không có `outcome` hợp lệ để điền. Ai thấy cần ghi
   các ca đó thì sửa enum ở CHOT §5.2 trước; cấm tự thêm giá trị `outcome` mới
   trong code, và càng cấm tái dùng một giá trị gần đúng cho có.
+- Lỗi database/network/process/framework bất ngờ sau boundary giữ canonical 5xx,
+  không ghi `AttendanceAttempt`, không retry và không được relabel thành một trong
+  bảy outcome nghiệp vụ. Chỉ các đường kết thúc bằng outcome đóng mới thuộc cam
+  kết đúng một attempt; telemetry lỗi hạ tầng phải lọc GPS/device/IP (R-125).
 - Với mọi request đã qua boundary bước 3, lớp quan trắc tính nearest metadata
   trước khi ghi attempt, kể cả outcome ở bước 3-5. Hàm này không được gọi
   `classify_geofence`, không tạo candidates và không thay thứ tự gate. Serializer
   gắn `nearest_is_approximate` cho `WEAK_GPS`; `candidate_count` của nhánh chưa
-  chạy candidate matching giữ `NULL`, không giả thành `0`.
+  chạy candidate matching giữ `NULL`, không giả thành `0`. Nearest phải đọc toàn
+  bộ đúng 76 Location canonical (`is_active` cả hai giá trị) và chọn khoảng cách
+  nhỏ nhất mà không xét radius; candidate matching phải dùng truy vấn riêng chỉ
+  lấy `is_active = True`. Cấm tái dùng danh sách active candidates làm tập nearest
+  hoặc cho nearest inactive đi vào auto-selection/revalidation (R-118). Khi có
+  nhiều khoảng cách nhỏ nhất bằng nhau, sort bằng `(distance_m, location.code)`
+  và lấy dòng đầu; cấm tie-break bằng database id/name/history/active. Sort này
+  chỉ dành cho FK nearest quan trắc, không được tái dùng để rút tập candidates
+  còn một phần tử (R-119).
+- Config phải được khóa trước khi tải reference data; nearest và candidates phải
+  dùng cùng một snapshot 76 Location, candidates chỉ là phép lọc active trên
+  snapshot đó. Cấm query nearest và candidates ở hai thời điểm khác nhau hoặc
+  reload giữa hai gate, vì admin edit đồng thời sẽ tạo quyết định lai phiên bản
+  (R-126).
 - Mã lỗi API khi không có ứng viên INSIDE là `OUTSIDE_RADIUS` — trùng tên với
   `AttendanceAttemptOutcome.OUTSIDE_RADIUS`. `OUTSIDE_GEOFENCE` chỉ là giá trị
   của `LocationValidationResult`; trả nó ra `error_code` là lỗi review.
@@ -238,6 +261,10 @@ Hai con số này khớp đúng cấu hình tooling ở §9 (`max-args = 4`, ESL
 - Hàm có tác dụng phụ có tên động từ: `check_in`, `complete_field_task`.
   Hàm hỏi có tên mệnh đề: `can_complete`, `find_inside_locations`.
 - Transaction bao trọn kiểm tra chống trùng và ghi Attendance/Task/AuditLog.
+  Check In thành công append `attendance.check_in.created`, Check Out thành công
+  append `attendance.check_out.created`; target là Attendance vừa tạo, payload
+  không chứa GPS/sai số/device/request IP. Nhánh từ chối không ghi AuditLog và
+  Check In/Out thường không tạo OutboxEvent.
 - Bất biến chấm công ở database là **partial unique index một phiên mở mỗi user**
   (`AttendanceSession`, CHOT §5.3), không phải `UNIQUE(user_id, work_date, kind)`.
   Một ngày được phép nhiều lượt Check In/Out; đừng khôi phục ràng buộc cũ dưới
@@ -249,10 +276,14 @@ Hai con số này khớp đúng cấu hình tooling ở §9 (`max-args = 4`, ESL
   review: job cuối ngày đóng phiên nhưng vẫn giữ `check_out = NULL`, nên bản ghi
   đó sẽ bị hiểu nhầm là còn mở và chặn Check In hôm sau. `closed_by_job` là
   `BooleanField(default=False)` không nullable vì nằm trong index.
-- Ghi `Attendance`, mở/đóng `AttendanceSession` và ghi/gỡ anomaly nằm trong **một**
+- Ghi `Attendance`, mở/đóng `AttendanceSession`, ghi/gỡ anomaly và AuditLog của
+  punch thành công nằm trong **một**
   transaction; đóng phiên phải `SELECT ... FOR UPDATE` phiên đang mở.
   `AttendanceAttempt` **nằm ngoài** transaction đó (§2, R-74) — nó là dữ liệu
   quan trắc, không phải bất biến nghiệp vụ.
+- `AttendanceSession.duration_minutes` lấy hiệu server timestamp rồi lượng tử hóa
+  đúng một lần tới 6 chữ số thập phân phút bằng `ROUND_HALF_UP`; mọi test duration
+  phải pin cả ca có số microsecond không chia hết cho 60 giây.
 - Complete Task dùng compare-and-set/row lock; chỉ request thắng được tạo
   `TaskUpdate COMPLETED`.
 - Upload object storage không nằm trong DB transaction. Backend HEAD/kiểm
@@ -769,7 +800,7 @@ lời “anh được làm gì”; giữ hai tầng tách bạch.
 | Cảnh báo đã làm sạch | Text chẩn đoán chứa URL đã ký, `token=...` và tọa độ `10.785850` đi qua đường phát cảnh báo: bản ghi **không** còn URL, giá trị token hay tọa độ, nhưng **vẫn còn** phần chẩn đoán còn lại; kiểm cùng lúc trên `last_error`, bản ghi cảnh báo và `caplog.text` (R-106) |
 | Dọn dẹp không chạm dòng cấm | Test PostgreSQL thật: dòng trong hạn sống sót, dòng quá hạn bị xóa đúng số lượng theo từng bảng, dòng `PENDING` **mọi tuổi** còn nguyên, dòng `AuditLog` còn nguyên, và tập lớn hơn kích thước lô vẫn bị xóa hết qua nhiều lô (R-106) |
 | Thiếu quan trắc ra `unknown` | Chưa từng có dòng nhịp tim thì check là `unknown` **và** vẫn phát cảnh báo; nhịp tim cũ hơn ngưỡng là `alert`; nhịp tim mới là `ok`; trạng thái tổng hợp xếp `alert` > `unknown` > `ok`. Không trường hợp nào trong hai trường hợp đầu được báo `ok` (R-106) |
-| Ghi quan trắc sống qua rollback | Test PostgreSQL thật (`transaction=True`): quan trắc đăng ký trong `business_transaction()` được ghi **sau** khi khối kết thúc ở cả nhánh commit lẫn nhánh exception, sống qua rollback của thay đổi nghiệp vụ, chạy **đúng một lần**, không sinh `OutboxEvent` và không sinh `AuditLog`; quan trắc tự ném lỗi thì được log mà **không** che exception nghiệp vụ gốc (R-106) |
+| Ghi quan trắc sống qua rollback | Test PostgreSQL thật (`transaction=True`): quan trắc đã đăng ký trong `business_transaction()` được ghi **sau** khi khối kết thúc ở nhánh commit và nhánh exception nghiệp vụ đã phân loại, sống qua rollback, chạy **đúng một lần**, không sinh `OutboxEvent` và không sinh `AuditLog`; quan trắc tự ném lỗi thì được log đã lọc mà **không** che response/exception nghiệp vụ gốc, không tự retry và không rollback kết quả đã có. Với `AttendanceAttempt`, unexpected 5xx không đăng ký writer và mọi telemetry không chứa tọa độ, device metadata hay request IP (R-106, R-125) |
 
 ## 8. Checklist review PR
 
@@ -786,10 +817,11 @@ lời “anh được làm gì”; giữ hai tầng tách bạch.
   database/transaction; không tái lập `UNIQUE(user_id, work_date, kind)`.
 - [ ] Mọi chỗ hỏi “phiên đang mở” dùng đủ `check_out IS NULL AND
   closed_by_job = False`, kể cả điều kiện của partial unique index.
-- [ ] Mọi request chấm công **đã qua xác thực/phân quyền** ghi một
+- [ ] Mọi request chấm công **đã qua xác thực/phân quyền và có outcome nghiệp vụ** ghi một
   `AttendanceAttempt`, gồm cả `ACCEPTED`; `401`/`403`/payload sai **không** ghi
   attempt và chỗ gọi `create` nằm trong service, không ở middleware. Mã lỗi ngoài
-  bán kính là `OUTSIDE_RADIUS`, lựa chọn sai là `INVALID_LOCATION_CHOICE`.
+  bán kính là `OUTSIDE_RADIUS`, lựa chọn sai là `INVALID_LOCATION_CHOICE`; lỗi
+  hạ tầng 5xx không ghi attempt và không relabel outcome (R-125).
 - [ ] `AttendanceAttempt` được ghi **ngoài** `transaction.atomic()` của nghiệp vụ,
   trên cả nhánh thành công lẫn nhánh `except`, nên rollback nghiệp vụ không xóa
   attempt (R-74).

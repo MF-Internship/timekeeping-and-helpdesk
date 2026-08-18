@@ -20,6 +20,12 @@ def test_authorized_codes_are_closed() -> None:
                 "LOCATION_VERSION_CONFLICT",
                 "THROTTLED",
                 "SERVICE_UNAVAILABLE",
+                "WEAK_GPS",
+                "OUTSIDE_RADIUS",
+                "LOCATION_CHOICE_REQUIRED",
+                "INVALID_LOCATION_CHOICE",
+                "NO_OPEN_SESSION",
+                "SESSION_ALREADY_OPEN",
             }
         )
         == AUTHORIZED_FOUNDATION_ERROR_CODES

@@ -3,7 +3,16 @@ from pathlib import Path
 
 from django.conf import settings
 
+from attendance.adapters.clock import DjangoClock
+from attendance.adapters.persistence.attempts import DjangoAttemptWriter
+from attendance.adapters.persistence.repositories import DjangoAttendanceRepository
+from attendance.adapters.persistence.unit_of_work import DjangoUnitOfWork as AttendanceUnitOfWork
+from attendance.application.commands import AttendanceCommandService
+from attendance.application.container import AttendanceContainer
+from attendance.application.dependencies import AttendanceDependencies
+from attendance.application.queries import AttendanceQueryService
 from audit.adapters.persistence.recording import DjangoAuditRecorder
+from config.attendance_adapters import DjangoAttendanceAuthorization, DjangoAttendanceReferenceData
 from identity.adapters.persistence.unit_of_work import DjangoUnitOfWork
 from identity.adapters.persistence.users import DjangoUserRepository
 from identity.adapters.security.passwords import DjangoPasswordService
@@ -120,3 +129,22 @@ def _build_locations_container(dependencies: LocationDependencies) -> LocationsC
 def _location_source_paths() -> tuple[Path, Path]:
     docs = settings.BASE_DIR.parent / "docs"
     return docs / "dia_chi_ttkd.csv", docs / "dia_chi_cua_hang.csv"
+
+
+@lru_cache(maxsize=1)
+def attendance_container() -> AttendanceContainer:
+    authorization = DjangoAttendanceAuthorization()
+    dependencies = AttendanceDependencies(
+        authorization=authorization,
+        clock=DjangoClock(),
+        reference_data=DjangoAttendanceReferenceData(),
+        repository=DjangoAttendanceRepository(),
+        attempts=DjangoAttemptWriter(),
+        audit=DjangoAuditRecorder(),
+        unit_of_work_factory=AttendanceUnitOfWork,
+    )
+    return AttendanceContainer(
+        authorization,
+        AttendanceCommandService(dependencies),
+        AttendanceQueryService(dependencies),
+    )

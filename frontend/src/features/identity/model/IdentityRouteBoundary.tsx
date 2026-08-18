@@ -6,13 +6,21 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/features/identity/model/AuthProvider";
 import { UI_MESSAGES } from "@/shared/messages";
 
-type IdentityRoute = "login" | "change-password" | "users" | "locations" | "config" | "holidays";
+type IdentityRoute =
+  | "login"
+  | "change-password"
+  | "users"
+  | "locations"
+  | "config"
+  | "holidays"
+  | "attendance";
 
 const REQUIRED_CAPABILITY = {
   users: "user.view",
   locations: "location.view",
   config: "config.view",
   holidays: "holiday.manage",
+  attendance: "attendance.view.self",
 } as const;
 
 function destination(

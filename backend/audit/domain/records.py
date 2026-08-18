@@ -15,6 +15,8 @@ class AuditAction(StrEnum):
     USER_PASSWORD_RESET = "identity.user.password_reset"
     USER_PASSWORD_CHANGED = "identity.user.password_changed"
     SESSIONS_REVOKED = "identity.sessions.revoked"
+    ATTENDANCE_CHECK_IN_CREATED = "attendance.check_in.created"
+    ATTENDANCE_CHECK_OUT_CREATED = "attendance.check_out.created"
 
 
 class IdentityEventType(StrEnum):

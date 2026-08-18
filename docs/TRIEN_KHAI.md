@@ -43,7 +43,10 @@ không được tự biến trạng thái đó thành bằng chứng production-
    chưa hoàn chỉnh, hoặc Location lệch canonical 76/7/69/code/hierarchy/source
    coordinates đều phải dừng rollout; gate không tự sửa dữ liệu, không ghi AuditLog
    hay OutboxEvent. Operator sửa bằng hai command attributable ở bước 4 rồi chạy lại gate.
-6. Rollout dần, giữ tương thích N-1, kiểm tra status-only smoke và rollback
+6. Chỉ sau khi gate trên trả `0` mới **enable route/UI Feature 004 Attendance**.
+   Gate là phép đọc thuần: khi thất bại không sửa Config, Location hoặc Attendance;
+   operator sửa dữ liệu tham chiếu bằng workflow ở bước 4 rồi chạy lại.
+7. Rollout dần, giữ tương thích N-1, kiểm tra status-only smoke và rollback
    application trước khi thực hiện bất kỳ contract migration phá hủy nào.
 
 ## Credential rotation và sự cố

@@ -68,3 +68,9 @@ def test_repository_thin_client_passes() -> None:
     from scripts.check_function_length import check_paths
 
     assert check_paths([ROOT / "frontend/src/shared/api/client.ts"]) == []
+
+
+def test_attendance_production_code_passes_maintainability_rules() -> None:
+    from scripts.check_function_length import check_paths
+
+    assert check_paths([ROOT / "backend/attendance"]) == []

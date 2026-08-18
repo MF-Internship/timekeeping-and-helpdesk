@@ -72,3 +72,12 @@ components:
 """,
             "nested.yaml",
         )
+
+
+def test_generated_attendance_coordinate_fields_are_named_but_never_exemplified() -> None:
+    from scripts.generate_openapi import generate_openapi_bytes
+
+    rendered = generate_openapi_bytes().decode()
+    assert "captured_latitude:" in rendered and "captured_longitude:" in rendered
+    assert "latitude:" in rendered and "longitude:" in rendered
+    assert "10.000000" not in rendered and "106.000000" not in rendered

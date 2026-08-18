@@ -29,6 +29,9 @@ def test_all_paths_operation_ids_and_properties_are_canonical() -> None:
             operation_ids.append(operation["operationId"])
     assert len(operation_ids) == len(set(operation_ids))
     assert operation_ids == [
+        "attendance_check_in",
+        "attendance_check_out",
+        "attendance_today_retrieve",
         "auth_login_create",
         "auth_logout_create",
         "auth_refresh_create",

@@ -12,4 +12,17 @@ describe("generated API schema", () => {
     execFileSync("node", ["scripts/generate-api.mjs", "--check"], { cwd: root });
     expect(readFileSync(resolve(root, "src/shared/api/schema.ts"))).toEqual(before);
   });
+
+  it("contains all attendance operations and typed candidate error branches", () => {
+    const schema = readFileSync(resolve(root, "src/shared/api/schema.ts"), "utf8");
+    for (const value of [
+      "attendance_check_in",
+      "attendance_check_out",
+      "attendance_today_retrieve",
+      "LocationChoiceRequiredError",
+      "InvalidLocationChoiceError",
+    ]) {
+      expect(schema).toContain(value);
+    }
+  });
 });

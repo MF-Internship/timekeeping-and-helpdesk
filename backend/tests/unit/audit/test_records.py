@@ -11,7 +11,7 @@ def test_records_are_immutable_and_use_closed_vocabularies() -> None:
     entry = AuditEntry(1, AuditAction.USER_CREATED, "User", "2", {}, {"role": "HELPDESK"})
     with pytest.raises(AttributeError):
         entry.actor_id = 3  # type: ignore[misc]
-    assert len(AuditAction) == 7
+    assert len(AuditAction) == 9
     assert len(IdentityEventType) == 7
 
 
@@ -45,3 +45,10 @@ def test_owner_defined_closed_enum_is_accepted_without_changing_identity_vocabul
     record = OutboxRecord(LocationEvent.LOCATION_UPDATED, "Location", "7", {"version": 2})
     assert record.event_type is LocationEvent.LOCATION_UPDATED
     assert len(IdentityEventType) == 7
+
+
+@pytest.mark.unit
+def test_attendance_audit_actions_are_closed_additions() -> None:
+    assert AuditAction.ATTENDANCE_CHECK_IN_CREATED.value == "attendance.check_in.created"
+    assert AuditAction.ATTENDANCE_CHECK_OUT_CREATED.value == "attendance.check_out.created"
+    assert len(AuditAction) == 9
