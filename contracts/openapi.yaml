@@ -3,6 +3,244 @@ info:
   title: Timekeeping and Helpdesk API
   version: 1.0.0
 paths:
+  /api/v1/attendance/check-in:
+    post:
+      operationId: attendance_check_in
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttendanceCommand'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AttendanceCommand'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AttendanceCommand'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceCommandResult'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              examples:
+                LocationChoiceRequired:
+                  summary: Location choice required
+                  value:
+                    details: {}
+                    error: LOCATION_CHOICE_REQUIRED
+                    error_code: LOCATION_CHOICE_REQUIRED
+                    location_candidates:
+                    - code: LOCATION_A
+                      distance_m: '10.000'
+                      id: 1
+                      name: Location A
+                    - code: LOCATION_B
+                      distance_m: '20.000'
+                      id: 2
+                      name: Location B
+                    message: Yêu cầu chấm công không được chấp nhận.
+                    request_id: 00000000-0000-4000-8000-000000000000
+                SessionAlreadyOpen:
+                  summary: Session already open
+                  value:
+                    details: {}
+                    error: SESSION_ALREADY_OPEN
+                    error_code: SESSION_ALREADY_OPEN
+                    message: Yêu cầu chấm công không được chấp nhận.
+                    request_id: 00000000-0000-4000-8000-000000000000
+              schema:
+                $ref: '#/components/schemas/CheckInConflictError'
+          description: ''
+        '422':
+          content:
+            application/json:
+              examples:
+                InvalidChoice:
+                  summary: Invalid choice
+                  value:
+                    details: {}
+                    error: INVALID_LOCATION_CHOICE
+                    error_code: INVALID_LOCATION_CHOICE
+                    location_candidates:
+                    - code: LOCATION_A
+                      distance_m: '10.000'
+                      id: 1
+                      name: Location A
+                    message: Yêu cầu chấm công không được chấp nhận.
+                    request_id: 00000000-0000-4000-8000-000000000000
+                OutsideRadius:
+                  summary: Outside radius
+                  value:
+                    details: {}
+                    error: OUTSIDE_RADIUS
+                    error_code: OUTSIDE_RADIUS
+                    message: Yêu cầu chấm công không được chấp nhận.
+                    request_id: 00000000-0000-4000-8000-000000000000
+                WeakGPS:
+                  summary: Weak GPS
+                  value:
+                    details: {}
+                    error: WEAK_GPS
+                    error_code: WEAK_GPS
+                    message: Yêu cầu chấm công không được chấp nhận.
+                    request_id: 00000000-0000-4000-8000-000000000000
+              schema:
+                $ref: '#/components/schemas/AttendanceUnprocessableError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - attendance
+  /api/v1/attendance/check-out:
+    post:
+      operationId: attendance_check_out
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttendanceCommand'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AttendanceCommand'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AttendanceCommand'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceCommandResult'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              examples:
+                LocationChoiceRequired:
+                  summary: Location choice required
+                  value:
+                    details: {}
+                    error: LOCATION_CHOICE_REQUIRED
+                    error_code: LOCATION_CHOICE_REQUIRED
+                    location_candidates:
+                    - code: LOCATION_A
+                      distance_m: '10.000'
+                      id: 1
+                      name: Location A
+                    - code: LOCATION_B
+                      distance_m: '20.000'
+                      id: 2
+                      name: Location B
+                    message: Yêu cầu chấm công không được chấp nhận.
+                    request_id: 00000000-0000-4000-8000-000000000000
+                NoOpenSession:
+                  summary: No open session
+                  value:
+                    details: {}
+                    error: NO_OPEN_SESSION
+                    error_code: NO_OPEN_SESSION
+                    message: Yêu cầu chấm công không được chấp nhận.
+                    request_id: 00000000-0000-4000-8000-000000000000
+              schema:
+                $ref: '#/components/schemas/CheckOutConflictError'
+          description: ''
+        '422':
+          content:
+            application/json:
+              examples:
+                InvalidChoice:
+                  summary: Invalid choice
+                  value:
+                    details: {}
+                    error: INVALID_LOCATION_CHOICE
+                    error_code: INVALID_LOCATION_CHOICE
+                    location_candidates:
+                    - code: LOCATION_A
+                      distance_m: '10.000'
+                      id: 1
+                      name: Location A
+                    message: Yêu cầu chấm công không được chấp nhận.
+                    request_id: 00000000-0000-4000-8000-000000000000
+                OutsideRadius:
+                  summary: Outside radius
+                  value:
+                    details: {}
+                    error: OUTSIDE_RADIUS
+                    error_code: OUTSIDE_RADIUS
+                    message: Yêu cầu chấm công không được chấp nhận.
+                    request_id: 00000000-0000-4000-8000-000000000000
+                WeakGPS:
+                  summary: Weak GPS
+                  value:
+                    details: {}
+                    error: WEAK_GPS
+                    error_code: WEAK_GPS
+                    message: Yêu cầu chấm công không được chấp nhận.
+                    request_id: 00000000-0000-4000-8000-000000000000
+              schema:
+                $ref: '#/components/schemas/AttendanceUnprocessableError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - attendance
+  /api/v1/attendance/today:
+    get:
+      operationId: attendance_today_retrieve
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodayAttendance'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - attendance
   /api/v1/auth/login:
     post:
       operationId: auth_login_create
@@ -1083,6 +1321,227 @@ components:
       - role
       - username
       type: object
+    AttendanceCommand:
+      properties:
+        accuracy_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          type: string
+        captured_at:
+          format: date-time
+          nullable: true
+          type: string
+        latitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          type: string
+        longitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          type: string
+        selected_location_id:
+          minimum: 1
+          nullable: true
+          type: integer
+      required:
+      - accuracy_m
+      - latitude
+      - longitude
+      type: object
+    AttendanceCommandResult:
+      properties:
+        attendance:
+          allOf:
+          - $ref: '#/components/schemas/AttendancePunch'
+          readOnly: true
+        punch_index:
+          minimum: 1
+          readOnly: true
+          type: integer
+        session:
+          allOf:
+          - $ref: '#/components/schemas/AttendanceSession'
+          readOnly: true
+      required:
+      - attendance
+      - punch_index
+      - session
+      type: object
+    AttendanceError:
+      properties:
+        details:
+          additionalProperties: {}
+          readOnly: true
+          type: object
+        error:
+          readOnly: true
+          type: string
+        error_code:
+          readOnly: true
+          type: string
+        message:
+          readOnly: true
+          type: string
+        request_id:
+          format: uuid
+          readOnly: true
+          type: string
+      required:
+      - details
+      - error
+      - error_code
+      - message
+      - request_id
+      type: object
+    AttendanceLocation:
+      properties:
+        address:
+          readOnly: true
+          type: string
+        code:
+          readOnly: true
+          type: string
+        id:
+          readOnly: true
+          type: integer
+        name:
+          readOnly: true
+          type: string
+      required:
+      - address
+      - code
+      - id
+      - name
+      type: object
+    AttendancePunch:
+      properties:
+        accuracy_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          readOnly: true
+          type: string
+        captured_at:
+          format: date-time
+          nullable: true
+          readOnly: true
+          type: string
+        captured_latitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          readOnly: true
+          type: string
+        captured_longitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          readOnly: true
+          type: string
+        distance_m:
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+          readOnly: true
+          type: string
+        id:
+          readOnly: true
+          type: integer
+        kind:
+          readOnly: true
+          type: string
+        location:
+          allOf:
+          - $ref: '#/components/schemas/AttendanceLocation'
+          readOnly: true
+        maps_url:
+          readOnly: true
+          type: string
+        recorded_at:
+          format: date-time
+          readOnly: true
+          type: string
+        resolution_method:
+          readOnly: true
+          type: string
+        resolved_address:
+          readOnly: true
+          type: string
+        validation_result:
+          readOnly: true
+          type: string
+        work_date:
+          format: date
+          readOnly: true
+          type: string
+      required:
+      - accuracy_m
+      - captured_at
+      - captured_latitude
+      - captured_longitude
+      - distance_m
+      - id
+      - kind
+      - location
+      - maps_url
+      - recorded_at
+      - resolution_method
+      - resolved_address
+      - validation_result
+      - work_date
+      type: object
+    AttendanceSession:
+      properties:
+        check_in_at:
+          format: date-time
+          readOnly: true
+          type: string
+        check_in_location_id:
+          readOnly: true
+          type: integer
+        check_out_at:
+          format: date-time
+          nullable: true
+          readOnly: true
+          type: string
+        check_out_location_id:
+          nullable: true
+          readOnly: true
+          type: integer
+        closed_by_job:
+          readOnly: true
+          type: boolean
+        duration_minutes:
+          format: decimal
+          nullable: true
+          pattern: ^-?\d{0,8}(?:\.\d{0,6})?$
+          readOnly: true
+          type: string
+        id:
+          readOnly: true
+          type: integer
+        work_date:
+          format: date
+          readOnly: true
+          type: string
+      required:
+      - check_in_at
+      - check_in_location_id
+      - check_out_at
+      - check_out_location_id
+      - closed_by_job
+      - duration_minutes
+      - id
+      - work_date
+      type: object
+    AttendanceUnprocessableError:
+      oneOf:
+      - $ref: '#/components/schemas/GpsBoundaryError'
+      - $ref: '#/components/schemas/InvalidLocationChoiceError'
+    CheckInConflictError:
+      oneOf:
+      - $ref: '#/components/schemas/SessionAlreadyOpenError'
+      - $ref: '#/components/schemas/LocationChoiceRequiredError'
+    CheckOutConflictError:
+      oneOf:
+      - $ref: '#/components/schemas/NoOpenSessionError'
+      - $ref: '#/components/schemas/LocationChoiceRequiredError'
     CodeEnum:
       enum:
       - GEOFENCE_OVERLAP
@@ -1254,6 +1713,38 @@ components:
       - generated_password
       - user
       type: object
+    GpsBoundaryError:
+      properties:
+        details:
+          additionalProperties: {}
+          readOnly: true
+          type: object
+        error:
+          readOnly: true
+          type: string
+        error_code:
+          allOf:
+          - $ref: '#/components/schemas/GpsBoundaryErrorErrorCodeEnum'
+          readOnly: true
+        message:
+          readOnly: true
+          type: string
+        request_id:
+          format: uuid
+          readOnly: true
+          type: string
+      required:
+      - details
+      - error
+      - error_code
+      - message
+      - request_id
+      type: object
+    GpsBoundaryErrorErrorCodeEnum:
+      enum:
+      - WEAK_GPS
+      - OUTSIDE_RADIUS
+      type: string
     Holiday:
       properties:
         date:
@@ -1309,6 +1800,122 @@ components:
       - message
       - request_id
       type: object
+    IndexedAttendancePunch:
+      properties:
+        accuracy_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          readOnly: true
+          type: string
+        captured_at:
+          format: date-time
+          nullable: true
+          readOnly: true
+          type: string
+        captured_latitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          readOnly: true
+          type: string
+        captured_longitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          readOnly: true
+          type: string
+        distance_m:
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+          readOnly: true
+          type: string
+        id:
+          readOnly: true
+          type: integer
+        kind:
+          readOnly: true
+          type: string
+        location:
+          allOf:
+          - $ref: '#/components/schemas/AttendanceLocation'
+          readOnly: true
+        maps_url:
+          readOnly: true
+          type: string
+        punch_index:
+          minimum: 1
+          readOnly: true
+          type: integer
+        recorded_at:
+          format: date-time
+          readOnly: true
+          type: string
+        resolution_method:
+          readOnly: true
+          type: string
+        resolved_address:
+          readOnly: true
+          type: string
+        validation_result:
+          readOnly: true
+          type: string
+        work_date:
+          format: date
+          readOnly: true
+          type: string
+      required:
+      - accuracy_m
+      - captured_at
+      - captured_latitude
+      - captured_longitude
+      - distance_m
+      - id
+      - kind
+      - location
+      - maps_url
+      - punch_index
+      - recorded_at
+      - resolution_method
+      - resolved_address
+      - validation_result
+      - work_date
+      type: object
+    InvalidLocationChoiceError:
+      properties:
+        details:
+          additionalProperties: {}
+          readOnly: true
+          type: object
+        error:
+          readOnly: true
+          type: string
+        error_code:
+          allOf:
+          - $ref: '#/components/schemas/InvalidLocationChoiceErrorErrorCodeEnum'
+          readOnly: true
+        location_candidates:
+          items:
+            $ref: '#/components/schemas/LocationCandidate'
+          minItems: 1
+          readOnly: true
+          type: array
+        message:
+          readOnly: true
+          type: string
+        request_id:
+          format: uuid
+          readOnly: true
+          type: string
+      required:
+      - details
+      - error
+      - error_code
+      - location_candidates
+      - message
+      - request_id
+      type: object
+    InvalidLocationChoiceErrorErrorCodeEnum:
+      enum:
+      - INVALID_LOCATION_CHOICE
+      type: string
     Location:
       properties:
         address:
@@ -1369,6 +1976,66 @@ components:
       - radius_m
       - version
       type: object
+    LocationCandidate:
+      properties:
+        code:
+          readOnly: true
+          type: string
+        distance_m:
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+          readOnly: true
+          type: string
+        id:
+          readOnly: true
+          type: integer
+        name:
+          readOnly: true
+          type: string
+      required:
+      - code
+      - distance_m
+      - id
+      - name
+      type: object
+    LocationChoiceRequiredError:
+      properties:
+        details:
+          additionalProperties: {}
+          readOnly: true
+          type: object
+        error:
+          readOnly: true
+          type: string
+        error_code:
+          allOf:
+          - $ref: '#/components/schemas/LocationChoiceRequiredErrorErrorCodeEnum'
+          readOnly: true
+        location_candidates:
+          items:
+            $ref: '#/components/schemas/LocationCandidate'
+          minItems: 2
+          readOnly: true
+          type: array
+        message:
+          readOnly: true
+          type: string
+        request_id:
+          format: uuid
+          readOnly: true
+          type: string
+      required:
+      - details
+      - error
+      - error_code
+      - location_candidates
+      - message
+      - request_id
+      type: object
+    LocationChoiceRequiredErrorErrorCodeEnum:
+      enum:
+      - LOCATION_CHOICE_REQUIRED
+      type: string
     LocationUpdate:
       properties:
         address:
@@ -1450,6 +2117,37 @@ components:
       - must_change_password
       - role
       type: object
+    NoOpenSessionError:
+      properties:
+        details:
+          additionalProperties: {}
+          readOnly: true
+          type: object
+        error:
+          readOnly: true
+          type: string
+        error_code:
+          allOf:
+          - $ref: '#/components/schemas/NoOpenSessionErrorErrorCodeEnum'
+          readOnly: true
+        message:
+          readOnly: true
+          type: string
+        request_id:
+          format: uuid
+          readOnly: true
+          type: string
+      required:
+      - details
+      - error
+      - error_code
+      - message
+      - request_id
+      type: object
+    NoOpenSessionErrorErrorCodeEnum:
+      enum:
+      - NO_OPEN_SESSION
+      type: string
     PasswordChange:
       properties:
         current_password:
@@ -1553,12 +2251,74 @@ components:
       - role
       - username
       type: object
+    SessionAlreadyOpenError:
+      properties:
+        details:
+          additionalProperties: {}
+          readOnly: true
+          type: object
+        error:
+          readOnly: true
+          type: string
+        error_code:
+          allOf:
+          - $ref: '#/components/schemas/SessionAlreadyOpenErrorErrorCodeEnum'
+          readOnly: true
+        message:
+          readOnly: true
+          type: string
+        request_id:
+          format: uuid
+          readOnly: true
+          type: string
+      required:
+      - details
+      - error
+      - error_code
+      - message
+      - request_id
+      type: object
+    SessionAlreadyOpenErrorErrorCodeEnum:
+      enum:
+      - SESSION_ALREADY_OPEN
+      type: string
     Status:
       properties:
         is_active:
           type: boolean
       required:
       - is_active
+      type: object
+    TodayAttendance:
+      properties:
+        has_open_session:
+          readOnly: true
+          type: boolean
+        punches:
+          items:
+            $ref: '#/components/schemas/IndexedAttendancePunch'
+          readOnly: true
+          type: array
+        sessions:
+          items:
+            $ref: '#/components/schemas/AttendanceSession'
+          readOnly: true
+          type: array
+        total_duration_minutes:
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,6})?$
+          readOnly: true
+          type: string
+        work_date:
+          format: date
+          readOnly: true
+          type: string
+      required:
+      - has_open_session
+      - punches
+      - sessions
+      - total_duration_minutes
+      - work_date
       type: object
     UserCreate:
       properties:

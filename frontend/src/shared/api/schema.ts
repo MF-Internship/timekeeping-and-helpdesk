@@ -4,6 +4,54 @@
  */
 
 export interface paths {
+  "/api/v1/attendance/check-in": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["attendance_check_in"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/attendance/check-out": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["attendance_check_out"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/attendance/today": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["attendance_today_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/auth/login": {
     parameters: {
       query?: never;
@@ -283,6 +331,84 @@ export interface components {
       readonly role: string;
       readonly username: string;
     };
+    AttendanceCommand: {
+      /** Format: decimal */
+      accuracy_m: string;
+      /** Format: date-time */
+      captured_at?: string | null;
+      /** Format: decimal */
+      latitude: string;
+      /** Format: decimal */
+      longitude: string;
+      selected_location_id?: number | null;
+    };
+    AttendanceCommandResult: {
+      readonly attendance: components["schemas"]["AttendancePunch"];
+      readonly punch_index: number;
+      readonly session: components["schemas"]["AttendanceSession"];
+    };
+    AttendanceError: {
+      readonly details: {
+        [key: string]: unknown;
+      };
+      readonly error: string;
+      readonly error_code: string;
+      readonly message: string;
+      /** Format: uuid */
+      readonly request_id: string;
+    };
+    AttendanceLocation: {
+      readonly address: string;
+      readonly code: string;
+      readonly id: number;
+      readonly name: string;
+    };
+    AttendancePunch: {
+      /** Format: decimal */
+      readonly accuracy_m: string;
+      /** Format: date-time */
+      readonly captured_at: string | null;
+      /** Format: decimal */
+      readonly captured_latitude: string;
+      /** Format: decimal */
+      readonly captured_longitude: string;
+      /** Format: decimal */
+      readonly distance_m: string;
+      readonly id: number;
+      readonly kind: string;
+      readonly location: components["schemas"]["AttendanceLocation"];
+      readonly maps_url: string;
+      /** Format: date-time */
+      readonly recorded_at: string;
+      readonly resolution_method: string;
+      readonly resolved_address: string;
+      readonly validation_result: string;
+      /** Format: date */
+      readonly work_date: string;
+    };
+    AttendanceSession: {
+      /** Format: date-time */
+      readonly check_in_at: string;
+      readonly check_in_location_id: number;
+      /** Format: date-time */
+      readonly check_out_at: string | null;
+      readonly check_out_location_id: number | null;
+      readonly closed_by_job: boolean;
+      /** Format: decimal */
+      readonly duration_minutes: string | null;
+      readonly id: number;
+      /** Format: date */
+      readonly work_date: string;
+    };
+    AttendanceUnprocessableError:
+      | components["schemas"]["GpsBoundaryError"]
+      | components["schemas"]["InvalidLocationChoiceError"];
+    CheckInConflictError:
+      | components["schemas"]["SessionAlreadyOpenError"]
+      | components["schemas"]["LocationChoiceRequiredError"];
+    CheckOutConflictError:
+      | components["schemas"]["NoOpenSessionError"]
+      | components["schemas"]["LocationChoiceRequiredError"];
     /** @enum {string} */
     CodeEnum: "GEOFENCE_OVERLAP" | "RADIUS_BELOW_ATTENDANCE_ACCURACY";
     Config: {
@@ -347,6 +473,18 @@ export interface components {
       readonly generated_password: string;
       readonly user: components["schemas"]["AdminUser"];
     };
+    GpsBoundaryError: {
+      readonly details: {
+        [key: string]: unknown;
+      };
+      readonly error: string;
+      readonly error_code: components["schemas"]["GpsBoundaryErrorErrorCodeEnum"];
+      readonly message: string;
+      /** Format: uuid */
+      readonly request_id: string;
+    };
+    /** @enum {string} */
+    GpsBoundaryErrorErrorCodeEnum: "WEAK_GPS" | "OUTSIDE_RADIUS";
     Holiday: {
       /** Format: date */
       readonly date: string;
@@ -368,6 +506,43 @@ export interface components {
       /** Format: uuid */
       readonly request_id: string;
     };
+    IndexedAttendancePunch: {
+      /** Format: decimal */
+      readonly accuracy_m: string;
+      /** Format: date-time */
+      readonly captured_at: string | null;
+      /** Format: decimal */
+      readonly captured_latitude: string;
+      /** Format: decimal */
+      readonly captured_longitude: string;
+      /** Format: decimal */
+      readonly distance_m: string;
+      readonly id: number;
+      readonly kind: string;
+      readonly location: components["schemas"]["AttendanceLocation"];
+      readonly maps_url: string;
+      readonly punch_index: number;
+      /** Format: date-time */
+      readonly recorded_at: string;
+      readonly resolution_method: string;
+      readonly resolved_address: string;
+      readonly validation_result: string;
+      /** Format: date */
+      readonly work_date: string;
+    };
+    InvalidLocationChoiceError: {
+      readonly details: {
+        [key: string]: unknown;
+      };
+      readonly error: string;
+      readonly error_code: components["schemas"]["InvalidLocationChoiceErrorErrorCodeEnum"];
+      readonly location_candidates: components["schemas"]["LocationCandidate"][];
+      readonly message: string;
+      /** Format: uuid */
+      readonly request_id: string;
+    };
+    /** @enum {string} */
+    InvalidLocationChoiceErrorErrorCodeEnum: "INVALID_LOCATION_CHOICE";
     Location: {
       readonly address: string;
       readonly code: string;
@@ -385,6 +560,26 @@ export interface components {
       readonly radius_m: string;
       readonly version: number;
     };
+    LocationCandidate: {
+      readonly code: string;
+      /** Format: decimal */
+      readonly distance_m: string;
+      readonly id: number;
+      readonly name: string;
+    };
+    LocationChoiceRequiredError: {
+      readonly details: {
+        [key: string]: unknown;
+      };
+      readonly error: string;
+      readonly error_code: components["schemas"]["LocationChoiceRequiredErrorErrorCodeEnum"];
+      readonly location_candidates: components["schemas"]["LocationCandidate"][];
+      readonly message: string;
+      /** Format: uuid */
+      readonly request_id: string;
+    };
+    /** @enum {string} */
+    LocationChoiceRequiredErrorErrorCodeEnum: "LOCATION_CHOICE_REQUIRED";
     LocationUpdate: {
       address?: string;
       is_active?: boolean;
@@ -413,6 +608,18 @@ export interface components {
       readonly must_change_password: boolean;
       readonly role: string;
     };
+    NoOpenSessionError: {
+      readonly details: {
+        [key: string]: unknown;
+      };
+      readonly error: string;
+      readonly error_code: components["schemas"]["NoOpenSessionErrorErrorCodeEnum"];
+      readonly message: string;
+      /** Format: uuid */
+      readonly request_id: string;
+    };
+    /** @enum {string} */
+    NoOpenSessionErrorErrorCodeEnum: "NO_OPEN_SESSION";
     PasswordChange: {
       current_password: string;
       new_password: string;
@@ -447,8 +654,29 @@ export interface components {
       readonly role: string;
       readonly username: string;
     };
+    SessionAlreadyOpenError: {
+      readonly details: {
+        [key: string]: unknown;
+      };
+      readonly error: string;
+      readonly error_code: components["schemas"]["SessionAlreadyOpenErrorErrorCodeEnum"];
+      readonly message: string;
+      /** Format: uuid */
+      readonly request_id: string;
+    };
+    /** @enum {string} */
+    SessionAlreadyOpenErrorErrorCodeEnum: "SESSION_ALREADY_OPEN";
     Status: {
       is_active: boolean;
+    };
+    TodayAttendance: {
+      readonly has_open_session: boolean;
+      readonly punches: components["schemas"]["IndexedAttendancePunch"][];
+      readonly sessions: components["schemas"]["AttendanceSession"][];
+      /** Format: decimal */
+      readonly total_duration_minutes: string;
+      /** Format: date */
+      readonly work_date: string;
     };
     UserCreate: {
       /** Format: email */
@@ -482,6 +710,155 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  attendance_check_in: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AttendanceCommand"];
+        "application/x-www-form-urlencoded": components["schemas"]["AttendanceCommand"];
+        "multipart/form-data": components["schemas"]["AttendanceCommand"];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceCommandResult"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceError"];
+        };
+      };
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CheckInConflictError"];
+        };
+      };
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceUnprocessableError"];
+        };
+      };
+    };
+  };
+  attendance_check_out: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AttendanceCommand"];
+        "application/x-www-form-urlencoded": components["schemas"]["AttendanceCommand"];
+        "multipart/form-data": components["schemas"]["AttendanceCommand"];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceCommandResult"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceError"];
+        };
+      };
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CheckOutConflictError"];
+        };
+      };
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceUnprocessableError"];
+        };
+      };
+    };
+  };
+  attendance_today_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TodayAttendance"];
+        };
+      };
+    };
+  };
   auth_login_create: {
     parameters: {
       query?: never;

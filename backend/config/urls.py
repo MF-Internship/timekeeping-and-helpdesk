@@ -1,7 +1,9 @@
 from django.conf import settings
 from django.urls import URLPattern, URLResolver, include, path
 
+from attendance.adapters.api.urls import attendance_urlpatterns
 from config.composition import (
+    attendance_container,
     identity_container,
     identity_target_lookup,
     locations_container,
@@ -18,6 +20,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
                 identity_target_lookup,
             )
             + location_urlpatterns(locations_container)
+            + attendance_urlpatterns(attendance_container)
         ),
     ),
 ]

@@ -73,6 +73,6 @@ def test_unsafe_fixture_fails_with_rule_and_path(fixture_name: str, rule_id: str
 
 @pytest.mark.architecture
 def test_production_backend_obeys_module_boundaries() -> None:
-    for module in ("identity", "audit", "locations", "config"):
+    for module in ("identity", "audit", "locations", "attendance", "config"):
         result = run_checker(BACKEND / module)
         assert result.returncode == 0, result.stderr

@@ -138,8 +138,23 @@ quả — đúng **bảy** giá trị: được chấp nhận; chờ chọn đ�
 GPS yếu, ngoài mọi vùng cho phép, địa điểm chọn không hợp lệ, đang có phiên mở,
 không có phiên mở. Nhật ký này lưu cả tọa độ, sai số và địa điểm gần nhất để phục
 vụ báo cáo; nó **không phải** bản ghi chấm công và không được cộng vào bảng công.
+Dữ liệu “địa điểm gần nhất” xét toàn bộ đúng 76 địa điểm canonical, kể cả địa
+điểm đã ngừng hoạt động, để báo cáo lịch sử địa lý không mất nhóm chẩn đoán.
+Điều này không làm địa điểm inactive trở thành nơi chấm công hợp lệ: danh sách
+ứng viên, tự chọn và xác nhận lựa chọn vẫn chỉ xét địa điểm đang hoạt động.
+Nếu nhiều địa điểm có cùng khoảng cách gần nhất, nhật ký chọn địa điểm có mã
+`code` nhỏ nhất theo thứ tự từ điển để kết quả báo cáo ổn định. Luật này chỉ áp
+dụng cho metadata gần nhất; các ứng viên chấm công trùng khoảng cách vẫn là các
+địa điểm riêng và vẫn bắt người dùng chọn.
 Dòng nhật ký được ghi **độc lập** với việc ca công có được tạo hay không: một lượt
 bấm bị từ chối vẫn để lại nhật ký, không bị xóa theo.
+
+Mỗi Check In hoặc Check Out **thành công** đồng thời ghi một vết kiểm toán bất
+biến tương ứng (`attendance.check_in.created` hoặc
+`attendance.check_out.created`) trong cùng transaction với ca công; vết này chỉ
+giữ định danh/kind/ngày công/Location/phiên cần truy vết, không sao chép tọa độ,
+sai số, metadata thiết bị hay IP. Lượt bị từ chối chỉ có nhật ký attempt, không
+có AuditLog. Chấm công thường chưa phát outbox event.
 
 #### **Chấm công khác địa điểm được phân công**
 
@@ -501,14 +516,22 @@ Ví dụ:
   điểm; hệ thống vẫn ghi nhật ký lượt bấm đó, nhưng nó bị **loại khỏi cả tử số
   lẫn mẫu số** của tỉ lệ thất bại — tính vào mẫu số sẽ làm tỉ lệ trông đẹp giả
   tạo ở đúng những cụm cửa hàng gần nhau nhất. Ngoài trường hợp này, hệ thống ghi
-  nhật ký **mọi** lần bấm chấm công kể cả lần thành công, nên mẫu số là tổng số
-  lần bấm chứ không phải số ca công. Hai báo cáo này không được cộng chung vì
+  nhật ký mọi lần bấm đã được phân loại thành một trong bảy outcome, kể cả lần
+  thành công, nên mẫu số là tổng số lần bấm đã phân loại chứ không phải số ca
+  công. Hai báo cáo này không được cộng chung vì
   nguồn dữ liệu khác nhau: một bên là ca công đã ghi, một bên là lần bấm không
-  tạo ra ca công.
+  tạo ra ca công. Nhật ký attempt được ghi sau transaction chấm công; nếu bước
+  ghi nhật ký này lỗi thì kết quả chấm công đã có vẫn được giữ nguyên, hệ thống
+  không tự retry attempt và chỉ ghi cảnh báo đã loại bỏ dữ liệu vị trí/thiết bị
+  nhạy cảm. Lỗi hạ tầng bất ngờ trả 5xx không phải outcome chấm công: không tạo
+  attempt và không được gán nhầm vào một trong bảy outcome đóng.
 - Báo cáo hoàn thành công việc theo phương thức: tổng đã hoàn thành, hoàn thành
   có ảnh/GPS hiện trường, hoàn thành do quản lý xác nhận ngoại lệ.
 - Mọi attempt đã vào luồng nghiệp vụ có địa điểm gần nhất để gom nhóm; nearest
-  của GPS yếu được ghi rõ là xấp xỉ để chẩn đoán, không phải bằng chứng hiện diện.
+  xét cả 76 Location canonical active và inactive, còn candidates vẫn active-only.
+  Khoảng cách hòa chọn `Location.code` nhỏ nhất chỉ cho nearest quan trắc, không
+  dùng để tự chọn candidate.
+  Nearest của GPS yếu được ghi rõ là xấp xỉ để chẩn đoán, không phải bằng chứng hiện diện.
   Tỉ lệ lỗi luôn hiện tử số/mẫu số, số lượt chọn Location bị loại, coverage và
   `N/A` khi không đủ mẫu; không biến “0 attempt” thành “không có vấn đề”.
 - Dashboard hiển thị health của job xử lý thiếu Check Out. Quản lý có đường điều
@@ -703,6 +726,13 @@ hay tạo thêm hành vi nghiệp vụ.
   tối đa 5 request/phút theo tài khoản đã xác thực. Vượt hạn mức trả `429` kèm
   thời gian chờ; kho đếm dùng chung hỏng thì trả `503` và không cho request đi
   tiếp. Các worker không có quota riêng và frontend không tự đoán thời gian chờ.
+- **NFR-31 — Acceptance tương tác Attendance.** Feature 004 đo 100 chu kỳ
+  command + today-read trên PostgreSQL với 50 user, đúng 76 Location và actor có
+  20 phiên cùng ngày; ít nhất 95 chu kỳ hoàn tất trong 2 giây. Kiểm tra usability
+  có tối thiểu 20 HELPDESK đại diện và đạt khi ít nhất 19 người tự hoàn thành cả
+  punch không mơ hồ lẫn bước chọn Location mơ hồ; evidence chỉ giữ số đếm và
+  blocker, không lưu GPS. Đây là acceptance của feature, không thay bằng chứng
+  capacity production ở NFR-29 và không chạy như wall-clock gate trong CI.
 - **AD-7 / AD-10 / AD-11.** Schema tiến hóa không gãy; ranh giới runtime/admin,
   môi trường và origin được kiểm bằng lệnh chạy được; contract, correlation,
   thông báo và dữ liệu chẩn đoán có một chủ sở hữu dùng chung. Những control nằm

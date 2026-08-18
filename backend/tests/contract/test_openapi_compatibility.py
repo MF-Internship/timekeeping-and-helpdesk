@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+import yaml
 
 FIXTURES = Path(__file__).parent / "fixtures/compatibility"
 GATE = "scripts/check_openapi_compatibility.sh"
@@ -149,3 +150,16 @@ def test_installer_replaces_tampered_cached_executable(tmp_path: Path) -> None:
         subprocess.run([str(repaired)], capture_output=True, text=True, check=True).stdout
         == "trusted\n"
     )
+
+
+def test_attendance_paths_and_error_unions_are_committed_compatibility_surface() -> None:
+    document = yaml.safe_load(Path("contracts/openapi.yaml").read_text(encoding="utf-8"))
+    assert set(document["paths"]) >= {
+        "/api/v1/attendance/check-in",
+        "/api/v1/attendance/check-out",
+        "/api/v1/attendance/today",
+    }
+    schemas = document["components"]["schemas"]
+    assert len(schemas["CheckInConflictError"]["oneOf"]) == 2
+    assert len(schemas["CheckOutConflictError"]["oneOf"]) == 2
+    assert len(schemas["AttendanceUnprocessableError"]["oneOf"]) == 2

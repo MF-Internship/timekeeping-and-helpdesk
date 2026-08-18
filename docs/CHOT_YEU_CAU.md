@@ -299,8 +299,18 @@ của Helpdesk, nên không cần lọc role ở từng truy vấn.
    nằm trong tập ứng viên. `resolution_method = USER_SELECTED`. Nếu
    `selected_location_id` **không** nằm trong tập ứng viên vừa tính lại: từ chối
    `422 INVALID_LOCATION_CHOICE` (cùng mã với `complete-field`, §6.2).
-11. Ghi `Attendance`, mở hoặc đóng `AttendanceSession` (§5.3) và ghi anomaly
-   trong cùng một transaction.
+   Nếu tập tính lại rỗng thì bước 8 thắng và response là `422 OUTSIDE_RADIUS`,
+   không phải `INVALID_LOCATION_CHOICE`; `INVALID_LOCATION_CHOICE` chỉ áp dụng
+   khi tập ứng viên tính lại không rỗng nhưng id được gửi không thuộc tập đó.
+11. Ghi `Attendance`, mở hoặc đóng `AttendanceSession` (§5.3), ghi/gỡ anomaly
+   và append đúng một `AuditLog` trong cùng một transaction. Check In dùng action
+   `attendance.check_in.created`, Check Out dùng action
+   `attendance.check_out.created`; target là `Attendance` vừa tạo, `before = {}`
+   và `after` chứa đúng năm khóa `attendance_id`, `kind`, `work_date`,
+   `location_id`, `session_id`, không chứa tọa độ, sai số, device metadata,
+   request IP hay maps URL. Request bị từ chối không tạo
+   `AuditLog`. Check In/Out thường không tạo `OutboxEvent` vì chưa có consumer hay
+   event type được duyệt.
 
 **Quan trắc nearest không đổi thứ tự validation (chốt).** Ngay khi request đã
 qua ranh giới giữa bước 2 và bước 3, service quan trắc tính
@@ -309,7 +319,22 @@ kể cả request bị chặn tại bước 3, 4 hoặc 5. Phép tính này ph�
 `AttendanceAttempt`, không tạo candidates, không xét geofence và tuyệt đối không
 được dùng để cho request đi tiếp hay đổi thứ tự bước 5 → 6. Với `WEAK_GPS`,
 nearest chỉ là nhãn gom nhóm **xấp xỉ để chẩn đoán**, không phải bằng chứng người
-dùng hiện diện tại Location đó.
+dùng hiện diện tại Location đó. Tập dùng để tìm nearest là **toàn bộ đúng 76
+`Location` canonical, gồm cả active và inactive** (R-118); phép tính không xét
+`radius_m`. Tập này cố ý khác tập candidates ở bước 6–7, vốn vẫn chỉ gồm
+`is_active = True`: một Location inactive có thể là nearest quan trắc nhưng
+không bao giờ trở thành candidate, được auto-select, được chọn bởi user hay gắn
+vào `Attendance` mới. Nếu nhiều Location có cùng khoảng cách nhỏ nhất, nearest
+quan trắc chọn dòng có `Location.code` nhỏ nhất theo thứ tự từ điển (R-119),
+không dùng database id/name/history/active. Tie-break này chỉ làm một FK quan trắc
+ổn định; nó không gộp hay phá hòa tập candidates.
+
+Nearest và candidates của một request phải xuất phát từ **cùng một snapshot tham
+chiếu**: transaction khóa Config theo thứ tự Config → Location hiện hành, tải đúng
+một lần toàn bộ 76 Location canonical, dùng toàn bộ snapshot cho nearest và lọc
+`is_active = True` trên chính snapshot đó cho candidates (R-126). Việc tính
+nearest có thể xảy ra trước business gate trên snapshot đã khóa nhưng vẫn chỉ là
+quan trắc: không được đổi outcome, mở khóa business state hay phá thứ tự gate.
 
 **GPS foreground có giới hạn, không phải tracking.** Khi màn Attendance đang
 hiện và quyền vị trí đã được cấp, client được dùng `watchPosition` để hiển thị
@@ -319,9 +344,10 @@ Nếu browser chưa cấp quyền, client chỉ gọi xin quyền sau thao tác 
 trí”. Fix dùng để submit vẫn phải là fix mới, `maximumAge = 0`, và qua kiểm tra
 độ tươi phía server.
 
-**Mọi request chấm công đã vào tới bước 3 đều ghi đúng một `AttendanceAttempt`,
-kể cả request thành công** — xem §5.2. Request thành công ghi `outcome = ACCEPTED`;
-các lần từ chối ở bước 3, 4, 5, 8 và 10 ghi outcome tương ứng. Không được chỉ log
+**Mọi request chấm công đã vào tới bước 3 và kết thúc bằng một outcome nghiệp vụ
+đóng đều ghi đúng một `AttendanceAttempt`, kể cả request thành công** — xem §5.2.
+Request thành công ghi `outcome = ACCEPTED`; các lần từ chối ở bước 3, 4, 5, 8
+và 10 ghi outcome tương ứng. Lỗi hạ tầng 5xx theo R-125 không thuộc tập này. Không được chỉ log
 request bị từ chối: thiếu mẫu số `ACCEPTED` thì không tính được tỉ lệ thất bại theo
 người và theo địa điểm.
 
@@ -332,9 +358,10 @@ payload mang `kind` — **không** ghi `AttendanceAttempt` dòng nào. Lý do kh
 tiện tay: `AttendanceAttemptOutcome` là enum đóng đúng 7 giá trị (§5.2) và không có
 giá trị nào mô tả “chưa qua cổng xác thực/phân quyền”. Muốn ghi những ca đó thì
 phải mở enum, mà mở enum là đổi cấu trúc chứ không phải thêm log — nếu thật sự cần
-thì sửa §5.2 trước, đừng nhét đại `outcome` gần đúng. Nhật ký cho tầng đó là
-`AuditLog` và log ứng dụng. Nói cách khác: `AttendanceAttempt` là nhật ký **nghiệp
-vụ chấm công của Helpdesk**, không phải access log của endpoint.
+thì sửa §5.2 trước, đừng nhét đại `outcome` gần đúng. Tầng đó dùng access/security
+log ứng dụng đã lọc; riêng endpoint punch bị từ chối không tạo `AuditLog` theo
+bước 11/R-121. Nói cách khác: `AttendanceAttempt` là nhật ký **nghiệp vụ chấm
+công của Helpdesk**, không phải access log của endpoint.
 
 `resolution_method = GPS_ONLY` không xảy ra với Attendance vì bước 8 đã chặn; giá
 trị này chỉ dùng cho `TaskUpdate`.
@@ -373,8 +400,8 @@ làm chuẩn đối chiếu chấm công.
 
 - `AttendanceAnomaly` gắn vào một `Attendance` đã tồn tại → mô tả một lần chấm
   công **thành công nhưng bất thường**.
-- `AttendanceAttempt` là **nhật ký request chấm công**: mỗi lần bấm Check In/Out
-  sinh đúng một dòng, bất kể kết quả. Dòng của request thành công có
+- `AttendanceAttempt` là **nhật ký request chấm công đã được phân loại**: mỗi lần
+  kết thúc bằng một trong bảy outcome sinh đúng một dòng. Dòng thành công có
   `outcome = ACCEPTED` và trỏ tới `Attendance` vừa tạo; dòng của request bị từ
   chối có `attendance IS NULL`. Đây **không** phải bảng “lần bị từ chối”: thiếu
   các dòng `ACCEPTED` thì không có mẫu số để tính tỉ lệ thất bại theo người hay
@@ -404,17 +431,31 @@ enum value cùng endpoint trong cùng một thay đổi.
 
 `Attendance.has_anomaly` chỉ là giá trị dẫn xuất/cached nếu cần hiển thị.
 
-**`AttendanceAttempt`.** Mọi request chấm công **đã qua xác thực và phân quyền, và
-đã vào tới bước 3 của §5.1** đều ghi đúng một `AttendanceAttempt` — kể cả request
-thành công. Dòng attempt được ghi **ngoài transaction nghiệp vụ**, sau khi
-transaction đó đã kết thúc, ở **cả nhánh commit lẫn nhánh bắt exception** (R-74).
+**`AttendanceAttempt`.** Mọi request chấm công **đã qua xác thực và phân quyền,
+đã vào tới bước 3 của §5.1 và kết thúc bằng một outcome nghiệp vụ đóng** đều ghi
+đúng một `AttendanceAttempt` — kể cả request thành công. Dòng attempt được ghi
+**ngoài transaction nghiệp vụ**, sau khi transaction đó đã kết thúc, ở cả nhánh
+commit và nhánh exception nghiệp vụ đã phân loại (R-74, R-125).
 Lý do: bất biến `uniq_open_session_per_user` (§5.3) bắn `IntegrityError` làm abort
 transaction, nên attempt ghi *bên trong* sẽ bị rollback cùng — đúng ca
 `SESSION_ALREADY_OPEN` mà §10 bắt buộc phải có dòng attempt cho **cả hai** request
 đua nhau. Transaction nghiệp vụ chỉ bao `Attendance`, `AttendanceSession`,
-`AttendanceAnomaly` và `AuditLog`; `AttendanceAttempt` nằm ngoài. Đổi lại,
+`AttendanceAnomaly` và `AuditLog` của bước 11; `AttendanceAttempt` nằm ngoài. Đổi lại,
 attempt có thể mất nếu process chết giữa hai bước — chấp nhận, vì attempt là dữ
-liệu quan trắc chứ không phải bất biến nghiệp vụ.
+liệu quan trắc chứ không phải bất biến nghiệp vụ. Nếu chính thao tác ghi
+`AttendanceAttempt` thất bại sau khi transaction nghiệp vụ đã kết thúc, hệ thống
+giữ nguyên response hoặc exception nghiệp vụ gốc, không tự retry và không
+rollback/che khuất kết quả đó; lỗi ghi attempt chỉ phát telemetry đã lọc, không
+chứa tọa độ, device metadata hay request IP. Cam kết "đúng một attempt" áp dụng
+khi persistence quan trắc hoạt động bình thường; process death hoặc lỗi
+persistence ở bước hậu-transaction là các trường hợp mất quan trắc được chấp
+nhận, không được biến thành một kết quả chấm công khác.
+
+Cam kết này chỉ áp dụng khi request kết thúc bằng một trong đúng bảy outcome
+nghiệp vụ dưới đây. Lỗi database/network/process/framework bất ngờ giữ response
+5xx canonical, **không tạo `AttendanceAttempt`**, không được gán nhãn bằng outcome
+gần đúng và chỉ phát telemetry đã lọc. Đây là lỗi vận hành chứ không phải một lần
+chấm công được phân loại; không mở rộng enum để che lỗi hạ tầng (R-125).
 
 Enum dưới đây là **đóng**, và việc nó không có giá trị nào cho `401`/`403`/payload
 sai chính là lý do những ca đó không ghi attempt (§5.1):
@@ -443,8 +484,13 @@ trong ngày (§5.1). Chúng được thay bằng hai outcome theo trạng thái 
 `nearest_distance_m` cho mọi request đã vào bước 3 (kể cả khi bị chặn trước bước
 6 hoặc ngoài bán kính) nên báo cáo “số lần chấm công bị
 từ chối theo từng địa điểm” query trực tiếp được, không phải parse JSON của
-`AuditLog`. Dòng `WEAK_GPS` có nearest được serializer/report gắn nhãn suy diễn
+`AuditLog`. Nearest được tính trên toàn bộ 76 Location canonical, kể cả Location
+inactive; đây chỉ là phép gán quan trắc, không thay tập candidate active-only và
+không cho phép chấm công tại Location inactive (R-118). Dòng `WEAK_GPS` có nearest
+được serializer/report gắn nhãn suy diễn
 `nearest_is_approximate = true`; không thêm cột vì suy trực tiếp từ `outcome`.
+Nếu khoảng cách nhỏ nhất bằng nhau, chọn `Location.code` nhỏ nhất theo thứ tự từ
+điển (R-119); candidates active cùng INSIDE vẫn giữ nguyên từng dòng riêng.
 Về tập ứng viên, attempt chỉ giữ **`candidate_count`** — một số đếm,
 **không** có cột mảng ứng viên và không thêm cột đó. Danh sách ứng viên là dữ liệu
 của **response API** ở `409 LOCATION_CHOICE_REQUIRED` và `422
@@ -904,6 +950,10 @@ Ghi chú model:
   `check_in.work_date`. `duration_minutes` tính bằng hiệu hai `recorded_at` khi
   đóng phiên và giữ `NULL` với phiên bị job đóng (§5.3), nên tổng giờ công phải
   cộng có bỏ qua `NULL` chứ không coi `NULL` là 0 im lặng.
+- `AttendanceSession.duration_minutes` là `DecimalField(..., decimal_places=6)`;
+  lấy hiệu chính xác giữa hai server timestamp theo microsecond rồi lượng tử hóa
+  một lần tới 6 chữ số thập phân phút bằng `ROUND_HALF_UP`. Không làm tròn theo
+  phút nguyên và không dùng giá trị đã lượng tử hóa để suy ngược timestamp.
 - `AttendanceSession.closed_by_job` là `BooleanField(default=False)`, **không
   nullable**: nó nằm trong điều kiện partial unique index (§5.3) nên `NULL` sẽ
   làm hỏng bất biến. Cờ này vừa phân biệt phiên do người dùng bấm Check Out với
@@ -1718,12 +1768,15 @@ version và không tạo bằng chứng giả rằng state đã đổi.
   cáo, không tự phát cảnh báo và không tự ghi gì. Nhờ vậy một endpoint đọc sau
   này (§10) dùng lại đúng phép đánh giá đó thay vì viết lại ngưỡng lần thứ hai.
 - Ghi quan trắc của một thay đổi nghiệp vụ **thất bại** phải xảy ra **ngoài**
-  transaction nghiệp vụ, ở **cả nhánh commit lẫn nhánh exception**, và bản ghi
+  transaction nghiệp vụ, ở cả nhánh commit lẫn nhánh exception **nghiệp vụ đã
+  được phân loại**, và bản ghi
   đó **không** phải sự kiện outbox, cũng **không** phải dòng `AuditLog` — nó là
   dữ liệu quan sát, không phải bất biến nghiệp vụ. Ghi nó bên trong transaction
   sẽ khiến nó bị cuốn theo rollback, tức là mất đúng bằng chứng về lần thất bại
   cần điều tra. Một lỗi trong chính việc ghi quan trắc được log lại và **không**
   được che mất exception nghiệp vụ gốc.
+  Riêng exception hạ tầng chưa phân loại của Attendance theo R-125 không đăng ký
+  AttendanceAttempt; nó chỉ đi telemetry 5xx đã lọc.
 - Ba lời hứa trên (ghi quan trắc sống qua rollback, dọn dẹp không chạm dòng cấm,
   thiếu quan trắc ra `unknown`) phải được khẳng định bằng test chạy trên
   PostgreSQL thật, với `transaction=True` ở mọi chỗ có khẳng định về hành vi
@@ -1941,9 +1994,11 @@ Server trả `409 LOCATION_CHOICE_REQUIRED`:
 
 Client gửi lại đúng payload cũ kèm `"selected_location_id": 61`; server tính lại
 danh sách ứng viên và chỉ chấp nhận lựa chọn nằm trong danh sách đó. Lựa chọn
-nằm ngoài danh sách vừa tính lại — vì client gửi sai id, hoặc vì người dùng đã đi
-chỗ khác giữa hai request — trả `422 INVALID_LOCATION_CHOICE` kèm danh sách ứng
-viên mới nhất để client hiển thị lại.
+nằm ngoài danh sách **không rỗng** vừa tính lại — vì client gửi sai id, hoặc vì
+người dùng đã đi tới một vùng phủ khác giữa hai request — trả `422
+INVALID_LOCATION_CHOICE` kèm danh sách ứng viên mới nhất để client hiển thị lại.
+Nếu người dùng đã đi ra ngoài mọi vùng và danh sách rỗng thì §5.1 bước 8 trả
+`OUTSIDE_RADIUS` trước khi xét id.
 
 `POST /api/attendance/check-in` và `POST /api/attendance/check-out` không nhận
 `recorded_at`, `work_date` hay `kind`; server tự tạo chúng, `kind` suy từ route
@@ -1954,7 +2009,7 @@ có `user_id`, không có `kind`**. Payload chứa `user_id` hoặc `kind` trả
 LOCATION_CHOICE_REQUIRED` kèm danh sách Location (mỗi phần tử có `code` và `name`,
 §3.1). `accuracy_m > Config.max_attendance_accuracy_m` trả `422 WEAK_GPS`; không
 ứng viên nào trả `422 OUTSIDE_RADIUS`; `selected_location_id` ngoài tập ứng viên
-trả `422 INVALID_LOCATION_CHOICE`. Check Out khi không có phiên mở trả
+**không rỗng** trả `422 INVALID_LOCATION_CHOICE`. Check Out khi không có phiên mở trả
 `409 NO_OPEN_SESSION`; Check In khi đang có phiên mở trả `409
 SESSION_ALREADY_OPEN` (kể cả khi thua race ở partial unique index, §5.3). Mọi
 request đã qua xác thực/phân quyền — kể cả request thành công — ghi đúng một
@@ -2237,6 +2292,9 @@ trả `404`, và không có giao diện HTML kiểu Swagger/ReDoc.
   trong các ứng viên `INSIDE_GEOFENCE` bị từ chối `422 INVALID_LOCATION_CHOICE`
   và ghi `AttendanceAttempt(outcome=INVALID_LOCATION_CHOICE)` — tách bạch với
   `LOCATION_CHOICE_REQUIRED` của lần chưa chọn.
+- Request có `selected_location_id` nhưng tập candidates tính lại rỗng trả
+  `422 OUTSIDE_RADIUS`; chỉ tập không rỗng mới được xét
+  `INVALID_LOCATION_CHOICE` (§5.1, R-122).
 - Hai cổng độc lập (§4.2): `a <= t` và `d <= r` mới `INSIDE_GEOFENCE`. Test phải
   có case `d = 40`, `a = 20`, `r = 50`, `t = 25` → **thành công** (công thức cũ
   `d + a <= r` sẽ trượt case này), và case `d = 60`, `a = 5`, `r = 50` →
@@ -2249,6 +2307,9 @@ trả `404`, và không có giao diện HTML kiểu Swagger/ReDoc.
   ứng và `attendance = NULL`; lần thành công ghi `outcome = ACCEPTED` trỏ tới
   `Attendance` vừa tạo. Test phải khẳng định request **thành công cũng sinh
   attempt** — không chỉ log lần bị từ chối.
+- Ép writer AttendanceAttempt hậu-transaction lỗi phải giữ nguyên
+  response/exception nghiệp vụ gốc, không retry, không rollback state đã commit;
+  telemetry lỗi không chứa tọa độ/device/IP (R-120).
 - Ranh giới ngược lại cũng có test: request không token, token hỏng, actor
   `MANAGER`, actor còn `must_change_password = True`, hoặc payload mang `kind`
   đều **không** thêm dòng `AttendanceAttempt` nào (§5.1). Đếm số dòng trước và
@@ -2268,6 +2329,8 @@ trả `404`, và không có giao diện HTML kiểu Swagger/ReDoc.
 - Một ngày bấm `IN → OUT → IN → OUT`: cả bốn lượt thành công, tạo đúng **hai**
   `AttendanceSession`, giờ công bằng **tổng** hai phiên chứ không phải hiệu giữa
   lượt đầu và lượt cuối.
+- Duration dùng một fixture có microsecond không biểu diễn hữu hạn theo phút và
+  khẳng định lượng tử hóa đúng 6 chữ số bằng `ROUND_HALF_UP` (R-123).
 - Check In tại Location A, rời geofence để di chuyển và hoàn thành Task ngoài 76
   Location, rồi Check Out tại Location B: phiên vẫn mở suốt khoảng đó, không có
   auto-close khi rời A; Check Out thành công nếu qua policy tại B;
@@ -2377,6 +2440,21 @@ trả `404`, và không có giao diện HTML kiểu Swagger/ReDoc.
 - Hai request Check In cùng lúc: partial unique index chỉ cho một phiên mở, request
   thua nhận `409 SESSION_ALREADY_OPEN`; hai request complete cùng lúc: chỉ một
   request thắng và có một `TaskUpdate COMPLETED`.
+- Hai request Check Out cùng lúc trên một phiên mở: đúng một request tạo OUT và
+  đóng phiên, request còn lại nhận `409 NO_OPEN_SESSION`; cả hai giữ attempt khi
+  persistence quan trắc hoạt động.
+- Lỗi hạ tầng bất ngờ sau boundary: trả 5xx canonical, không ghi attempt, không
+  relabel thành một trong bảy outcome và telemetry không chứa GPS/device/IP
+  (R-125).
+- Check In/Out thành công tạo đúng một AuditLog action tương ứng trong cùng
+  transaction, payload đã lọc và không outbox; mọi nhánh từ chối không tạo
+  AuditLog/OutboxEvent (R-121).
+- Acceptance latency Feature 004 chạy 100 chu kỳ command + today-read trên
+  PostgreSQL với 50 user, đúng 76 Location và actor có 20 session cùng ngày; ít
+  nhất 95 chu kỳ không quá 2 giây; đây là acceptance trước phát hành có evidence,
+  **không phải cổng CI** hay wall-clock assertion trong test suite. Usability dùng ít nhất 20 HELPDESK đại diện,
+  ít nhất 19 người hoàn thành cả punch không mơ hồ và bước chọn Location mà không
+  cần trợ giúp; evidence không lưu GPS (R-124).
 - `recorded_at` ở ranh giới ngày UTC phải cho đúng `work_date` Asia/Ho_Chi_Minh;
   thay đổi `captured_at` không làm đổi late/early/work_date.
 - Phiên mở lúc gần nửa đêm không kéo sang `work_date` hôm sau: `work_date` của

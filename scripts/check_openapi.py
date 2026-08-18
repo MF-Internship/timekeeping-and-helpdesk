@@ -32,6 +32,15 @@ _ALLOWED_PROTECTED_SCHEMA_PATHS = frozenset(
         "$.components.schemas.LocationUpdate.properties.longitude",
         "$.components.schemas.PatchedLocationUpdate.properties.latitude",
         "$.components.schemas.PatchedLocationUpdate.properties.longitude",
+        # Attendance coordinates are approved request/response field names;
+        # values and examples remain forbidden by the recursive string check.
+        "$.components.schemas.AttendanceCommand.properties.latitude",
+        "$.components.schemas.AttendanceCommand.properties.longitude",
+        "$.components.schemas.AttendancePunch.properties.captured_latitude",
+        "$.components.schemas.AttendancePunch.properties.captured_longitude",
+        "$.components.schemas.IndexedAttendancePunch.properties.captured_latitude",
+        "$.components.schemas.IndexedAttendancePunch.properties.captured_longitude",
+        "$.components.schemas.AttendanceCommandResult.properties.session",
     }
 )
 

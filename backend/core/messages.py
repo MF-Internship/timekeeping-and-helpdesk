@@ -10,4 +10,10 @@ ERROR_MESSAGES = {
     "LOCATION_VERSION_CONFLICT": "Dữ liệu địa điểm đã được thay đổi.",
     "THROTTLED": "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.",
     "SERVICE_UNAVAILABLE": "Dịch vụ tạm thời không khả dụng. Vui lòng thử lại sau.",
+    "WEAK_GPS": "Độ chính xác GPS không đạt yêu cầu chấm công.",
+    "OUTSIDE_RADIUS": "Vị trí nằm ngoài mọi địa điểm được phép.",
+    "LOCATION_CHOICE_REQUIRED": "Vui lòng chọn địa điểm chấm công.",
+    "INVALID_LOCATION_CHOICE": "Địa điểm đã chọn không còn hợp lệ.",
+    "NO_OPEN_SESSION": "Không có phiên chấm công đang mở.",
+    "SESSION_ALREADY_OPEN": "Đã có một phiên chấm công đang mở.",
 }
