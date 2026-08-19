@@ -344,6 +344,17 @@ Nếu browser chưa cấp quyền, client chỉ gọi xin quyền sau thao tác 
 trí”. Fix dùng để submit vẫn phải là fix mới, `maximumAge = 0`, và qua kiểm tra
 độ tươi phía server.
 
+Ngoài sai số, client được phép hiển thị các **giá trị dẫn xuất tính hoàn toàn trên
+thiết bị** từ vị trí đang đọc và danh mục `Location` đã được ủy quyền: khoảng cách
+tới từng Location, trạng thái trong/ngoài geofence **biểu kiến**, và khoảng cách
+còn lại tới biên. Đây là mối quan tâm **trình bày tại thời điểm đọc**, không phải
+kết quả nghiệp vụ. Ràng buộc: không lưu, không gửi tọa độ sống lên backend, không
+gọi dịch vụ bên ngoài, không dựng link bản đồ ngoài từ vị trí sống, không được
+dùng để cho phép hay chặn một lượt bấm, và **không** thay đổi quy tắc chấp nhận
+chuẩn `distance_m <= radius_m` ở bước 5–10 — chỉ server mới có thẩm quyền quyết
+định chấp nhận. Sai lệch giữa giá trị hiển thị trên thiết bị và kết quả server là
+kết cục dự kiến; kết quả server luôn thắng.
+
 **Mọi request chấm công đã vào tới bước 3 và kết thúc bằng một outcome nghiệp vụ
 đóng đều ghi đúng một `AttendanceAttempt`, kể cả request thành công** — xem §5.2.
 Request thành công ghi `outcome = ACCEPTED`; các lần từ chối ở bước 3, 4, 5, 8

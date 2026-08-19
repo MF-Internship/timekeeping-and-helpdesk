@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { AsyncState } from "@/shared/ui/async-state";
+import { AsyncState, EmptyState, ErrorState, LoadingState } from "@/shared/ui/async-state";
 
 describe("AsyncState", () => {
   it("renders loading and empty as distinct status states", () => {
@@ -37,6 +37,17 @@ describe("AsyncState", () => {
     expect(screen.queryByRole("button")).toBeNull();
     rerender(<AsyncState state={{ kind: "network" }} onRetry={retry} />);
     fireEvent.click(screen.getByRole("button"));
+    expect(retry).toHaveBeenCalledOnce();
+  });
+
+  it("offers reusable loading, empty, and recoverable error compositions", () => {
+    const retry = vi.fn();
+    const { rerender } = render(<LoadingState message="Đang chuẩn bị" />);
+    expect(screen.getByRole("status")).toHaveAttribute("aria-busy", "true");
+    rerender(<EmptyState message="Không có địa điểm" />);
+    expect(screen.getByRole("status")).toHaveTextContent("Không có địa điểm");
+    rerender(<ErrorState message="Không tải được" onRetry={retry} />);
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
     expect(retry).toHaveBeenCalledOnce();
   });
 });

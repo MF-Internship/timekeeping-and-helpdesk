@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TodayAttendance } from "@/features/attendance/api/attendance-api";
 import { AttendancePanel } from "@/features/attendance/ui/AttendancePanel";
 
+import { directoryRow, mockGeolocation, mockReference } from "../guidance/panel-harness";
+
 const mocks = vi.hoisted(() => ({
   getToday: vi.fn(),
   checkIn: vi.fn(),
@@ -24,6 +26,38 @@ vi.mock("@/features/attendance/model/use-foreground-position", () => ({
 vi.mock("@/features/identity/model/AuthProvider", () => ({
   useAuth: () => ({ hasCapability: mocks.hasCapability }),
 }));
+vi.mock("@/features/locations/api/location-api", () => ({
+  listLocations: vi.fn(),
+  getConfig: vi.fn(),
+}));
+
+const INSIDE_ONE = "Bạn đang ở trong vùng của đúng một địa điểm đã đăng ký.";
+const OUTSIDE_ALL = "Bạn đang ở ngoài vùng của mọi địa điểm gần đây.";
+const AUTHORITATIVE = "Đây là kết quả chính thức từ máy chủ.";
+
+/** Far enough north of the guidance position to sit outside a 50 m radius. */
+const DISTANT_M = 500;
+
+/**
+ * The sample the punch acquires when the button is pressed. Every field differs
+ * from what the guidance provider reports, so a payload built from the preview
+ * would be visibly wrong rather than coincidentally right (SC-008).
+ */
+const PRESS_SAMPLE = {
+  latitude: "20.500000000000000",
+  longitude: "116.500000000000000",
+  accuracy_m: "7.000",
+  captured_at: "2026-08-19T09:00:00Z",
+};
+
+function canonical(errorCode: string, details: Record<string, unknown> = {}) {
+  return { kind: "canonical" as const, errorCode, message: "", details, requestId: "req-1" };
+}
+
+/** Mounts the screen and opens the preview, which never runs on its own. */
+async function showPreview() {
+  fireEvent.click(screen.getByRole("button", { name: "Xem vị trí" }));
+}
 
 const punch = {
   id: 1,
@@ -88,6 +122,7 @@ describe("AttendancePanel", () => {
     fireEvent.click(button);
     await waitFor(() => expect(mocks.checkIn).toHaveBeenCalledOnce());
     await waitFor(() => expect(mocks.getToday).toHaveBeenCalledTimes(2));
+    expect(screen.getByText("Check In thành công")).toBeInTheDocument();
     expect(screen.getByText("Tổng thời gian: 30.000000 phút")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Phiên làm việc (1)" })).toBeInTheDocument();
     expect(screen.getByText(/Location 1.*Location 2.*30.000000 phút/)).toBeInTheDocument();
@@ -131,6 +166,92 @@ describe("AttendancePanel", () => {
     render(<AttendancePanel />);
     expect(await screen.findByText(/Đang mở/)).toBeInTheDocument();
     expect(mocks.acquire).not.toHaveBeenCalled();
+  });
+
+  /**
+   * The gate verified by T075: it is the one that already existed, unchanged.
+   * An actor who may not punch still reads the whole preview, because guidance
+   * is a reading and not an action (FR-037a, FR-040).
+   */
+  it("guidance stays fully visible to an actor without the punch capability", async () => {
+    mocks.hasCapability.mockReturnValue(false);
+    mockReference([directoryRow("A", 0)]);
+    mockGeolocation();
+    render(<AttendancePanel />);
+    await screen.findByText("Tổng thời gian: 30.000000 phút");
+    expect(screen.queryByRole("button", { name: /Check/ })).not.toBeInTheDocument();
+
+    await showPreview();
+
+    expect(await screen.findByText(INSIDE_ONE)).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Vị trí thiết bị" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Địa điểm gần bạn" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Địa điểm đang xem" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Check/ })).not.toBeInTheDocument();
+  });
+
+  /** Scenario M — the preview said inside, the server says otherwise (FR-041). */
+  it("presents a server OUTSIDE_RADIUS rejection as the authoritative outcome", async () => {
+    mockReference([directoryRow("A", 0)]);
+    mockGeolocation();
+    mocks.checkIn.mockRejectedValue(canonical("OUTSIDE_RADIUS"));
+    render(<AttendancePanel />);
+    const button = await screen.findByRole("button", { name: "Check In" });
+    await showPreview();
+    expect(await screen.findByText(INSIDE_ONE)).toBeInTheDocument();
+
+    fireEvent.click(button);
+
+    const outcome = await screen.findByRole("alert");
+    expect(outcome).toHaveTextContent(
+      "Máy chủ từ chối: vị trí đọc được lúc chấm công nằm ngoài bán kính của địa điểm.",
+    );
+    expect(outcome).toHaveTextContent(AUTHORITATIVE);
+    expect(mocks.acquire).toHaveBeenCalledOnce();
+    expect(screen.getByText(INSIDE_ONE)).toBeInTheDocument();
+  });
+
+  /** Scenario N — the preview said outside and still gated nothing (FR-040). */
+  it("accepts a punch after an outside preview, which never blocked the control", async () => {
+    mockReference([directoryRow("A", DISTANT_M)]);
+    mockGeolocation();
+    mocks.checkIn.mockResolvedValue(punch);
+    render(<AttendancePanel />);
+    const button = await screen.findByRole("button", { name: "Check In" });
+    await showPreview();
+    expect(await screen.findByText(OUTSIDE_ALL)).toBeInTheDocument();
+    expect(button).toBeEnabled();
+
+    fireEvent.click(button);
+
+    await waitFor(() => expect(mocks.checkIn).toHaveBeenCalledOnce());
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByText(OUTSIDE_ALL)).toBeInTheDocument();
+  });
+
+  /** The punch reads the device again at press time; the preview is not a source. */
+  it("punches with the sample acquired at press time, never the guidance snapshot", async () => {
+    mockReference([directoryRow("A", 0)]);
+    mockGeolocation();
+    mocks.checkIn.mockResolvedValue(punch);
+    mocks.acquire.mockResolvedValue(PRESS_SAMPLE);
+    render(<AttendancePanel />);
+    const button = await screen.findByRole("button", { name: "Check In" });
+    await showPreview();
+    expect(await screen.findByText(INSIDE_ONE)).toBeInTheDocument();
+    expect(mocks.acquire).not.toHaveBeenCalled();
+
+    fireEvent.click(button);
+
+    await waitFor(() => expect(mocks.checkIn).toHaveBeenCalledOnce());
+    const payload = mocks.checkIn.mock.calls[0][0] as Record<string, unknown>;
+    expect(payload).toEqual(PRESS_SAMPLE);
+    expect(Object.keys(payload).sort()).toEqual([
+      "accuracy_m",
+      "captured_at",
+      "latitude",
+      "longitude",
+    ]);
   });
 
   it("renders a canonical load failure", async () => {

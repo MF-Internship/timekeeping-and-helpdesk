@@ -1,0 +1,216 @@
+{
+  "earth_radius_m": 6371008.8,
+  "tolerance_m": 0.001,
+  "cases": [
+    {
+      "id": "identical-point",
+      "description": "identical coordinates yield exactly zero distance",
+      "origin": {
+        "latitude": "10.785850000000000",
+        "longitude": "106.692600000000000"
+      },
+      "destination": {
+        "latitude": "10.785850000000000",
+        "longitude": "106.692600000000000"
+      },
+      "expected_distance_m": 0.0,
+      "radius_m": "100.000",
+      "expected_status": "INSIDE_GEOFENCE"
+    },
+    {
+      "id": "distance-equals-radius",
+      "description": "distance equal to the radius is inclusive: INSIDE at the boundary",
+      "origin": {
+        "latitude": "10.762622000000000",
+        "longitude": "106.660172000000000"
+      },
+      "destination": {
+        "latitude": "10.763071660181861",
+        "longitude": "106.660172000000000"
+      },
+      "expected_distance_m": 50.0,
+      "radius_m": "50.000",
+      "expected_status": "INSIDE_GEOFENCE"
+    },
+    {
+      "id": "one-millimetre-outside",
+      "description": "one millimetre beyond the radius classifies OUTSIDE",
+      "origin": {
+        "latitude": "10.762622000000000",
+        "longitude": "106.660172000000000"
+      },
+      "destination": {
+        "latitude": "10.763071669175066",
+        "longitude": "106.660172000000000"
+      },
+      "expected_distance_m": 50.001,
+      "radius_m": "50.000",
+      "expected_status": "OUTSIDE_GEOFENCE"
+    },
+    {
+      "id": "coincident-pair-hcm000079-hcm010005",
+      "description": "seeded coincident pair (CHOT S3): two distinct Locations at identical coordinates",
+      "origin": {
+        "latitude": "10.785850000000000",
+        "longitude": "106.692600000000000"
+      },
+      "destination": {
+        "latitude": "10.785850000000000",
+        "longitude": "106.692600000000000"
+      },
+      "expected_distance_m": 0.0,
+      "radius_m": "50.000",
+      "expected_status": "INSIDE_GEOFENCE"
+    },
+    {
+      "id": "overlapping-pair-hcm010005-hcm000079-reversed",
+      "description": "same seeded coincident pair evaluated in the reverse direction",
+      "origin": {
+        "latitude": "10.785850000000000",
+        "longitude": "106.692600000000000"
+      },
+      "destination": {
+        "latitude": "10.785850000000000",
+        "longitude": "106.692600000000000"
+      },
+      "expected_distance_m": 0.0,
+      "radius_m": "50.000",
+      "expected_status": "INSIDE_GEOFENCE"
+    },
+    {
+      "id": "overlapping-pair-hcm030015-hcm030000",
+      "description": "seeded overlapping pair (CHOT S3): centres about 4.8 m apart",
+      "origin": {
+        "latitude": "10.740680000000000",
+        "longitude": "106.698020000000000"
+      },
+      "destination": {
+        "latitude": "10.740723000000000",
+        "longitude": "106.698024000000000"
+      },
+      "expected_distance_m": 4.801316,
+      "radius_m": "50.000",
+      "expected_status": "INSIDE_GEOFENCE"
+    },
+    {
+      "id": "overlapping-pair-hcm010018-hcm010000",
+      "description": "seeded overlapping pair (CHOT S3): centres about 47.1 m apart",
+      "origin": {
+        "latitude": "10.769700000000000",
+        "longitude": "106.681650000000000"
+      },
+      "destination": {
+        "latitude": "10.770116582718295",
+        "longitude": "106.681572567516280"
+      },
+      "expected_distance_m": 47.087878,
+      "radius_m": "50.000",
+      "expected_status": "INSIDE_GEOFENCE"
+    },
+    {
+      "id": "short-range-50m",
+      "description": "short range, about 50 m, well inside a 100 m radius",
+      "origin": {
+        "latitude": "10.762622000000000",
+        "longitude": "106.660172000000000"
+      },
+      "destination": {
+        "latitude": "10.763071660181863",
+        "longitude": "106.660172000000000"
+      },
+      "expected_distance_m": 50.0,
+      "radius_m": "100.000",
+      "expected_status": "INSIDE_GEOFENCE"
+    },
+    {
+      "id": "mid-range-5km",
+      "description": "medium range, about 5 km",
+      "origin": {
+        "latitude": "10.762622000000000",
+        "longitude": "106.660172000000000"
+      },
+      "destination": {
+        "latitude": "10.807588018186227",
+        "longitude": "106.660172000000000"
+      },
+      "expected_distance_m": 5000.0,
+      "radius_m": "100.000",
+      "expected_status": "OUTSIDE_GEOFENCE"
+    },
+    {
+      "id": "long-range-1000km",
+      "description": "long range, about 1000 km",
+      "origin": {
+        "latitude": "10.762622000000000",
+        "longitude": "106.660172000000000"
+      },
+      "destination": {
+        "latitude": "19.755825637245380",
+        "longitude": "106.660172000000000"
+      },
+      "expected_distance_m": 1000000.0,
+      "radius_m": "100.000",
+      "expected_status": "OUTSIDE_GEOFENCE"
+    },
+    {
+      "id": "across-the-equator",
+      "description": "a pair straddling the equator, one degree apart in latitude",
+      "origin": {
+        "latitude": "-0.500000000000000",
+        "longitude": "10.000000000000000"
+      },
+      "destination": {
+        "latitude": "0.500000000000000",
+        "longitude": "10.000000000000000"
+      },
+      "expected_distance_m": 111195.080234,
+      "radius_m": "100.000",
+      "expected_status": "OUTSIDE_GEOFENCE"
+    },
+    {
+      "id": "across-the-antimeridian",
+      "description": "a pair straddling the antimeridian; longitude wrap must not inflate the distance",
+      "origin": {
+        "latitude": "10.000000000000000",
+        "longitude": "179.999000000000000"
+      },
+      "destination": {
+        "latitude": "10.000000000000000",
+        "longitude": "-179.999000000000000"
+      },
+      "expected_distance_m": 219.011554,
+      "radius_m": "100.000",
+      "expected_status": "OUTSIDE_GEOFENCE"
+    },
+    {
+      "id": "near-antipodal",
+      "description": "near-antipodal pair; the asin argument must be clamped to 1",
+      "origin": {
+        "latitude": "10.762622000000000",
+        "longitude": "106.660172000000000"
+      },
+      "destination": {
+        "latitude": "-10.762622000000000",
+        "longitude": "-73.339828000000000"
+      },
+      "expected_distance_m": 20015114.252165,
+      "radius_m": "100.000",
+      "expected_status": "OUTSIDE_GEOFENCE"
+    },
+    {
+      "id": "high-latitude-60n",
+      "description": "about 60 degrees north; longitude degrees shrink by cos(latitude)",
+      "origin": {
+        "latitude": "60.000000000000000",
+        "longitude": "10.000000000000000"
+      },
+      "destination": {
+        "latitude": "60.000000000000000",
+        "longitude": "10.001000000000000"
+      },
+      "expected_distance_m": 55.59754,
+      "radius_m": "100.000",
+      "expected_status": "INSIDE_GEOFENCE"
+    }
+  ]
+}
