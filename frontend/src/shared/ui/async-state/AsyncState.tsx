@@ -1,4 +1,6 @@
 import { UI_MESSAGES } from "@/shared/messages";
+import { Button } from "@/shared/ui/button";
+import { Card } from "@/shared/ui/card";
 
 export type AsyncStateValue =
   | { kind: "loading" }
@@ -17,9 +19,30 @@ export interface AsyncStateProps {
   onRetry?: () => void;
 }
 
+export function LoadingState({ message = UI_MESSAGES.loading }: { message?: string }) {
+  return (
+    <p role="status" aria-live="polite" aria-busy="true">
+      {message}
+    </p>
+  );
+}
+
+export function EmptyState({ message = UI_MESSAGES.empty }: { message?: string }) {
+  return <p role="status">{message}</p>;
+}
+
+export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  return (
+    <Card role="alert">
+      <p>{message}</p>
+      {onRetry && <Button onClick={onRetry}>{UI_MESSAGES.retry}</Button>}
+    </Card>
+  );
+}
+
 export function AsyncState({ state, onRetry }: AsyncStateProps) {
-  if (state.kind === "loading") return <p role="status">{UI_MESSAGES.loading}</p>;
-  if (state.kind === "empty") return <p role="status">{UI_MESSAGES.empty}</p>;
+  if (state.kind === "loading") return <LoadingState />;
+  if (state.kind === "empty") return <EmptyState />;
 
   const message = failureMessage(state);
   return (
@@ -33,7 +56,7 @@ export function AsyncState({ state, onRetry }: AsyncStateProps) {
           <p>Mã hỗ trợ: {state.requestId}</p>
         </>
       ) : null}
-      {onRetry ? <button onClick={onRetry}>{UI_MESSAGES.retry}</button> : null}
+      {onRetry ? <Button onClick={onRetry}>{UI_MESSAGES.retry}</Button> : null}
     </section>
   );
 }

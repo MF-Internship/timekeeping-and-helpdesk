@@ -1,0 +1,29 @@
+.page {
+  display: grid;
+  gap: var(--space-4);
+  max-width: var(--primary-column-max);
+}
+.context {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+.context h2,
+.context p {
+  margin: 0;
+}
+.eyebrow {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+.primaryAction {
+  width: 100%;
+  min-height: 3.5rem;
+  font-size: 1.1rem;
+}
+@media (min-width: 64rem) {
+  .page {
+    max-width: 64rem;
+  }
+}

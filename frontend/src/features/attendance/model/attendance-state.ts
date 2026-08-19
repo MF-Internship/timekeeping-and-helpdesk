@@ -31,7 +31,8 @@ export async function freshCommand(
     : { ...sample, selected_location_id: selectedLocationId };
 }
 
-function isCanonicalFailure(value: unknown): value is CanonicalFailure {
+/** Shared with the failure wording so both read the same shape (T077). */
+export function isCanonicalFailure(value: unknown): value is CanonicalFailure {
   return (
     typeof value === "object" &&
     value !== null &&

@@ -1,0 +1,25 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  border-radius: 999px;
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+.neutral {
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+}
+.ready {
+  background: var(--color-success-surface);
+  color: var(--color-success);
+}
+.warning {
+  background: var(--color-warning-surface);
+  color: var(--color-warning);
+}
+.critical {
+  background: var(--color-critical-surface);
+  color: var(--color-critical);
+}

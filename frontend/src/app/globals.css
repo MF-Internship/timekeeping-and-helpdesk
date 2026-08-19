@@ -1,12 +1,14 @@
+@import "../shared/ui/theme/tokens.css";
+
 :root {
-  color-scheme: light;
-  font-family: system-ui, sans-serif;
-  background: #f5f7fb;
-  color: #172033;
+  font-family: var(--font-body);
+  background: var(--color-canvas);
+  color: var(--color-text-primary);
 }
 
 body {
   margin: 0;
+  background: var(--color-canvas);
 }
 
 main {
@@ -24,13 +26,21 @@ select,
 textarea,
 button {
   box-sizing: border-box;
-  min-height: 2.5rem;
+  min-height: var(--touch-target);
   padding: 0.55rem 0.7rem;
   font: inherit;
 }
 
 button {
   cursor: pointer;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+summary:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
 }
 textarea {
   min-height: 5rem;
@@ -46,9 +56,9 @@ textarea {
 .summary-card {
   margin: 1.5rem 0;
   padding: 1.25rem;
-  border: 1px solid #cbd3e1;
-  border-radius: 0.75rem;
-  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
 }
 .record-list {
   display: grid;
@@ -62,9 +72,9 @@ textarea {
   justify-content: space-between;
   gap: 1rem;
   padding: 1rem;
-  border: 1px solid #d8deea;
-  border-radius: 0.5rem;
-  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
 }
 .actions {
   display: flex;
@@ -86,5 +96,16 @@ textarea {
 }
 small[role="alert"],
 p[role="alert"] {
-  color: #9b1c1c;
+  color: var(--color-critical);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

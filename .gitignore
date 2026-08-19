@@ -23,5 +23,7 @@ node_modules/
 *.tsbuildinfo
 build/
 coverage/
+playwright-report/
+test-results/
 *.log
 *.identities

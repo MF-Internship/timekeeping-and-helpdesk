@@ -13,6 +13,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install chromium",
     "api:generate": "node scripts/generate-api.mjs --write",
     "api:check": "node scripts/generate-api.mjs --check"
   },
@@ -23,7 +25,9 @@
     "react-dom": "19.1.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/eslintrc": "3.3.1",
+    "@playwright/test": "^1.62.1",
     "@testing-library/jest-dom": "6.8.0",
     "@testing-library/react": "16.3.0",
     "@types/node": "22.17.2",
