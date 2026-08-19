@@ -612,6 +612,43 @@ bảo đảm job không bao giờ đóng nhầm phiên đang mở hợp lệ c�
 thừa vào ngày nghỉ là vô hại. Đổi lại, `MISSING_CHECK_OUT` có thể xuất hiện vào
 ngày không làm việc — đúng bản chất: người đó có bấm Check In thật.
 
+**Transaction và retry của job (chốt, R-127).** Mỗi phiên đủ điều kiện là một
+đơn vị transaction riêng: job khóa lại phiên, xác nhận nó vẫn thỏa định nghĩa
+phiên mở canonical, rồi đặt `closed_by_job = True` và tạo đúng một
+`AttendanceAnomaly(MISSING_CHECK_OUT)` trong cùng transaction. Lỗi ở một phiên
+rollback cả hai thay đổi của riêng phiên đó nhưng không rollback các phiên đã
+commit; job tiếp tục các phiên còn lại khi có thể và `JobRun` phải phản ánh đúng
+số đã commit cùng việc có ít nhất một lỗi. Chạy lại chỉ thấy các phiên vẫn mở,
+nên hoàn tất phần còn lại mà không đóng lại phiên cũ hoặc tạo anomaly trùng.
+Không dùng một transaction cho toàn bộ lần chạy và không commit theo batch.
+
+**`JobRun` của reconciliation (chốt, R-128).** `job_name` canonical là
+`MISSING_CHECK_OUT`; mỗi invocation commit một dòng `RUNNING` trước khi quét.
+`status` là enum đóng đúng bốn giá trị: `RUNNING`,
+`SUCCEEDED`, `PARTIAL_FAILED`, `FAILED`; chỉ `RUNNING` có `finished_at = NULL`.
+Không có lỗi thì `SUCCEEDED`, kể cả không có phiên đủ điều kiện. Có cả phiên đã
+commit và lỗi thì `PARTIAL_FAILED`; có lỗi nhưng không phiên nào commit, hoặc run
+abort trước khi hoàn tất scan, thì `FAILED`. Hai trạng thái lỗi bắt buộc có
+`error_code` máy đọc được đã làm sạch; `RUNNING`/`SUCCEEDED` không có error code.
+Error code là tập đóng đúng hai giá trị: `SESSION_PROCESSING_FAILED` khi một hay
+nhiều phiên lỗi và `RUN_ABORTED` khi invocation không hoàn tất scan.
+`scanned_count` đếm phiên invocation đã khóa và re-check, `changed_count` chỉ
+đếm phiên mới commit `closed_by_job = True`, `anomaly_count` chỉ đếm anomaly mới
+commit; `changed_count` luôn bằng `anomaly_count`. Process chết giữ dòng
+`RUNNING` cùng các count đã commit để health phát hiện stale. `JobRun` chính là
+dòng nhịp tim PostgreSQL cụ thể của job này theo §9.6, không tạo thêm model
+heartbeat song song. Migration tạo bảng mới không backfill lần chạy lịch sử.
+
+**Cutoff, stale và lịch gọi job (chốt, R-131/R-133).** Một run chỉ được xem là
+success đúng hạn khi `finished_at < 01:00:00` Asia/Ho_Chi_Minh của ngày hiện tại;
+đúng `01:00:00` đã là trễ và dùng luật at/after-cutoff. Trước cutoff, RUNNING bắt
+đầu từ 00:00 của ngày hiện tại là hợp lệ; RUNNING bắt đầu trước mốc đó là stale và
+alert ngay. Từ đúng cutoff trở đi, mọi RUNNING chưa terminal đều alert. Scheduler
+triển khai hiện hữu gọi management command đúng một lần mỗi ngày lúc `00:15`
+Asia/Ho_Chi_Minh (`15 0 * * *` với timezone tường minh), kể cả cuối tuần/ngày lễ.
+Repository phải có `deploy/scheduled-jobs.yaml` phi bí mật và kiểm tra binding môi
+trường/scheduler identity; không thêm Celery, broker hay timer trong web process.
+
 MVP không tạo `MISSING_CHECK_IN` vì không có bản ghi Attendance để gắn anomaly;
 báo cáo “chưa Check In” dùng lịch ca/user.
 
@@ -959,6 +996,10 @@ Ghi chú model:
   làm hỏng bất biến. Cờ này vừa phân biệt phiên do người dùng bấm Check Out với
   phiên bị job cuối ngày đóng, vừa là vế thứ hai của định nghĩa “phiên đang mở”;
   báo cáo dùng cờ này thay vì đoán từ `check_out IS NULL`.
+- `JobRun.status` dùng đúng bốn giá trị ở R-128. Các count không âm;
+  `changed_count = anomaly_count <= scanned_count`. Chỉ `RUNNING` thiếu
+  `finished_at`; `RUNNING`/`SUCCEEDED` không có `error_code`, còn
+  `PARTIAL_FAILED` và `FAILED` bắt buộc có một trong hai mã lỗi đóng ở R-128.
 - `TaskUpdate.location_candidates` là mảng id `Location` (`ArrayField`/`JSONField`),
   mặc định `[]`, **không nullable**. Ghi một lần tại thời điểm tạo bản ghi và
   không tính lại khi đọc (§6.2). Mảng rỗng đi cùng `GPS_ONLY` khi không đối chiếu
@@ -1035,6 +1076,7 @@ trong view/service. Client chỉ ẩn/hiện UI, không thay thế backend autho
 | `report.view.self` | - | - | ✅ |
 | `report.view.all`, `report.export`, `photo.view.all` | ✅ | ✅ | - |
 | `photo.view.self` | - | - | ✅ |
+| `operations.job_health.view` | ✅ | ✅ | - |
 
 **`config.view` và `holiday.manage` (chốt, R-83).** Hai action này được tách ra
 để mọi endpoint ở §10 đều có đúng một action canonical, không còn endpoint nào
@@ -1046,6 +1088,19 @@ cảnh báo GPS yếu, biết `shift_start`/`shift_end` mới tô được giờ
 nhau**, kiểm theo method. `holiday.manage` gộp cả đọc lẫn ghi lịch nghỉ và chỉ
 `MANAGER` có, vì danh sách ngày nghỉ chỉ dùng ở màn cấu hình chứ không dùng để
 dựng UI của Helpdesk (§5.3: job cuối ngày **không** đọc `Holiday`, R-82).
+
+**Job health (chốt, R-130).** `operations.job_health.view` là action đọc global
+aggregate, cấp trực tiếp cho `LEADER` và `MANAGER`, không cấp `HELPDESK` và không
+nằm trong `PERMISSION_IMPLIES`. Nó không có object scope theo user vì response
+không trả danh sách phiên hay người dùng. Response vẫn được shape theo role:
+LEADER không nhận account/AuditLog deep-link; MANAGER chỉ nhận link điều tra mà
+endpoint đích vẫn phải kiểm quyền độc lập.
+
+Việc shape response theo role thuộc duy nhất module Identity (R-132). Sau khi
+authorize action, Identity trả enum đóng `JobHealthAccessScope.INVESTIGATE` cho
+MANAGER hoặc `JobHealthAccessScope.ESCALATE_ONLY` cho LEADER; HELPDESK bị từ chối
+trước khi có scope. Operations và adapter composition chỉ tiêu thụ scope này,
+không đọc hoặc so sánh `Role`.
 
 Một `*.all` chỉ bao hàm `*.self` tương ứng **khi cặp đó có trong
 `PERMISSION_IMPLIES` ở §8.1**; ngoài map đó không có kế thừa ngầm nào. Vì vậy
@@ -1289,6 +1344,23 @@ Attendance, Task và TaskUpdate.
   hạn hiện tại và cờ vi phạm bất biến closed/anomaly. MANAGER thấy link tới điều
   tra vận hành được phép; LEADER chỉ thấy trạng thái read-only và hành động chuyển
   thông tin cho MANAGER, không thấy account/AuditLog.
+- Cutoff hoàn tất daily reconciliation là **01:00 Asia/Ho_Chi_Minh** (R-129,
+  R-131), theo ranh giới loại trừ: chỉ `finished_at < 01:00:00` là đúng hạn,
+  đúng `01:00:00` đã là trễ.
+  Health dùng đúng `ok`/`alert`/`unknown` và precedence của §9.6. Chưa từng có
+  `JobRun` là `unknown`. Sau cutoff, thiếu một `SUCCEEDED` của ngày hiện tại,
+  `RUNNING` chưa kết thúc, latest terminal `PARTIAL_FAILED`/`FAILED`, còn phiên
+  mở quá hạn, count mismatch hoặc quan hệ job-closed/`MISSING_CHECK_OUT` sai đều
+  là `alert`; chỉ success đúng hạn và không còn lỗi/bất biến mới là `ok`. Trước
+  cutoff, overdue-open vẫn hiển thị nhưng riêng nó chưa nâng thành alert; RUNNING
+  từ trước 00:00 ngày hiện tại là stale, lỗi và invariant đều alert ngay. Từ đúng
+  cutoff, mọi RUNNING chưa terminal alert. Read model trả latest run, latest successful run,
+  cutoff, counts, overdue-open, reason flags và `refreshed_at`.
+- `JobRun` cùng `AttendanceSession` và `AttendanceAnomaly` là bằng chứng canonical
+  của auto-close. Job không có actor người dùng nên không tạo AuditLog hoặc
+  OutboxEvent theo từng phiên; đọc health cũng không tạo AuditLog/OutboxEvent.
+  Response health không chứa GPS, danh sách user, raw exception hay secret và
+  phải là private/no-store (R-130).
 
 ### 9.1 Lưu ảnh S3 / R2
 
@@ -2068,9 +2140,10 @@ không cần GPS, bắt `completion_note`; task đã hoàn thành trả
 
 `GET /api/notifications/`, `PATCH /api/notifications/{id}/read`, `POST
 /api/push-subscriptions/` và `DELETE /api/push-subscriptions/{id}/` chỉ thao tác
-trên `request.user`; không nhận `user_id`. `GET /api/operations/job-health`
-cho MANAGER/LEADER đọc health model §9; response LEADER không chứa account/AuditLog
-link. Không có endpoint rerun/repair job trong MVP.
+trên `request.user`; không nhận `user_id`. `GET /api/v1/operations/job-health` yêu
+cầu `operations.job_health.view`, cho MANAGER/LEADER đọc health model §9;
+response LEADER không chứa account/AuditLog link. HELPDESK nhận `403
+PERMISSION_DENIED`. Không có endpoint rerun/repair job trong MVP.
 
 Ba endpoint xác thực theo §9.2.1: `POST /api/v1/auth/login` nhận `username` +
 `password`, trả JSON chỉ có `access` và trạng thái account/role; refresh token
@@ -2409,7 +2482,16 @@ trả `404`, và không có giao diện HTML kiểu Swagger/ReDoc.
   thành không nhận event “người khác hoàn thành”; Check Out hủy reminder còn mở;
   logout/khóa account vô hiệu hóa push subscription; deep-link kiểm lại RBAC.
 - Job-health response đối chiếu `scanned/closed/anomaly`, phát hiện invariant
-  mismatch và stale run; LEADER không nhận account/AuditLog link.
+  mismatch và stale run; cutoff equality là late; trước cutoff chỉ prior-day
+  RUNNING là stale, từ cutoff mọi RUNNING chưa terminal alert. Identity trả typed
+  access scope và LEADER không nhận account/AuditLog link.
+- Deployment test kiểm `deploy/scheduled-jobs.yaml` có đúng `15 0 * * *`, timezone
+  Asia/Ho_Chi_Minh, management command canonical, một binding/môi trường và enabled
+  ở staging/production; lịch không có nhánh bỏ weekend/Holiday (R-133).
+- Usability job-health trước release dùng ít nhất 10 MANAGER/LEADER đại diện;
+  100% xác định đúng state và một reason active khi có trong dưới 30 giây; với
+  `ok` không có reason active phải xác định đúng là không có cảnh báo. Evidence chỉ
+  giữ số liệu/role tổng hợp, timing và pass/fail, không username/GPS (R-134).
 - `PATCH Location` với version cũ trả conflict; overlap được tính lại trong
   transaction lưu và AuditLog giữ before/after/reason.
 - `PATCH Location` current-version và `PATCH Config` có field nhưng candidate

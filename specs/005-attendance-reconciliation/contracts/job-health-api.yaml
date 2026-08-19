@@ -1,0 +1,169 @@
+openapi: 3.0.3
+info:
+  title: Attendance Reconciliation Job Health Design Contract
+  version: 0.1.0
+  description: >-
+    Phase 1 design contract for Feature 005. The implementation source of truth
+    remains the generated contracts/openapi.yaml.
+paths:
+  /api/v1/operations/job-health:
+    get:
+      operationId: operations_job_health_retrieve
+      summary: Read MISSING_CHECK_OUT reconciliation health
+      description: >-
+        Global aggregate read for MANAGER and LEADER. It accepts no filters or
+        user id and never exposes individual sessions, users, GPS, or raw errors.
+        A success is timely only when finished_at is strictly before cutoff_at.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current reconciliation health and durable run evidence
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                enum: ["private, no-store"]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobHealth'
+        '400':
+          $ref: '#/components/responses/FoundationError'
+        '401':
+          $ref: '#/components/responses/FoundationError'
+        '403':
+          $ref: '#/components/responses/FoundationError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    FoundationError:
+      description: Canonical API error envelope
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/FoundationError'
+  schemas:
+    FoundationError:
+      type: object
+      additionalProperties: false
+      required: [error_code, message, details, request_id, error]
+      properties:
+        error_code: {type: string}
+        message: {type: string}
+        details: {type: object, additionalProperties: true}
+        request_id: {type: string, format: uuid}
+        error: {type: string}
+    JobRun:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - job_name
+        - started_at
+        - finished_at
+        - status
+        - scanned_count
+        - changed_count
+        - anomaly_count
+        - error_code
+      properties:
+        id: {type: integer, format: int64}
+        job_name: {type: string, enum: [MISSING_CHECK_OUT]}
+        started_at: {type: string, format: date-time}
+        finished_at: {type: string, format: date-time, nullable: true}
+        status:
+          type: string
+          enum: [RUNNING, SUCCEEDED, PARTIAL_FAILED, FAILED]
+        scanned_count: {type: integer, minimum: 0}
+        changed_count:
+          type: integer
+          minimum: 0
+          description: Sessions newly committed closed_by_job by this invocation; this is the displayed closed count.
+        anomaly_count: {type: integer, minimum: 0}
+        error_code:
+          type: string
+          nullable: true
+          enum: [SESSION_PROCESSING_FAILED, RUN_ABORTED]
+    JobHealthEvidenceCounts:
+      type: object
+      additionalProperties: false
+      required:
+        - job_closed_session_count
+        - missing_checkout_anomaly_count
+        - job_closed_without_anomaly_count
+        - anomaly_without_job_closed_count
+      properties:
+        job_closed_session_count: {type: integer, minimum: 0}
+        missing_checkout_anomaly_count: {type: integer, minimum: 0}
+        job_closed_without_anomaly_count: {type: integer, minimum: 0}
+        anomaly_without_job_closed_count: {type: integer, minimum: 0}
+    JobHealthReasonFlags:
+      type: object
+      additionalProperties: false
+      required:
+        - no_run_history
+        - missing_timely_success
+        - unfinished_run
+        - stale_running
+        - latest_terminal_failed
+        - run_count_mismatch
+        - persisted_evidence_mismatch
+        - overdue_open_sessions
+      properties:
+        no_run_history: {type: boolean}
+        missing_timely_success: {type: boolean}
+        unfinished_run: {type: boolean}
+        stale_running: {type: boolean}
+        latest_terminal_failed: {type: boolean}
+        run_count_mismatch: {type: boolean}
+        persisted_evidence_mismatch: {type: boolean}
+        overdue_open_sessions: {type: boolean}
+    JobHealthInvestigationLinks:
+      type: object
+      additionalProperties: false
+      properties:
+        accounts: {type: string, enum: [/api/v1/users/]}
+    JobHealth:
+      type: object
+      additionalProperties: false
+      required:
+        - state
+        - timezone
+        - cutoff_at
+        - refreshed_at
+        - latest_run
+        - latest_successful_run
+        - overdue_open_session_count
+        - evidence_counts
+        - invariant_valid
+        - reason_flags
+        - investigation_links
+        - escalation_guidance
+      properties:
+        state: {type: string, enum: [ok, alert, unknown]}
+        timezone: {type: string, enum: [Asia/Ho_Chi_Minh]}
+        cutoff_at: {type: string, format: date-time}
+        refreshed_at: {type: string, format: date-time}
+        latest_run:
+          allOf: [{$ref: '#/components/schemas/JobRun'}]
+          nullable: true
+        latest_successful_run:
+          allOf: [{$ref: '#/components/schemas/JobRun'}]
+          nullable: true
+        overdue_open_session_count: {type: integer, minimum: 0}
+        evidence_counts: {$ref: '#/components/schemas/JobHealthEvidenceCounts'}
+        invariant_valid: {type: boolean}
+        reason_flags: {$ref: '#/components/schemas/JobHealthReasonFlags'}
+        investigation_links:
+          allOf: [{$ref: '#/components/schemas/JobHealthInvestigationLinks'}]
+          nullable: true
+          description: Present only for Identity access scope INVESTIGATE; null for ESCALATE_ONLY.
+        escalation_guidance:
+          type: string
+          nullable: true
+          description: Fixed guidance for Identity access scope ESCALATE_ONLY; null for INVESTIGATE.

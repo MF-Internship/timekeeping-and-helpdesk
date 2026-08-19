@@ -284,6 +284,28 @@ Hai con số này khớp đúng cấu hình tooling ở §9 (`max-args = 4`, ESL
 - `AttendanceSession.duration_minutes` lấy hiệu server timestamp rồi lượng tử hóa
   đúng một lần tới 6 chữ số thập phân phút bằng `ROUND_HALF_UP`; mọi test duration
   phải pin cả ca có số microsecond không chia hết cho 60 giây.
+- Job `MISSING_CHECK_OUT` xử lý **mỗi phiên trong một transaction riêng**
+  (R-127): khóa lại dòng và re-check đủ điều kiện trước khi ghi
+  `closed_by_job = True` cùng đúng một anomaly trong cùng transaction. Lỗi một
+  phiên rollback riêng phiên đó, không rollback phiên đã commit; tiếp tục phiên
+  khác khi có thể. Cấm bọc toàn run trong một transaction và cấm commit theo
+  batch. Retry chỉ quét điều kiện phiên mở canonical; `JobRun` đếm state đã
+  commit, không đếm thay đổi đã rollback.
+- `JobRun` commit `RUNNING` trước scan và dùng đúng bốn status của R-128.
+  Terminalization phải giữ các shape: chỉ RUNNING thiếu `finished_at`; success
+  không error code; hai trạng thái lỗi chỉ nhận
+  `SESSION_PROCESSING_FAILED`/`RUN_ABORTED`. `job_name` luôn
+  `MISSING_CHECK_OUT`. Count chỉ tăng cho state tương ứng đã commit, giữ
+  `changed = anomaly <= scanned`. Process death không được rewrite RUNNING thành
+  success. Model này là heartbeat của job, không tạo bảng heartbeat song song.
+  Migration tạo bảng theo expand, không bịa/backfill lịch sử.
+- Một success chỉ đúng hạn khi `finished_at < 01:00:00` Asia/Ho_Chi_Minh; equality
+  là late. Trước cutoff chỉ RUNNING bắt đầu trước ngày local hiện tại là stale;
+  từ đúng cutoff mọi RUNNING chưa terminal đều alert (R-131).
+- Lịch gọi job là contract triển khai tại `deploy/scheduled-jobs.yaml`: `00:15`
+  Asia/Ho_Chi_Minh mỗi ngày, đúng một scheduler binding cho mỗi môi trường. Script
+  deployment check phải kiểm command/timezone/cron/enabled/singleton identity;
+  không thêm timer trong web process hoặc dependency scheduler mới (R-133).
 - Complete Task dùng compare-and-set/row lock; chỉ request thắng được tạo
   `TaskUpdate COMPLETED`.
 - Upload object storage không nằm trong DB transaction. Backend HEAD/kiểm
@@ -457,7 +479,16 @@ def require_permission(user: User, action: PermissionAction) -> None:
 - `LEADER` chỉ đọc: role map của Leader không được chứa bất kỳ action mutation
   nào, kể cả `task.create.assign` và `task.update.any`.
 - Mọi service/API public kiểm quyền trước khi đọc/ghi dữ liệu.
+- `GET /api/v1/operations/job-health` dùng action tập trung
+  `operations.job_health.view`: LEADER/MANAGER allow, HELPDESK deny. Đây là read
+  global aggregate không có object-scope user. Identity authorize trước rồi trả
+  enum đóng `JobHealthAccessScope.INVESTIGATE|ESCALATE_ONLY`; operations chỉ shape
+  từ scope và không import/so sánh `Role`; endpoint đích vẫn tự authorize. Response private/no-store,
+  không GPS/user list/raw exception/secret. Read và auto-close không tạo
+  AuditLog/OutboxEvent; JobRun/session/anomaly là bằng chứng canonical (R-130).
 - Không dùng `if user.role == Role.MANAGER` ngoài module phân quyền.
+- Architecture test phải chặn mọi import/so sánh `Role` phục vụ job-health ngoài
+  identity authorization; adapter composition chỉ chuyển typed scope (R-132).
 - Frontend chỉ dùng capability từ API để điều khiển UI; backend là nguồn thực thi.
 
 RBAC không phải ownership. `task.view.self`, `task.update.self` và
@@ -727,13 +758,17 @@ lời “anh được làm gì”; giữ hai tầng tách bạch.
 | Anomaly theo ngày | `LATE_CHECK_IN` chỉ ở lượt IN đầu, `EARLY_CHECK_OUT`/`LATE_CHECK_OUT` chỉ ở lượt OUT cuối; lượt giữa ngày không sinh anomaly; bấm thêm cặp IN/OUT gỡ anomaly ra ca cũ |
 | Vị trí mọi lượt | Lượt Check In thứ hai ngoài mọi bán kính vẫn bị `OUTSIDE_RADIUS` |
 | Missing Check Out | Job cuối ngày đóng phiên mở: `MISSING_CHECK_OUT`, `check_out`/`duration_minutes` giữ `NULL`, `closed_by_job = True`, không cộng vào tổng giờ; hôm sau Check In được |
+| Job lỗi giữa chừng | Ít nhất ba phiên đủ điều kiện, ép phiên giữa lỗi: phiên lỗi không đổi và không có anomaly; các phiên khác vẫn commit khi có thể; `JobRun` chỉ đếm phần đã commit; retry đóng đúng phần còn lại, không tạo anomaly trùng (R-127) |
+| Vòng đời JobRun | Zero-work → `SUCCEEDED` với ba count 0; mixed commit/error → `PARTIAL_FAILED`; error không commit phiên nào → `FAILED`; process death để `RUNNING`/`finished_at=NULL`; shape/error/count constraints chạy PostgreSQL thật (R-128) |
+| Race reconciliation | Hai invocation cùng chọn một phiên: đúng một bên job-close/tạo anomaly; bên kia re-check rồi không đổi. Check Out đua job: đúng một transition thắng; nếu job thắng thì Check Out thấy không còn phiên mở. Mọi test dùng hai connection/barrier PostgreSQL thật (R-127/R-128) |
 | Định nghĩa phiên mở | Sau job, `GET` trạng thái trả `has_open_session = false` và Check In hôm sau trả `201`, không dính partial unique index; điều kiện index trong migration có đủ `check_out IS NULL` **và** `closed_by_job = False` |
 | Phiên không qua ngày | `AttendanceSession.work_date` luôn bằng `work_date` của Check In |
 | Link bản đồ | `maps_url` dựng từ tọa độ bản ghi (không phải tọa độ `Location`), đúng dạng `https://www.google.com/maps?q={lat},{lng}` |
 | Nearest cho early-gate attempt | `SESSION_ALREADY_OPEN`, `NO_OPEN_SESSION`, `WEAK_GPS` sau boundary có nearest; WEAK_GPS approximate; business gate không bị reorder |
 | GPS foreground | watch chỉ khi Attendance visible, dừng ở hidden/rời màn/timeout/submit, không lưu fix, không auto chấm công, sample quá 60 giây không submit |
 | Dashboard denominator | Trả numerator/eligible denominator/excluded choice/observed/nearest coverage; denominator 0 là `NULL`/`N/A` |
-| Job health | Có last run/scanned/closed/anomaly/overdue-open/invariant; LEADER read-only không có account/AuditLog deep-link |
+| Job health | Cutoff exclusive: success phải `< 01:00`, equality là late; trước cutoff prior-day RUNNING stale, từ cutoff mọi RUNNING chưa terminal alert; `unknown` khi chưa từng chạy; thiếu success, latest failure, overdue-open hoặc mismatch → `alert`; đủ success và invariant → `ok`. Identity trả access scope đóng; LEADER không có account/AuditLog deep-link (R-129–R-132) |
+| Job schedule | Manifest `deploy/scheduled-jobs.yaml` và deployment check chứng minh `15 0 * * *`, timezone Asia/Ho_Chi_Minh, đúng command, một binding/môi trường, enabled staging/production và không bỏ cuối tuần/ngày lễ (R-133) |
 | Location concurrent edit | PATCH version cũ trả `409`; overlap recompute cùng transaction; reason giữ qua conflict; AuditLog before/after |
 | Location/Config same-value PATCH | Current Location version trả `200` no-op; không save/audit/outbox/version. Location stale vẫn `409`; Config same-value cũng không evidence (R-115) |
 | Hạ Config max radius | Bằng radius lớn nhất thì pass; thấp hơn Location active hoặc inactive trả `400`, không rewrite/partial/evidence. Race với Location update và hai Location update khác nhau chạy PostgreSQL hai connection/barrier (R-114) |

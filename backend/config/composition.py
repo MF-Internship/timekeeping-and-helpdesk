@@ -5,14 +5,17 @@ from django.conf import settings
 
 from attendance.adapters.clock import DjangoClock
 from attendance.adapters.persistence.attempts import DjangoAttemptWriter
+from attendance.adapters.persistence.reconciliation import DjangoReconciliationRepository
 from attendance.adapters.persistence.repositories import DjangoAttendanceRepository
 from attendance.adapters.persistence.unit_of_work import DjangoUnitOfWork as AttendanceUnitOfWork
 from attendance.application.commands import AttendanceCommandService
 from attendance.application.container import AttendanceContainer
 from attendance.application.dependencies import AttendanceDependencies
 from attendance.application.queries import AttendanceQueryService
+from attendance.application.reconciliation import ReconciliationDependencies, ReconciliationService
 from audit.adapters.persistence.recording import DjangoAuditRecorder
 from config.attendance_adapters import DjangoAttendanceAuthorization, DjangoAttendanceReferenceData
+from config.operations_adapters import DjangoReadOnlyRepeatableRead, DjangoReconciliationJobRuns
 from identity.adapters.persistence.unit_of_work import DjangoUnitOfWork
 from identity.adapters.persistence.users import DjangoUserRepository
 from identity.adapters.security.passwords import DjangoPasswordService
@@ -42,6 +45,10 @@ from locations.application.location_admin import LocationAdminService
 from locations.application.queries import ConfigQueryService, LocationQueryService
 from locations.application.readiness import ReadinessDependencies, ReferenceDataReadinessService
 from locations.application.seed import LocationSeedService
+from operations.adapters.persistence.job_runs import DjangoJobRunRepository
+from operations.application.container import OperationsContainer
+from operations.application.dependencies import JobHealthDependencies
+from operations.application.job_health import JobHealthService
 
 
 @lru_cache(maxsize=1)
@@ -147,4 +154,31 @@ def attendance_container() -> AttendanceContainer:
         authorization,
         AttendanceCommandService(dependencies),
         AttendanceQueryService(dependencies),
+    )
+
+
+def reconciliation_service() -> ReconciliationService:
+    return ReconciliationService(
+        ReconciliationDependencies(
+            clock=DjangoClock(),
+            repository=DjangoReconciliationRepository(),
+            job_runs=DjangoReconciliationJobRuns(),
+            unit_of_work_factory=AttendanceUnitOfWork,
+        )
+    )
+
+
+@lru_cache(maxsize=1)
+def operations_container() -> OperationsContainer:
+    repository = DjangoReconciliationRepository()
+    return OperationsContainer(
+        JobHealthService(
+            JobHealthDependencies(
+                authorization=DjangoAuthorizationGateway(),
+                clock=DjangoClock(),
+                job_runs=DjangoJobRunRepository(),
+                attendance_health=repository,
+                read_unit_of_work_factory=DjangoReadOnlyRepeatableRead,
+            )
+        )
     )

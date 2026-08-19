@@ -48,6 +48,16 @@ không được tự biến trạng thái đó thành bằng chứng production-
    operator sửa dữ liệu tham chiếu bằng workflow ở bước 4 rồi chạy lại.
 7. Rollout dần, giữ tương thích N-1, kiểm tra status-only smoke và rollback
    application trước khi thực hiện bất kỳ contract migration phá hủy nào.
+8. Sau khi migration `attendance` và `operations` hoàn tất, chạy
+   `python scripts/deployment_check.py scheduled-jobs-ready`, rồi enable đúng một
+   scheduler binding cho mỗi môi trường staging/production. Scheduler chạy
+   `python manage.py reconcile_missing_checkouts` lúc 00:15 mỗi ngày theo
+   `Asia/Ho_Chi_Minh`, kể cả cuối tuần và ngày lễ. Exit khác 0 phải phát cảnh báo;
+   không tự động repair hoặc tạo Check Out thay người dùng.
+9. Theo dõi `/api/v1/operations/job-health`. Thành công đúng hạn phải hoàn tất
+   **trước** 01:00; đúng 01:00 được coi là trễ. Trước lần chạy thật đầu tiên,
+   trạng thái có thể là `unknown`. Khi rollback application, giữ nguyên migration
+   mở rộng và JobRun; command cũ/mới đều phải an toàn khi chạy lặp.
 
 ## Credential rotation và sự cố
 

@@ -1,6 +1,9 @@
-import pytest
+from datetime import timedelta
 
-from attendance.models import Attendance, AttendanceAttempt, AttendanceSession
+import pytest
+from django.utils import timezone
+
+from attendance.models import Attendance, AttendanceAnomaly, AttendanceAttempt, AttendanceSession
 from tests.integration.api.attendance.helpers import (
     create_reference_data,
     gps_payload,
@@ -66,3 +69,35 @@ def test_rejected_next_pair_does_not_mutate_completed_sessions() -> None:
         .values_list("check_in_id", "check_out_id", "duration_minutes")
     )
     assert after == before and Attendance.objects.filter(user=user).count() == 4
+
+
+def test_later_out_replaces_only_previous_departure_anomaly() -> None:
+    config, _ = create_reference_data()
+    local_now = timezone.localtime()
+    config.shift_start = (local_now - timedelta(minutes=30)).time()
+    config.shift_end = (local_now + timedelta(minutes=30)).time()
+    config.late_grace_minutes = 0
+    config.early_checkout_grace_minutes = 0
+    config.save(
+        update_fields=[
+            "shift_start",
+            "shift_end",
+            "late_grace_minutes",
+            "early_checkout_grace_minutes",
+        ]
+    )
+    client, user = helpdesk_client("multiple-session-anomalies")
+    for action in ("check-in", "check-out", "check-in", "check-out"):
+        assert (
+            client.post(f"/api/v1/attendance/{action}", gps_payload(), format="json").status_code
+            == 201
+        )
+    punches = list(Attendance.objects.filter(user=user).order_by("recorded_at", "id"))
+    anomaly_map = {
+        punch.pk: set(punch.anomalies.values_list("reason", flat=True)) for punch in punches
+    }
+    assert anomaly_map[punches[0].pk] == {"LATE_CHECK_IN"}
+    assert anomaly_map[punches[1].pk] == set()
+    assert anomaly_map[punches[2].pk] == set()
+    assert anomaly_map[punches[3].pk] == {"EARLY_CHECK_OUT"}
+    assert AttendanceAnomaly.objects.filter(attendance__user=user).count() == 2

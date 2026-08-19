@@ -12,6 +12,12 @@ class RecoveryHealthSinks:
     logger: logging.Logger
     telemetry: Callable[[str], None]
 
+    def request_alert(self, reason: object) -> bool:
+        return request_alert(self, reason)
+
+    def emit_health_state(self, state: str) -> bool:
+        return emit_health_state(self, state)
+
 
 def request_alert(sinks: RecoveryHealthSinks, reason: object) -> bool:
     return emit_safe_failure(

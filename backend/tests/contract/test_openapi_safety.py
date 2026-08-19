@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+import yaml
 
 FIXTURES = Path(__file__).parent / "fixtures/openapi"
 
@@ -81,3 +82,14 @@ def test_generated_attendance_coordinate_fields_are_named_but_never_exemplified(
     assert "captured_latitude:" in rendered and "captured_longitude:" in rendered
     assert "latitude:" in rendered and "longitude:" in rendered
     assert "10.000000" not in rendered and "106.000000" not in rendered
+
+
+def test_job_health_has_no_forbidden_detail_or_mutation_surface() -> None:
+    from scripts.generate_openapi import generate_openapi_bytes
+
+    document = yaml.safe_load(generate_openapi_bytes())
+    path = document["paths"]["/api/v1/operations/job-health"]
+    assert set(path) == {"get"}
+    rendered = str(path).lower()
+    for forbidden in ("user_id", "session_id", "gps", "latitude", "longitude", "closed_count"):
+        assert forbidden not in rendered

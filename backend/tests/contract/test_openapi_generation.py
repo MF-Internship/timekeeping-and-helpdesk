@@ -45,6 +45,7 @@ def test_all_paths_operation_ids_and_properties_are_canonical() -> None:
         "locations_partial_update",
         "identity_me_retrieve",
         "identity_me_partial_update",
+        "operations_job_health_retrieve",
         "api_schema_retrieve",
         "users_list",
         "users_create",

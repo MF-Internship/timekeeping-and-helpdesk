@@ -1,0 +1,9 @@
+schema_version: 1
+jobs:
+  - name: missing-check-out-reconciliation
+    working_directory: backend
+    command: python manage.py reconcile_missing_checkouts
+    cron: "15 0 * * *"
+    timezone: Asia/Ho_Chi_Minh
+    calendar: every_day
+    singleton_per_environment: true

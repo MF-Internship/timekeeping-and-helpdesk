@@ -33,3 +33,9 @@ def test_no_daily_kind_uniqueness_and_attempt_link_is_one_to_one() -> None:
     }
     assert ("user", "work_date", "kind") not in unique_fields
     assert AttendanceAttempt._meta.get_field("attendance").one_to_one
+    anomaly_unique = {
+        tuple(constraint.fields)
+        for constraint in AttendanceAnomaly._meta.constraints
+        if isinstance(constraint, UniqueConstraint)
+    }
+    assert ("attendance", "reason") in anomaly_unique

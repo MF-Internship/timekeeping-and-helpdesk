@@ -1,0 +1,26 @@
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Protocol
+
+from operations.domain.job_runs import JobRunCounterDelta, JobRunSnapshot, JobRunTerminal
+
+
+class JobRunRepository(Protocol):
+    def create(self, started_at: datetime) -> JobRunSnapshot: ...
+
+    def add_counts(self, run_id: int, delta: JobRunCounterDelta) -> JobRunSnapshot: ...
+
+    def finalize(
+        self, run_id: int, finished_at: datetime, terminal: JobRunTerminal
+    ) -> JobRunSnapshot | None: ...
+
+    def get(self, run_id: int, *, lock: bool = False) -> JobRunSnapshot: ...
+
+    def latest(self) -> JobRunSnapshot | None: ...
+
+    def latest_successful(self) -> JobRunSnapshot | None: ...
+
+    def latest_terminal(self) -> JobRunSnapshot | None: ...
+
+    def unfinished(self) -> tuple[JobRunSnapshot, ...]: ...

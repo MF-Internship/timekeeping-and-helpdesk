@@ -74,3 +74,9 @@ def test_attendance_production_code_passes_maintainability_rules() -> None:
     from scripts.check_function_length import check_paths
 
     assert check_paths([ROOT / "backend/attendance"]) == []
+
+
+def test_operations_production_code_passes_maintainability_rules() -> None:
+    from scripts.check_function_length import check_paths
+
+    assert check_paths([ROOT / "backend/operations"]) == []

@@ -6,14 +6,14 @@ cd "$repo_root"
 export ORIGIN_CREDENTIAL_HEADER="X-Origin-Credential"
 export ORIGIN_CREDENTIAL="test-origin-credential-at-least-32-chars"
 
-maintainability_paths=(backend/core backend/config backend/operations backend/identity backend/audit backend/locations scripts frontend/src/shared/api/client.ts)
+maintainability_paths=(backend/core backend/config backend/operations backend/identity backend/audit backend/locations backend/attendance scripts frontend/src/shared/api/client.ts)
 if [[ -n "${CHECK_ALL_MAINTAINABILITY_PATH:-}" ]]; then
   maintainability_paths=("$CHECK_ALL_MAINTAINABILITY_PATH")
 fi
 
 uv run --project backend ruff format --check backend scripts
 uv run --project backend ruff check backend scripts
-uv run --project backend mypy backend/core backend/config backend/operations backend/identity backend/audit backend/locations scripts
+uv run --project backend mypy backend/core backend/config backend/operations backend/identity backend/audit backend/locations backend/attendance scripts
 uv run --project backend python scripts/check_function_length.py "${maintainability_paths[@]}"
 scripts/check_feature_002_convergence.sh --all
 uv run --project backend pytest backend/tests/unit backend/tests/architecture backend/tests/contract backend/tests/integration/api

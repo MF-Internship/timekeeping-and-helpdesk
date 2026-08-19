@@ -2,6 +2,8 @@ from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import Any, cast
 
+import pytest
+
 from attendance.application.dependencies import AttendanceDependencies
 from attendance.application.dto import AttendanceSnapshot, SessionProjection
 from attendance.application.queries import AttendanceQueryService
@@ -47,17 +49,18 @@ class Clock:
 
 
 class Repository:
-    def __init__(self) -> None:
+    def __init__(self, completed_count: int = 1) -> None:
         self.calls: list[tuple[int, date]] = []
+        self.completed_count = completed_count
 
     def punches(self, user_id: int, work_date: date) -> tuple[AttendanceSnapshot, ...]:
         self.calls.append((user_id, work_date))
         return (punch(2, 20), punch(1, 10))
 
     def sessions(self, user_id: int, work_date: date) -> tuple[SessionProjection, ...]:
-        return (
+        completed = tuple(
             SessionProjection(
-                1,
+                identifier,
                 work_date,
                 punch(1, 10).recorded_at,
                 punch(2, 20).recorded_at,
@@ -65,12 +68,17 @@ class Repository:
                 1,
                 Decimal("10"),
                 False,
-            ),
+            )
+            for identifier in range(1, self.completed_count + 1)
+        )
+        return (
+            *completed,
             SessionProjection(2, work_date, punch(2, 20).recorded_at, None, 1, None, None, False),
+            SessionProjection(3, work_date, punch(2, 20).recorded_at, None, 1, None, None, True),
         )
 
     def total_duration(self, user_id: int, work_date: date) -> Decimal:
-        return Decimal("10.000000")
+        return Decimal(self.completed_count * 10).quantize(Decimal("0.000001"))
 
 
 def test_today_uses_local_date_actor_scope_order_index_duration_and_open_predicate() -> None:
@@ -90,3 +98,25 @@ def test_today_uses_local_date_actor_scope_order_index_duration_and_open_predica
     assert [(item.attendance.id, item.punch_index) for item in result.punches] == [(1, 1), (2, 2)]
     assert result.total_duration_minutes == Decimal("10.000000")
     assert result.has_open_session is True
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("completed_count", range(1, 21))
+def test_today_preserves_one_to_twenty_sessions_and_excludes_incomplete(
+    completed_count: int,
+) -> None:
+    repository = Repository(completed_count)
+    dependencies = AttendanceDependencies(
+        Authorization(),
+        Clock(),
+        cast(Any, None),
+        cast(Any, repository),
+        cast(Any, None),
+        cast(Any, None),
+        cast(Any, None),
+    )
+    result = AttendanceQueryService(dependencies).today(42)
+    assert len(result.sessions) == completed_count + 2
+    assert result.total_duration_minutes == Decimal(completed_count * 10).quantize(
+        Decimal("0.000001")
+    )

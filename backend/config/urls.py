@@ -7,9 +7,11 @@ from config.composition import (
     identity_container,
     identity_target_lookup,
     locations_container,
+    operations_container,
 )
 from identity.adapters.api.urls import identity_urlpatterns
 from locations.adapters.api.urls import location_urlpatterns
+from operations.adapters.api.urls import operations_urlpatterns
 
 urlpatterns: list[URLPattern | URLResolver] = [
     path(
@@ -21,6 +23,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
             )
             + location_urlpatterns(locations_container)
             + attendance_urlpatterns(attendance_container)
+            + operations_urlpatterns(operations_container)
         ),
     ),
 ]
