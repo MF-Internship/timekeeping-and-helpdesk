@@ -212,6 +212,22 @@ export interface paths {
     patch: operations["identity_me_partial_update"];
     trace?: never;
   };
+  "/api/v1/operations/job-health": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["operations_job_health_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/schema/": {
     parameters: {
       query?: never;
@@ -316,6 +332,8 @@ export interface components {
     AccessResponse: {
       readonly access: string;
     };
+    /** @enum {string} */
+    AccountsEnum: "/api/v1/users/";
     AdminUser: {
       /** Format: date-time */
       readonly created_at: string;
@@ -457,6 +475,12 @@ export interface components {
       readonly config: components["schemas"]["Config"];
       readonly warnings: components["schemas"]["Warning"][];
     };
+    Evidence: {
+      anomaly_without_job_closed_count: number;
+      job_closed_session_count: number;
+      job_closed_without_anomaly_count: number;
+      missing_checkout_anomaly_count: number;
+    };
     FoundationError: {
       details: {
         [key: string]: string[];
@@ -543,6 +567,44 @@ export interface components {
     };
     /** @enum {string} */
     InvalidLocationChoiceErrorErrorCodeEnum: "INVALID_LOCATION_CHOICE";
+    JobHealth: {
+      /** Format: date-time */
+      cutoff_at: string;
+      escalation_guidance: string | null;
+      evidence_counts: components["schemas"]["Evidence"];
+      invariant_valid: boolean;
+      investigation_links: components["schemas"]["Links"] | null;
+      latest_run: components["schemas"]["JobRun"] | null;
+      latest_successful_run: components["schemas"]["JobRun"] | null;
+      overdue_open_session_count: number;
+      reason_flags: components["schemas"]["Reasons"];
+      /** Format: date-time */
+      refreshed_at: string;
+      state: components["schemas"]["StateEnum"];
+      timezone: components["schemas"]["TimezoneEnum"];
+    };
+    /** @enum {string} */
+    JobNameEnum: "MISSING_CHECK_OUT";
+    JobRun: {
+      anomaly_count: number;
+      changed_count: number;
+      error_code:
+        | (components["schemas"]["JobRunErrorCodeEnum"] | components["schemas"]["NullEnum"])
+        | null;
+      /** Format: date-time */
+      finished_at: string | null;
+      id: number;
+      job_name: components["schemas"]["JobNameEnum"];
+      scanned_count: number;
+      /** Format: date-time */
+      started_at: string;
+      status: components["schemas"]["StatusEnum"];
+    };
+    /** @enum {string} */
+    JobRunErrorCodeEnum: "SESSION_PROCESSING_FAILED" | "RUN_ABORTED";
+    Links: {
+      accounts: components["schemas"]["AccountsEnum"];
+    };
     Location: {
       readonly address: string;
       readonly code: string;
@@ -620,6 +682,8 @@ export interface components {
     };
     /** @enum {string} */
     NoOpenSessionErrorErrorCodeEnum: "NO_OPEN_SESSION";
+    /** @enum {unknown} */
+    NullEnum: null;
     PasswordChange: {
       current_password: string;
       new_password: string;
@@ -629,6 +693,16 @@ export interface components {
       email?: string | null;
       full_name?: string;
       phone?: string | null;
+    };
+    Reasons: {
+      latest_terminal_failed: boolean;
+      missing_timely_success: boolean;
+      no_run_history: boolean;
+      overdue_open_sessions: boolean;
+      persisted_evidence_mismatch: boolean;
+      run_count_mismatch: boolean;
+      stale_running: boolean;
+      unfinished_run: boolean;
     };
     ResetPasswordResult: {
       readonly generated_password: string;
@@ -666,9 +740,15 @@ export interface components {
     };
     /** @enum {string} */
     SessionAlreadyOpenErrorErrorCodeEnum: "SESSION_ALREADY_OPEN";
+    /** @enum {string} */
+    StateEnum: "ok" | "alert" | "unknown";
     Status: {
       is_active: boolean;
     };
+    /** @enum {string} */
+    StatusEnum: "RUNNING" | "SUCCEEDED" | "PARTIAL_FAILED" | "FAILED";
+    /** @enum {string} */
+    TimezoneEnum: "Asia/Ho_Chi_Minh";
     TodayAttendance: {
       readonly has_open_session: boolean;
       readonly punches: components["schemas"]["IndexedAttendancePunch"][];
@@ -1504,6 +1584,25 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+    };
+  };
+  operations_job_health_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["JobHealth"];
         };
       };
     };

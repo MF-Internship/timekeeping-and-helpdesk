@@ -10,6 +10,11 @@ class Role(StrEnum):
     HELPDESK = "HELPDESK"
 
 
+class JobHealthAccessScope(StrEnum):
+    INVESTIGATE = "INVESTIGATE"
+    ESCALATE_ONLY = "ESCALATE_ONLY"
+
+
 class PermissionAction(StrEnum):
     ATTENDANCE_CHECK_IN_SELF = "attendance.check_in.self"
     ATTENDANCE_CHECK_OUT_SELF = "attendance.check_out.self"
@@ -36,6 +41,7 @@ class PermissionAction(StrEnum):
     REPORT_EXPORT = "report.export"
     PHOTO_VIEW_ALL = "photo.view.all"
     PHOTO_VIEW_SELF = "photo.view.self"
+    OPERATIONS_JOB_HEALTH_VIEW = "operations.job_health.view"
 
     @property
     def is_mutation(self) -> bool:
@@ -51,6 +57,7 @@ class PermissionAction(StrEnum):
             self.REPORT_EXPORT,
             self.PHOTO_VIEW_ALL,
             self.PHOTO_VIEW_SELF,
+            self.OPERATIONS_JOB_HEALTH_VIEW,
         }
 
 
@@ -64,6 +71,7 @@ ROLE_PERMISSIONS: dict[Role, frozenset[PermissionAction]] = {
             PermissionAction.REPORT_VIEW_ALL,
             PermissionAction.REPORT_EXPORT,
             PermissionAction.PHOTO_VIEW_ALL,
+            PermissionAction.OPERATIONS_JOB_HEALTH_VIEW,
         }
     ),
     Role.MANAGER: frozenset(
@@ -86,6 +94,7 @@ ROLE_PERMISSIONS: dict[Role, frozenset[PermissionAction]] = {
             PermissionAction.REPORT_VIEW_ALL,
             PermissionAction.REPORT_EXPORT,
             PermissionAction.PHOTO_VIEW_ALL,
+            PermissionAction.OPERATIONS_JOB_HEALTH_VIEW,
         }
     ),
     Role.HELPDESK: frozenset(
@@ -138,3 +147,11 @@ def effective_capabilities(role: Role) -> frozenset[PermissionAction]:
     direct = ROLE_PERMISSIONS[role]
     implied = {PERMISSION_IMPLIES[action] for action in direct if action in PERMISSION_IMPLIES}
     return direct | implied
+
+
+def job_health_access_scope(role: Role) -> JobHealthAccessScope:
+    if role is Role.MANAGER:
+        return JobHealthAccessScope.INVESTIGATE
+    if role is Role.LEADER:
+        return JobHealthAccessScope.ESCALATE_ONLY
+    raise ValueError("job_health_access_scope")

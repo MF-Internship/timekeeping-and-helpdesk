@@ -43,3 +43,10 @@ def test_locations_migration_is_safe_and_has_one_leaf() -> None:
     from scripts.migration_check import check_tree
 
     assert check_tree(Path("backend/locations")) == []
+
+
+@pytest.mark.parametrize("app", ["attendance", "operations"])
+def test_feature_005_migrations_are_expand_only_and_single_leaf(app: str) -> None:
+    from scripts.migration_check import check_tree
+
+    assert check_tree(Path("backend") / app) == []

@@ -1,0 +1,1 @@
+"""Attendance command entry points."""

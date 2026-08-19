@@ -14,7 +14,7 @@ from identity.domain.authorization import (
 @pytest.mark.unit
 def test_canonical_policy_shape() -> None:
     assert len(Role) == 3
-    assert len(PermissionAction) == 25
+    assert len(PermissionAction) == 26
     assert len(PERMISSION_IMPLIES) == 5
     assert frozenset({Role.LEADER, Role.HELPDESK}) == ASSIGNABLE_ROLES
 

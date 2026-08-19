@@ -140,7 +140,12 @@ class AttendanceSession(models.Model):
             ),
         ]
         indexes: ClassVar[list[models.Index]] = [
-            models.Index(fields=["user", "work_date", "id"], name="attendance_session_idx")
+            models.Index(fields=["user", "work_date", "id"], name="attendance_session_idx"),
+            models.Index(
+                fields=["work_date", "id"],
+                condition=models.Q(check_out__isnull=True, closed_by_job=False),
+                name="attendance_reconcile_idx",
+            ),
         ]
 
 

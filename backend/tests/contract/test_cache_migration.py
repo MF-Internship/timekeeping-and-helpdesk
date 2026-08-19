@@ -11,7 +11,10 @@ BACKEND_ROOT = Path(__file__).parents[2]
 @pytest.mark.contract
 def test_cache_table_provisioning_has_one_operations_leaf() -> None:
     migrations = sorted((BACKEND_ROOT / "operations" / "migrations").glob("[0-9]*.py"))
-    assert [path.name for path in migrations] == ["0001_throttle_cache_table.py"]
+    assert [path.name for path in migrations] == [
+        "0001_throttle_cache_table.py",
+        "0002_job_run.py",
+    ]
 
 
 @pytest.mark.contract

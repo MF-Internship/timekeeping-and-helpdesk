@@ -780,6 +780,20 @@ paths:
       - bearerAuth: []
       tags:
       - me
+  /api/v1/operations/job-health:
+    get:
+      operationId: operations_job_health_retrieve
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobHealth'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - operations
   /api/v1/schema/:
     get:
       description: Machine-readable schema endpoint; no interactive UI is registered.
@@ -1271,6 +1285,10 @@ components:
       required:
       - access
       type: object
+    AccountsEnum:
+      enum:
+      - /api/v1/users/
+      type: string
     AdminUser:
       properties:
         created_at:
@@ -1674,6 +1692,26 @@ components:
       - config
       - warnings
       type: object
+    Evidence:
+      properties:
+        anomaly_without_job_closed_count:
+          minimum: 0
+          type: integer
+        job_closed_session_count:
+          minimum: 0
+          type: integer
+        job_closed_without_anomaly_count:
+          minimum: 0
+          type: integer
+        missing_checkout_anomaly_count:
+          minimum: 0
+          type: integer
+      required:
+      - anomaly_without_job_closed_count
+      - job_closed_session_count
+      - job_closed_without_anomaly_count
+      - missing_checkout_anomaly_count
+      type: object
     FoundationError:
       properties:
         details:
@@ -1916,6 +1954,112 @@ components:
       enum:
       - INVALID_LOCATION_CHOICE
       type: string
+    JobHealth:
+      properties:
+        cutoff_at:
+          format: date-time
+          type: string
+        escalation_guidance:
+          nullable: true
+          type: string
+        evidence_counts:
+          $ref: '#/components/schemas/Evidence'
+        invariant_valid:
+          type: boolean
+        investigation_links:
+          allOf:
+          - $ref: '#/components/schemas/Links'
+          nullable: true
+        latest_run:
+          allOf:
+          - $ref: '#/components/schemas/JobRun'
+          nullable: true
+        latest_successful_run:
+          allOf:
+          - $ref: '#/components/schemas/JobRun'
+          nullable: true
+        overdue_open_session_count:
+          minimum: 0
+          type: integer
+        reason_flags:
+          $ref: '#/components/schemas/Reasons'
+        refreshed_at:
+          format: date-time
+          type: string
+        state:
+          $ref: '#/components/schemas/StateEnum'
+        timezone:
+          $ref: '#/components/schemas/TimezoneEnum'
+      required:
+      - cutoff_at
+      - escalation_guidance
+      - evidence_counts
+      - invariant_valid
+      - investigation_links
+      - latest_run
+      - latest_successful_run
+      - overdue_open_session_count
+      - reason_flags
+      - refreshed_at
+      - state
+      - timezone
+      type: object
+    JobNameEnum:
+      enum:
+      - MISSING_CHECK_OUT
+      type: string
+    JobRun:
+      properties:
+        anomaly_count:
+          minimum: 0
+          type: integer
+        changed_count:
+          minimum: 0
+          type: integer
+        error_code:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/JobRunErrorCodeEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        finished_at:
+          format: date-time
+          nullable: true
+          type: string
+        id:
+          type: integer
+        job_name:
+          $ref: '#/components/schemas/JobNameEnum'
+        scanned_count:
+          minimum: 0
+          type: integer
+        started_at:
+          format: date-time
+          type: string
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+      required:
+      - anomaly_count
+      - changed_count
+      - error_code
+      - finished_at
+      - id
+      - job_name
+      - scanned_count
+      - started_at
+      - status
+      type: object
+    JobRunErrorCodeEnum:
+      enum:
+      - SESSION_PROCESSING_FAILED
+      - RUN_ABORTED
+      type: string
+    Links:
+      properties:
+        accounts:
+          $ref: '#/components/schemas/AccountsEnum'
+      required:
+      - accounts
+      type: object
     Location:
       properties:
         address:
@@ -2148,6 +2292,9 @@ components:
       enum:
       - NO_OPEN_SESSION
       type: string
+    NullEnum:
+      enum:
+      - null
     PasswordChange:
       properties:
         current_password:
@@ -2171,6 +2318,34 @@ components:
         phone:
           nullable: true
           type: string
+      type: object
+    Reasons:
+      properties:
+        latest_terminal_failed:
+          type: boolean
+        missing_timely_success:
+          type: boolean
+        no_run_history:
+          type: boolean
+        overdue_open_sessions:
+          type: boolean
+        persisted_evidence_mismatch:
+          type: boolean
+        run_count_mismatch:
+          type: boolean
+        stale_running:
+          type: boolean
+        unfinished_run:
+          type: boolean
+      required:
+      - latest_terminal_failed
+      - missing_timely_success
+      - no_run_history
+      - overdue_open_sessions
+      - persisted_evidence_mismatch
+      - run_count_mismatch
+      - stale_running
+      - unfinished_run
       type: object
     ResetPasswordResult:
       properties:
@@ -2282,6 +2457,12 @@ components:
       enum:
       - SESSION_ALREADY_OPEN
       type: string
+    StateEnum:
+      enum:
+      - ok
+      - alert
+      - unknown
+      type: string
     Status:
       properties:
         is_active:
@@ -2289,6 +2470,17 @@ components:
       required:
       - is_active
       type: object
+    StatusEnum:
+      enum:
+      - RUNNING
+      - SUCCEEDED
+      - PARTIAL_FAILED
+      - FAILED
+      type: string
+    TimezoneEnum:
+      enum:
+      - Asia/Ho_Chi_Minh
+      type: string
     TodayAttendance:
       properties:
         has_open_session:

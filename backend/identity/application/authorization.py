@@ -7,7 +7,13 @@ from core.error_codes import (
     PERMISSION_DENIED,
 )
 from core.errors import IdentityAPIError
-from identity.domain.authorization import PermissionAction, Role, decide_permission
+from identity.domain.authorization import (
+    JobHealthAccessScope,
+    PermissionAction,
+    Role,
+    decide_permission,
+    job_health_access_scope,
+)
 from identity.models import User
 from identity.ports.authorization import AuthorizationResult
 
@@ -26,3 +32,8 @@ class DjangoAuthorizationGateway:
         if user.must_change_password:
             raise IdentityAPIError(PASSWORD_CHANGE_REQUIRED, status_code=403)
         return AuthorizationResult(action, True, decision.granted_by)
+
+    def authorize_job_health(self, actor_id: int) -> JobHealthAccessScope:
+        self.authorize(actor_id, PermissionAction.OPERATIONS_JOB_HEALTH_VIEW)
+        user = User.objects.only("role").get(pk=actor_id)
+        return job_health_access_scope(Role(user.role))

@@ -5,6 +5,12 @@ from attendance.application.dto import AttendanceSnapshot, ConfigSnapshot
 from attendance.domain.attendance import AttendanceAnomalyReason, AttendanceKind
 from attendance.ports.repositories import AttendanceRepository
 
+ARRIVAL_REASONS = (AttendanceAnomalyReason.LATE_CHECK_IN,)
+DEPARTURE_REASONS = (
+    AttendanceAnomalyReason.EARLY_CHECK_OUT,
+    AttendanceAnomalyReason.LATE_CHECK_OUT,
+)
+
 
 def reconcile_punch_anomalies(
     repository: AttendanceRepository,
@@ -30,7 +36,7 @@ def _reconcile_in(
         current.recorded_at, config, config.late_grace_minutes
     ):
         reasons = (AttendanceAnomalyReason.LATE_CHECK_IN,)
-    repository.replace_anomalies(current.id, reasons)
+    repository.replace_anomalies(current.id, ARRIVAL_REASONS, reasons)
 
 
 def _reconcile_out(
@@ -41,7 +47,7 @@ def _reconcile_out(
 ) -> None:
     outs = tuple(item for item in punches if item.kind is AttendanceKind.OUT)
     for previous in outs[:-1]:
-        repository.replace_anomalies(previous.id, ())
+        repository.replace_anomalies(previous.id, DEPARTURE_REASONS, ())
     local = _local(current.recorded_at, config)
     early = _shift(current.recorded_at, config, -config.early_checkout_grace_minutes, end=True)
     late = _shift(current.recorded_at, config, config.late_checkout_grace_minutes, end=True)
@@ -50,7 +56,7 @@ def _reconcile_out(
         reasons = (AttendanceAnomalyReason.EARLY_CHECK_OUT,)
     elif local > late:
         reasons = (AttendanceAnomalyReason.LATE_CHECK_OUT,)
-    repository.replace_anomalies(current.id, reasons)
+    repository.replace_anomalies(current.id, DEPARTURE_REASONS, reasons)
 
 
 def _local(value: datetime, config: ConfigSnapshot) -> datetime:

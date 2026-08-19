@@ -133,6 +133,18 @@ người đó có bấm Check In thật, nên thiếu Check Out là dữ liệu 
 xử lý, không phải chuyện được im lặng bỏ qua. Nhờ vậy mọi phiên hệ thống tự đóng
 đều xuất hiện trong báo cáo, không có phiên nào bị đóng âm thầm.
 
+Việc tự đóng xử lý độc lập từng phiên: trạng thái tự đóng và dấu thiếu Check Out
+của một phiên luôn cùng thành công hoặc cùng thất bại. Nếu một phiên lỗi, các
+phiên đã xử lý không bị hoàn tác và hệ thống tiếp tục phiên khác khi có thể; lần
+chạy sau chỉ xử lý phần còn thiếu, không tạo dấu trùng. Lịch sử chạy phải cho
+người vận hành thấy đúng số phiên đã thực sự xử lý và việc lần chạy có lỗi.
+
+Mỗi lần chạy có một trạng thái rõ ràng: đang chạy, thành công, thành công một
+phần có lỗi, hoặc thất bại. Nếu tiến trình dừng đột ngột, lần chạy vẫn hiện là
+đang chạy quá hạn thay vì bị hiểu nhầm là thành công. Các số quét/đóng/anomaly
+chỉ phản ánh dữ liệu thực sự đã được xử lý; lần chạy không có phiên cần đóng vẫn
+là thành công.
+
 Mỗi lần bấm Check In/Check Out đều được ghi lại một dòng nhật ký riêng, kèm kết
 quả — đúng **bảy** giá trị: được chấp nhận; chờ chọn địa điểm; hoặc bị từ chối vì
 GPS yếu, ngoài mọi vùng cho phép, địa điểm chọn không hợp lệ, đang có phiên mở,
@@ -536,6 +548,21 @@ Ví dụ:
   `N/A` khi không đủ mẫu; không biến “0 attempt” thành “không có vấn đề”.
 - Dashboard hiển thị health của job xử lý thiếu Check Out. Quản lý có đường điều
   tra tài khoản/audit phù hợp; Lãnh đạo chỉ đọc trạng thái và chuyển cho Quản lý.
+- Job phải hoàn tất thành công mỗi ngày trước **01:00 giờ Việt Nam**. Dashboard
+  phân biệt chưa từng chạy, cảnh báo và bình thường; hiển thị lần chạy mới nhất,
+  lần thành công mới nhất, cutoff, số quét/đóng/anomaly, phiên mở quá hạn và lỗi
+  bất biến. Trước 01:00, phiên chờ xử lý vẫn được hiển thị nhưng riêng việc đó
+  chưa tạo cảnh báo; lỗi hoặc dữ liệu không nhất quán cảnh báo ngay.
+- “Trước 01:00” là ranh giới nghiêm ngặt: `finished_at = 01:00:00` đã trễ. Trước
+  cutoff, RUNNING từ ngày local trước là stale và cảnh báo; từ đúng cutoff, mọi
+  RUNNING chưa terminal đều cảnh báo. Scheduler hiện hữu gọi job lúc **00:15
+  Asia/Ho_Chi_Minh mỗi ngày**, kể cả cuối tuần/ngày lễ; repository phải lưu
+  manifest và kiểm tra binding triển khai, không thêm scheduler runtime mới.
+- Việc phân nhánh nội dung MANAGER/LEADER của job-health do authorization Identity
+  trả access scope đóng; module operations không đọc role. Acceptance trước release
+  dùng ít nhất 10 MANAGER/LEADER đại diện và yêu cầu 100% xác định đúng health state
+  cùng một reason active khi có trong dưới 30 giây; với `ok` không có reason active
+  phải nhận biết đúng là không có cảnh báo. Chỉ lưu evidence tổng hợp.
 - Báo cáo theo trạng thái công việc và chất lượng GPS của bằng chứng hiện trường.
 
 ## **5. Phân quyền người dùng**
@@ -546,6 +573,9 @@ chỉ dựa vào mô tả vai trò bằng câu chữ. Ba vai trò hiện hành l
 `MANAGER` chỉ tạo qua seed hoặc superuser, không gán được qua giao diện.
 
 ### **5.1. Lãnh đạo**
+
+Lãnh đạo được xem health job ở dạng tổng hợp chỉ đọc nhưng không nhận đường dẫn
+tài khoản hoặc AuditLog; khi có cảnh báo, Lãnh đạo chuyển thông tin cho Quản lý.
 
 Có quyền theo dõi và xem báo cáo tổng quan.
 
@@ -577,6 +607,9 @@ này vẫn là quyền riêng của Quản lý.
 ### **5.2. Quản lý**
 
 Có toàn bộ quyền của Lãnh đạo và bổ sung các chức năng quản trị hệ thống:
+
+- Xem health job tổng hợp và dùng đường điều tra tài khoản/AuditLog mà mình có
+  quyền; mỗi màn đích vẫn kiểm quyền độc lập.
 
 - Tạo và giao công việc cho nhân viên.
 - Theo dõi tiến độ thực hiện công việc.

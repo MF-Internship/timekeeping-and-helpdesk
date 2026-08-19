@@ -47,7 +47,18 @@ function today(open = false, punches: TodayAttendance["punches"] = [punch]): Tod
   return {
     work_date: "2026-08-18",
     punches,
-    sessions: [],
+    sessions: [
+      {
+        id: 9,
+        work_date: "2026-08-18",
+        check_in_at: "2026-08-18T01:00:00Z",
+        check_out_at: open ? null : "2026-08-18T01:30:00Z",
+        check_in_location_id: 1,
+        check_out_location_id: open ? null : 2,
+        duration_minutes: open ? null : "30.000000",
+        closed_by_job: false,
+      },
+    ],
     total_duration_minutes: "30.000000",
     has_open_session: open,
   };
@@ -77,7 +88,9 @@ describe("AttendancePanel", () => {
     fireEvent.click(button);
     await waitFor(() => expect(mocks.checkIn).toHaveBeenCalledOnce());
     await waitFor(() => expect(mocks.getToday).toHaveBeenCalledTimes(2));
-    expect(screen.getByText(/30.000000/)).toBeInTheDocument();
+    expect(screen.getByText("Tổng thời gian: 30.000000 phút")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Phiên làm việc (1)" })).toBeInTheDocument();
+    expect(screen.getByText(/Location 1.*Location 2.*30.000000 phút/)).toBeInTheDocument();
   });
 
   it("keeps IN and OUT boundary locations separate in one indexed timeline", async () => {
@@ -111,6 +124,13 @@ describe("AttendancePanel", () => {
     await act(async () => Promise.resolve());
     expect(screen.getByText("Chưa có lượt chấm công hôm nay.")).toBeInTheDocument();
     expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("does not acquire or poll location while an open session is merely displayed", async () => {
+    mocks.getToday.mockResolvedValue(today(true));
+    render(<AttendancePanel />);
+    expect(await screen.findByText(/Đang mở/)).toBeInTheDocument();
+    expect(mocks.acquire).not.toHaveBeenCalled();
   });
 
   it("renders a canonical load failure", async () => {

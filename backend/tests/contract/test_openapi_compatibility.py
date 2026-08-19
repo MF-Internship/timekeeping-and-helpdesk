@@ -163,3 +163,10 @@ def test_attendance_paths_and_error_unions_are_committed_compatibility_surface()
     assert len(schemas["CheckInConflictError"]["oneOf"]) == 2
     assert len(schemas["CheckOutConflictError"]["oneOf"]) == 2
     assert len(schemas["AttendanceUnprocessableError"]["oneOf"]) == 2
+
+
+def test_job_health_get_is_committed_compatibility_surface() -> None:
+    document = yaml.safe_load(Path("contracts/openapi.yaml").read_text(encoding="utf-8"))
+    assert set(document["paths"]["/api/v1/operations/job-health"]) == {"get"}
+    properties = document["components"]["schemas"]["JobHealth"]["properties"]
+    assert "reason_flags" in properties and "evidence_counts" in properties

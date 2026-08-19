@@ -3,9 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
-from identity.domain.authorization import PermissionAction
+from identity.domain.authorization import JobHealthAccessScope, PermissionAction
 
-__all__ = ["AuthorizationGateway", "AuthorizationResult", "PermissionAction"]
+__all__ = [
+    "AuthorizationGateway",
+    "AuthorizationResult",
+    "JobHealthAccessScope",
+    "PermissionAction",
+]
 
 
 @dataclass(frozen=True, slots=True)
@@ -17,3 +22,5 @@ class AuthorizationResult:
 
 class AuthorizationGateway(Protocol):
     def authorize(self, actor_id: int, action: PermissionAction) -> AuthorizationResult: ...
+
+    def authorize_job_health(self, actor_id: int) -> JobHealthAccessScope: ...

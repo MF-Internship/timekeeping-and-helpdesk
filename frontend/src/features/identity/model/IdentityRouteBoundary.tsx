@@ -13,7 +13,8 @@ type IdentityRoute =
   | "locations"
   | "config"
   | "holidays"
-  | "attendance";
+  | "attendance"
+  | "job-health";
 
 const REQUIRED_CAPABILITY = {
   users: "user.view",
@@ -21,6 +22,7 @@ const REQUIRED_CAPABILITY = {
   config: "config.view",
   holidays: "holiday.manage",
   attendance: "attendance.view.self",
+  "job-health": "operations.job_health.view",
 } as const;
 
 function destination(

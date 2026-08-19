@@ -4,7 +4,7 @@ import pytest
 
 from core.errors import IdentityAPIError
 from identity.application.authorization import DjangoAuthorizationGateway
-from identity.domain.authorization import PermissionAction
+from identity.domain.authorization import JobHealthAccessScope, PermissionAction
 from tests.integration.api.identity.helpers import create_user
 
 
@@ -30,3 +30,18 @@ def test_gateway_returns_permission_provenance() -> None:
     assert result.requested_action is PermissionAction.LOCATION_VIEW
     assert result.allowed is True
     assert result.granted_by is PermissionAction.LOCATION_VIEW
+
+
+@pytest.mark.django_db
+@pytest.mark.unit
+def test_gateway_owns_job_health_scope_and_denies_before_issuing_it() -> None:
+    manager = create_user("gateway-health-manager", "MANAGER")
+    leader = create_user("gateway-health-leader", "LEADER")
+    helpdesk = create_user("gateway-health-helpdesk", "HELPDESK")
+    gateway = DjangoAuthorizationGateway()
+
+    assert gateway.authorize_job_health(manager.pk) is JobHealthAccessScope.INVESTIGATE
+    assert gateway.authorize_job_health(leader.pk) is JobHealthAccessScope.ESCALATE_ONLY
+    with pytest.raises(IdentityAPIError) as error:
+        gateway.authorize_job_health(helpdesk.pk)
+    assert error.value.error_code == "PERMISSION_DENIED"

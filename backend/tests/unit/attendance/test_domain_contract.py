@@ -23,6 +23,14 @@ def test_attendance_vocabularies_are_closed() -> None:
     assert {value.value for value in LocationValidationResult} == {"INSIDE_GEOFENCE"}
     assert len(AttendanceAttemptOutcome) == 7
     assert len(AttendanceAnomalyReason) == 4
+    assert {value.value for value in AttendanceAnomalyReason} == {
+        "LATE_CHECK_IN",
+        "EARLY_CHECK_OUT",
+        "LATE_CHECK_OUT",
+        "MISSING_CHECK_OUT",
+    }
+    assert "MISSING_CHECK_IN" not in AttendanceAnomalyReason.__members__
+    assert "OFF_ASSIGNMENT" not in AttendanceAnomalyReason.__members__
 
 
 @pytest.mark.unit

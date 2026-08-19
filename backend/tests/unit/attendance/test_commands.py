@@ -169,7 +169,12 @@ class Repository:
     def sessions(self, user_id: int, work_date: date) -> tuple[SessionProjection, ...]:
         return ()
 
-    def replace_anomalies(self, attendance_id: int, reasons: tuple[object, ...]) -> None:
+    def replace_anomalies(
+        self,
+        attendance_id: int,
+        removable_reasons: tuple[object, ...],
+        reasons: tuple[object, ...],
+    ) -> None:
         self.anomalies[attendance_id] = reasons
 
     def total_duration(self, user_id: int, work_date: date) -> Decimal:

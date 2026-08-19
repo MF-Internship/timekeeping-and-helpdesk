@@ -38,6 +38,15 @@ PRODUCTION_FIELDS = (
     "backup.restore_project_ref",
     "backup.alert_owner",
 )
+RECONCILIATION_JOB = {
+    "name": "missing-check-out-reconciliation",
+    "working_directory": "backend",
+    "command": "python manage.py reconcile_missing_checkouts",
+    "cron": "15 0 * * *",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "calendar": "every_day",
+    "singleton_per_environment": True,
+}
 
 
 def validate_cache_inventory(document: object) -> list[str]:
@@ -141,6 +150,51 @@ def recovery_readiness(document: object) -> list[str]:
     return findings
 
 
+def scheduled_jobs_readiness(
+    jobs_document: object, inventory_document: object
+) -> list[str]:
+    findings: list[str] = []
+    matching = _matching_entries(_mapping(jobs_document).get("jobs"), "name")
+    if len(matching) != 1:
+        findings.append("jobs.missing-check-out-reconciliation")
+    elif any(
+        matching[0].get(key) != value for key, value in RECONCILIATION_JOB.items()
+    ):
+        findings.append("jobs.missing-check-out-reconciliation.contract")
+    environments = _environments(inventory_document)
+    identities: set[str] = set()
+    for environment_name in ("staging", "production"):
+        findings.extend(_binding_findings(environments, environment_name, identities))
+    return findings
+
+
+def _matching_entries(value: object, field: str) -> list[Mapping[Any, Any]]:
+    if not isinstance(value, list):
+        return []
+    return [
+        item
+        for item in value
+        if isinstance(item, Mapping) and item.get(field) == RECONCILIATION_JOB["name"]
+    ]
+
+
+def _binding_findings(
+    environments: Mapping[Any, Any], environment_name: str, identities: set[str]
+) -> list[str]:
+    bindings = _mapping(environments.get(environment_name)).get("scheduled_jobs")
+    selected = _matching_entries(bindings, "job")
+    path = f"environments.{environment_name}.scheduled_jobs"
+    if len(selected) != 1 or selected[0].get("enabled") is not True:
+        return [path]
+    identity = selected[0].get("scheduler_identity")
+    if not isinstance(identity, str) or not identity or identity == "UNRESOLVED":
+        return [f"{path}.scheduler_identity"]
+    if identity in identities:
+        return [f"{path}.scheduler_identity"]
+    identities.add(identity)
+    return []
+
+
 def _is_stale(value: object) -> bool:
     if not isinstance(value, str):
         return True
@@ -228,6 +282,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--evidence", type=Path, default=ROOT / "deploy/recovery-evidence.yaml"
     )
     smoke = subparsers.add_parser("smoke")
+    scheduled = subparsers.add_parser("scheduled-jobs-ready")
+    scheduled.add_argument(
+        "--jobs", type=Path, default=ROOT / "deploy/scheduled-jobs.yaml"
+    )
+    scheduled.add_argument(
+        "--inventory", type=Path, default=ROOT / "deploy/environments.yaml"
+    )
     smoke.add_argument("--status", required=True)
     return parser
 
@@ -242,6 +303,11 @@ def main() -> int:
     if arguments.command == "recovery-ready":
         paths = recovery_readiness(load_yaml(arguments.evidence))
         return _print_findings([("RECOVERY-NOT-READY", path) for path in paths])
+    if arguments.command == "scheduled-jobs-ready":
+        paths = scheduled_jobs_readiness(
+            load_yaml(arguments.jobs), load_yaml(arguments.inventory)
+        )
+        return _print_findings([("SCHEDULE-NOT-READY", path) for path in paths])
     print(sanitize_failure_reason(arguments.status))
     return 0
 

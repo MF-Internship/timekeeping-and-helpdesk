@@ -92,7 +92,7 @@ function AttendanceContent({
       {candidates.length > 0 && (
         <LocationChoice candidates={candidates} disabled={busy} onSelect={(id) => void punch(id)} />
       )}
-      <TodayTimeline punches={today.punches} />
+      <TodayTimeline punches={today.punches} sessions={today.sessions} />
     </section>
   );
 }

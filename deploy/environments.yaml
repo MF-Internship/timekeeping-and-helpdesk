@@ -1,6 +1,7 @@
 schema_version: 1
 environments:
   development:
+    scheduled_jobs: []
     database_identity: UNRESOLVED
     migration_identity: UNRESOLVED
     bucket_identity: UNRESOLVED
@@ -18,6 +19,10 @@ environments:
       restore_project_ref: UNRESOLVED
       alert_owner: UNRESOLVED
   staging:
+    scheduled_jobs:
+      - job: missing-check-out-reconciliation
+        scheduler_identity: staging-missing-check-out-reconciliation
+        enabled: true
     database_identity: UNRESOLVED
     migration_identity: UNRESOLVED
     bucket_identity: UNRESOLVED
@@ -35,6 +40,10 @@ environments:
       restore_project_ref: UNRESOLVED
       alert_owner: UNRESOLVED
   production:
+    scheduled_jobs:
+      - job: missing-check-out-reconciliation
+        scheduler_identity: production-missing-check-out-reconciliation
+        enabled: true
     database_identity: UNRESOLVED
     migration_identity: UNRESOLVED
     bucket_identity: UNRESOLVED

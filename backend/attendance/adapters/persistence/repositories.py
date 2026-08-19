@@ -139,9 +139,15 @@ class DjangoAttendanceRepository:
         return tuple(session_projection(item) for item in query.order_by("id"))
 
     def replace_anomalies(
-        self, attendance_id: int, reasons: tuple[AttendanceAnomalyReason, ...]
+        self,
+        attendance_id: int,
+        removable_reasons: tuple[AttendanceAnomalyReason, ...],
+        reasons: tuple[AttendanceAnomalyReason, ...],
     ) -> None:
-        AttendanceAnomaly.objects.filter(attendance_id=attendance_id).delete()
+        AttendanceAnomaly.objects.filter(
+            attendance_id=attendance_id,
+            reason__in=[reason.value for reason in removable_reasons],
+        ).delete()
         AttendanceAnomaly.objects.bulk_create(
             [
                 AttendanceAnomaly(attendance_id=attendance_id, reason=reason.value, metadata={})
