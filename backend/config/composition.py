@@ -25,6 +25,7 @@ from config.notification_adapters import (
     notification_shift_end,
 )
 from config.operations_adapters import DjangoReadOnlyRepeatableRead, DjangoReconciliationJobRuns
+from config.reporting_adapters import DjangoReportingAuthorization, DjangoReportingRepository
 from config.task_adapters import (
     DjangoAssigneeDirectory,
     DjangoTaskAuthorization,
@@ -77,6 +78,8 @@ from operations.adapters.persistence.job_runs import DjangoJobRunRepository
 from operations.application.container import OperationsContainer
 from operations.application.dependencies import JobHealthDependencies
 from operations.application.job_health import JobHealthService
+from reporting.application.container import ReportingContainer
+from reporting.application.queries import ReportingDependencies, ReportingQueryService
 from tasks.adapters.clock import DjangoClock as TaskDjangoClock
 from tasks.adapters.evidence_storage import S3EvidenceStorage
 from tasks.adapters.notification_facts import DjangoTaskNotificationFacts
@@ -216,6 +219,19 @@ def operations_container() -> OperationsContainer:
                 job_runs=DjangoJobRunRepository(),
                 attendance_health=repository,
                 read_unit_of_work_factory=DjangoReadOnlyRepeatableRead,
+            )
+        )
+    )
+
+
+@lru_cache(maxsize=1)
+def reporting_container() -> ReportingContainer:
+    return ReportingContainer(
+        ReportingQueryService(
+            ReportingDependencies(
+                authorization=DjangoReportingAuthorization(),
+                repository=DjangoReportingRepository(),
+                audit=DjangoAuditRecorder(),
             )
         )
     )
