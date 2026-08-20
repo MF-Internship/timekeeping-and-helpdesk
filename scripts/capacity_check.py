@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import http.client
 import json
 import math
 import sys
@@ -11,7 +12,6 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Protocol
 from urllib.parse import urlsplit
-from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
@@ -135,20 +135,39 @@ class HttpSampleResource:
     def __init__(self, target_url: str, timeout_ms: int) -> None:
         self.target_url = _validated_target_url(target_url)
         self.timeout_seconds = timeout_ms / 1000
+        self._parsed = urlsplit(self.target_url)
 
     def measure(self, bearer_token: str) -> float:
-        request = Request(
-            self.target_url,
-            headers={
-                "Accept": "application/json",
-                "Authorization": f"Bearer {bearer_token}",
-            },
-            method="GET",
+        connection_class = (
+            http.client.HTTPSConnection
+            if self._parsed.scheme == "https"
+            else http.client.HTTPConnection
         )
+        connection = connection_class(
+            self._parsed.hostname or "",
+            self._parsed.port,
+            timeout=self.timeout_seconds,
+        )
+        path = self._parsed.path or "/"
+        if self._parsed.query:
+            path = f"{path}?{self._parsed.query}"
         started = time.perf_counter()
-        with urlopen(request, timeout=self.timeout_seconds) as response:
+        try:
+            connection.request(
+                "GET",
+                path,
+                headers={
+                    "Accept": "application/json",
+                    "Authorization": f"Bearer {bearer_token}",
+                },
+            )
+            response = connection.getresponse()
             response.read()
-        return (time.perf_counter() - started) * 1000
+            if response.status >= 500:
+                raise RuntimeError("CAPACITY-HTTP-STATUS")
+            return (time.perf_counter() - started) * 1000
+        finally:
+            connection.close()
 
     def close(self) -> None:
         return None

@@ -71,10 +71,14 @@ class CapacityRequestHandler(BaseHTTPRequestHandler):
         del args
 
 
+class CapacityServer(ThreadingHTTPServer):
+    request_queue_size = 128
+
+
 @contextmanager
 def capacity_server() -> Iterator[str]:
     CapacityRequestHandler.authorizations = []
-    server = ThreadingHTTPServer(("127.0.0.1", 0), CapacityRequestHandler)
+    server = CapacityServer(("127.0.0.1", 0), CapacityRequestHandler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
