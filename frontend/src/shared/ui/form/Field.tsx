@@ -12,10 +12,18 @@ export function Field(props: {
 }) {
   return (
     <div className={cn("grid gap-1.5", props.className)}>
-      <label className="text-sm font-medium leading-none" htmlFor={props.htmlFor}>{props.label}</label>
+      <label className="text-sm font-medium leading-none" htmlFor={props.htmlFor}>
+        {props.label}
+      </label>
       {props.children}
-      {props.description ? <p className="text-sm text-muted-foreground">{props.description}</p> : null}
-      {props.error ? <p className="text-sm text-destructive" role="alert">{props.error}</p> : null}
+      {props.description ? (
+        <p className="text-sm text-muted-foreground">{props.description}</p>
+      ) : null}
+      {props.error ? (
+        <p className="text-sm text-destructive" role="alert">
+          {props.error}
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -25,23 +25,33 @@ beforeEach(() => {
   Object.defineProperty(navigator, "geolocation", {
     configurable: true,
     value: {
-      getCurrentPosition: (success: PositionCallback) => success({
-        coords: { latitude: 10, longitude: 106, accuracy: 12 } as GeolocationCoordinates,
-        timestamp: Date.now(),
-      } as GeolocationPosition),
+      getCurrentPosition: (success: PositionCallback) =>
+        success({
+          coords: { latitude: 10, longitude: 106, accuracy: 12 } as GeolocationCoordinates,
+          timestamp: Date.now(),
+        } as GeolocationPosition),
     },
   });
 });
 
 describe("Field evidence completion", () => {
   it("uploads once, captures fresh GPS and reuses the upload after a location choice", async () => {
-    const complete = vi.fn()
+    const complete = vi
+      .fn()
       .mockRejectedValueOnce({
-        kind: "canonical", errorCode: "LOCATION_CHOICE_REQUIRED",
+        kind: "canonical",
+        errorCode: "LOCATION_CHOICE_REQUIRED",
         details: { candidates: [{ id: 2, code: "HCM", name: "Trung tâm HCM" }] },
       })
       .mockResolvedValueOnce(undefined);
-    render(<FieldEvidenceForm taskId={7} taskTitle="Kiểm tra máy in" busy={false} onComplete={complete} />);
+    render(
+      <FieldEvidenceForm
+        taskId={7}
+        taskTitle="Kiểm tra máy in"
+        busy={false}
+        onComplete={complete}
+      />,
+    );
     const file = new File(["jpg"], "proof.jpg", { type: "image/jpeg" });
     fireEvent.change(screen.getByLabelText("Ảnh minh chứng"), { target: { files: [file] } });
     fireEvent.submit(screen.getByRole("form", { name: "Nộp minh chứng Kiểm tra máy in" }));
@@ -52,23 +62,48 @@ describe("Field evidence completion", () => {
     expect(api.intent).toHaveBeenCalledTimes(1);
     expect(api.upload).toHaveBeenCalledTimes(1);
     expect(complete.mock.calls[1][0]).toMatchObject({
-      selected_location_id: 2, latitude: "10", longitude: "106", accuracy_m: "12",
+      selected_location_id: 2,
+      latitude: "10",
+      longitude: "106",
+      accuracy_m: "12",
     });
     expect(complete.mock.calls[1][1]).toBe(complete.mock.calls[0][1]);
   });
 
   it("retains successful uploads and retries only the incomplete suffix", async () => {
     api.intent
-      .mockResolvedValueOnce({ upload_id: "upload-1", upload_url: "https://storage.invalid/1", headers: {}, expires_at: "2026-08-20T12:00:00Z" })
-      .mockResolvedValueOnce({ upload_id: "upload-2", upload_url: "https://storage.invalid/2", headers: {}, expires_at: "2026-08-20T12:00:00Z" })
-      .mockResolvedValueOnce({ upload_id: "upload-2b", upload_url: "https://storage.invalid/2b", headers: {}, expires_at: "2026-08-20T12:00:00Z" });
-    api.upload.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error("Mạng lỗi")).mockResolvedValueOnce(undefined);
+      .mockResolvedValueOnce({
+        upload_id: "upload-1",
+        upload_url: "https://storage.invalid/1",
+        headers: {},
+        expires_at: "2026-08-20T12:00:00Z",
+      })
+      .mockResolvedValueOnce({
+        upload_id: "upload-2",
+        upload_url: "https://storage.invalid/2",
+        headers: {},
+        expires_at: "2026-08-20T12:00:00Z",
+      })
+      .mockResolvedValueOnce({
+        upload_id: "upload-2b",
+        upload_url: "https://storage.invalid/2b",
+        headers: {},
+        expires_at: "2026-08-20T12:00:00Z",
+      });
+    api.upload
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error("Mạng lỗi"))
+      .mockResolvedValueOnce(undefined);
     const complete = vi.fn().mockResolvedValue(undefined);
     render(<FieldEvidenceForm taskId={7} taskTitle="Hai ảnh" busy={false} onComplete={complete} />);
-    fireEvent.change(screen.getByLabelText("Ảnh minh chứng"), { target: { files: [
-      new File(["1"], "one.jpg", { type: "image/jpeg" }),
-      new File(["2"], "two.jpg", { type: "image/jpeg" }),
-    ] } });
+    fireEvent.change(screen.getByLabelText("Ảnh minh chứng"), {
+      target: {
+        files: [
+          new File(["1"], "one.jpg", { type: "image/jpeg" }),
+          new File(["2"], "two.jpg", { type: "image/jpeg" }),
+        ],
+      },
+    });
     const form = screen.getByRole("form", { name: "Nộp minh chứng Hai ảnh" });
     fireEvent.submit(form);
     await screen.findByText("Mạng lỗi");

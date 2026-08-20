@@ -5,10 +5,20 @@ import { AppHeader } from "@/shared/ui/shell/AppHeader";
 
 vi.mock("@/features/identity/model/AuthProvider", () => ({
   useAuth: () => ({
-    state: { kind: "authenticated", account: {
-      id: 7, username: "helpdesk", full_name: "Nguyễn An", role: "HELPDESK",
-      capabilities: [], phone: null, email: null, is_active: true, must_change_password: false,
-    } },
+    state: {
+      kind: "authenticated",
+      account: {
+        id: 7,
+        username: "helpdesk",
+        full_name: "Nguyễn An",
+        role: "HELPDESK",
+        capabilities: [],
+        phone: null,
+        email: null,
+        is_active: true,
+        must_change_password: false,
+      },
+    },
     logout: vi.fn(),
   }),
 }));

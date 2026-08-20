@@ -15,7 +15,7 @@ from identity.domain.authorization import (
 @pytest.mark.unit
 def test_canonical_policy_shape() -> None:
     assert len(Role) == 3
-    assert len(PermissionAction) == 27
+    assert len(PermissionAction) == 30
     assert len(PERMISSION_IMPLIES) == 5
     assert frozenset({Role.LEADER, Role.HELPDESK}) == ASSIGNABLE_ROLES
 
@@ -41,7 +41,17 @@ def test_role_specific_denials_are_closed() -> None:
     leader_mutations = {
         action for action in effective_capabilities(Role.LEADER) if action.is_mutation
     }
-    assert not leader_mutations
+    assert leader_mutations == {
+        PermissionAction.NOTIFICATION_UPDATE_SELF,
+        PermissionAction.PUSH_SUBSCRIPTION_MANAGE_SELF,
+    }
+    for role in Role:
+        for action in {
+            PermissionAction.NOTIFICATION_VIEW_SELF,
+            PermissionAction.NOTIFICATION_UPDATE_SELF,
+            PermissionAction.PUSH_SUBSCRIPTION_MANAGE_SELF,
+        }:
+            assert decide_permission(role, action).granted_by is action
     assert not decide_permission(Role.MANAGER, PermissionAction.ATTENDANCE_CHECK_IN_SELF).allowed
     assert not decide_permission(Role.MANAGER, PermissionAction.ATTENDANCE_CHECK_OUT_SELF).allowed
     assert not decide_permission(Role.HELPDESK, PermissionAction.USER_MANAGE).allowed

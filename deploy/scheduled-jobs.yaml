@@ -7,3 +7,17 @@ jobs:
     timezone: Asia/Ho_Chi_Minh
     calendar: every_day
     singleton_per_environment: true
+  - name: notification-occurrence-dispatch
+    working_directory: backend
+    command: python manage.py dispatch_notification_occurrences
+    cron: "* * * * *"
+    timezone: Asia/Ho_Chi_Minh
+    calendar: every_day
+    singleton_per_environment: true
+  - name: web-push-delivery
+    working_directory: backend
+    command: python manage.py deliver_web_push
+    cron: "* * * * *"
+    timezone: Asia/Ho_Chi_Minh
+    calendar: every_day
+    singleton_per_environment: true

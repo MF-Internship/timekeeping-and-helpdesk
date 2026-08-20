@@ -93,3 +93,27 @@ def test_job_health_has_no_forbidden_detail_or_mutation_surface() -> None:
     rendered = str(path).lower()
     for forbidden in ("user_id", "session_id", "gps", "latitude", "longitude", "closed_count"):
         assert forbidden not in rendered
+
+
+@pytest.mark.parametrize(
+    ("schema_name", "field_name"),
+    [
+        ("NotificationItem", "full_name"),
+        ("NotificationItem", "gps"),
+        ("PushSubscriptionResult", "endpoint"),
+        ("PushSubscriptionResult", "encrypted_subscription"),
+        ("Target", "url"),
+    ],
+)
+def test_notification_contracts_reject_sensitive_response_fields(
+    schema_name: str, field_name: str
+) -> None:
+    from scripts.check_openapi import OpenAPISafetyError, check_openapi_text
+
+    document = {
+        "openapi": "3.0.3",
+        "components": {"schemas": {schema_name: {"properties": {field_name: {"type": "string"}}}}},
+    }
+
+    with pytest.raises(OpenAPISafetyError, match="OPENAPI-SAFETY"):
+        check_openapi_text(yaml.safe_dump(document), "notification-privacy")

@@ -9,6 +9,10 @@ from pathlib import Path
 import pytest
 
 BACKEND_ROOT = Path(__file__).parents[3]
+VAPID_PRIVATE_KEY = "_JwK_15j-P5tijB2GLjaUo9O78G63Quft2hADnTnj7U"
+VAPID_PUBLIC_KEY = (
+    "BHPBij6oiVlZ6ydT8A8cMACRw4bRGEDWu46WEWlK9XuOVJ_3YRv4Zui2SjMw0gRmKBdMbgakGwKtojux_sCKRSY"
+)
 
 
 def runtime_environment(**overrides: str) -> dict[str, str]:
@@ -25,6 +29,12 @@ def runtime_environment(**overrides: str) -> dict[str, str]:
         "R2_BUCKET": f"timekeeping-{environment_name}",
         "ORIGIN_CREDENTIAL_HEADER": "X-Origin-Credential",
         "ORIGIN_CREDENTIAL": "x" * 32,
+        "WEB_PUSH_VAPID_PUBLIC_KEY": VAPID_PUBLIC_KEY,
+        "WEB_PUSH_VAPID_PRIVATE_KEY": VAPID_PRIVATE_KEY,
+        "WEB_PUSH_VAPID_SUBJECT": "mailto:test@example.invalid",
+        "PUSH_SUBSCRIPTION_ENCRYPTION_KEY": "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=",
+        "WEB_PUSH_ENABLED": "true" if environment_name != "development" else "false",
+        "WEB_PUSH_ALLOWED_ORIGINS": "https://push.example.invalid",
     }
     values.update(overrides)
     return values

@@ -11,7 +11,9 @@ không được tự biến trạng thái đó thành bằng chứng production-
   Internet.
 - Mỗi AZ có **per-AZ egress** riêng. Chính sách chặn mặc định áp dụng cho
   **all outbound egress**; chỉ DNS, PostgreSQL, secret store, object storage và các
-  endpoint vận hành đã phê duyệt được mở.
+  endpoint vận hành đã phê duyệt được mở. Web Push chỉ được đi tới exact HTTPS
+  origins trong `web_push_allowed_origins`; endpoint khác origin này bị từ chối
+  trước khi lưu hoặc mở socket, không redirect tới origin tùy ý.
 - Chạy **exactly one scheduler** cho mọi công việc định kỳ có single-owner.
   Worker có thể scale ngang, scheduler không được nhân bản ngoài cơ chế leader
   election đã được phê duyệt.
@@ -58,12 +60,21 @@ không được tự biến trạng thái đó thành bằng chứng production-
    **trước** 01:00; đúng 01:00 được coi là trễ. Trước lần chạy thật đầu tiên,
    trạng thái có thể là `unknown`. Khi rollback application, giữ nguyên migration
    mở rộng và JobRun; command cũ/mới đều phải an toàn khi chạy lặp.
+10. Chạy singleton `dispatch_notification_occurrences` và `deliver_web_push` mỗi
+    phút theo `Asia/Ho_Chi_Minh`; không đặt timer trong web process và không tạo
+    scheduler thứ hai. Hai command idempotent, dùng PostgreSQL lease/dedupe.
 
 ## Credential rotation và sự cố
 
 - **Credential rotation**: tạo credential mới, cập nhật secret store, rollout
   consumer, xác nhận credential mới hoạt động rồi thu hồi credential cũ. Thực
   hiện riêng cho runtime DB, migration DB, origin credential và signing keys.
+- Rotate VAPID bằng public/private pair mới, rollout public key rồi re-opt-in các
+  subscription cũ; rotate subscription-encryption key theo key-ring đọc-cũ/ghi-mới,
+  re-encrypt theo batch, xác minh rồi thu hồi key cũ. Inventory chỉ giữ identity.
+- Khi push origin hoặc key bị nghi lộ, tắt `WEB_PUSH_ENABLED`, revoke subscription,
+  chặn egress origin, rotate key và chỉ bật lại sau kiểm tra scheduler, generic
+  payload cùng authorization-safe resolver.
 - Khi credential hoặc signing key bị lộ, thực hiện **session revocation**, rotate
   key, vô hiệu token liên quan và lưu bằng chứng operator bên ngoài log ứng dụng.
 - Sau worker crash, liệt kê và xử lý **stale lease** theo owner/expiry đã commit;

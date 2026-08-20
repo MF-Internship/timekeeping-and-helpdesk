@@ -22,9 +22,20 @@ describe("FIELD_EVIDENCE local draft security and lifecycle", () => {
     const raw = localStorage.getItem("task-evidence-draft:17:42") ?? "";
     expect(raw).toContain("base64");
     for (const forbidden of [
-      "latitude", "longitude", "accuracy", "captured_at", "access", "refresh",
-      "token", "upload_id", "object_key", "presigned", "url", "idempotency",
-    ]) expect(raw.toLowerCase()).not.toContain(forbidden);
+      "latitude",
+      "longitude",
+      "accuracy",
+      "captured_at",
+      "access",
+      "refresh",
+      "token",
+      "upload_id",
+      "object_key",
+      "presigned",
+      "url",
+      "idempotency",
+    ])
+      expect(raw.toLowerCase()).not.toContain(forbidden);
     const restored = loadEvidenceDraft(17, 42);
     expect(restored).toMatchObject({ kind: "ready", note: "Đã xử lý" });
     if (restored.kind === "ready") expect(restored.files[0]?.name).toBe("proof.jpg");

@@ -42,7 +42,11 @@ export function LoginForm() {
         <Input name="password" type="password" required autoComplete="current-password" />
       </label>
       <IdentityFailureNotice failure={error} />
-      <ActionGroup><Button type="submit" variant="primary">Đăng nhập</Button></ActionGroup>
+      <ActionGroup>
+        <Button type="submit" variant="primary">
+          Đăng nhập
+        </Button>
+      </ActionGroup>
     </form>
   );
 }

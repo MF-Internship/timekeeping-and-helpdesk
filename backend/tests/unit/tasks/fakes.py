@@ -144,6 +144,36 @@ class Audit:
         self.outbox.append(event)
 
 
+class Notifications:
+    def __init__(self) -> None:
+        self.assignments: list[tuple[int, tuple[int, ...], int]] = []
+        self.removed: list[tuple[int, tuple[int, ...]]] = []
+        self.suppressed_tasks: list[int] = []
+        self.completions: list[tuple[int, tuple[int, ...], datetime]] = []
+
+    def record_assignments(
+        self,
+        task_id: int,
+        assignee_ids: tuple[int, ...],
+        assignment_version: int,
+    ) -> None:
+        self.assignments.append((task_id, assignee_ids, assignment_version))
+
+    def suppress_removed_assignments(self, task_id: int, assignee_ids: tuple[int, ...]) -> None:
+        self.removed.append((task_id, assignee_ids))
+
+    def suppress_task_reminders(self, task_id: int) -> None:
+        self.suppressed_tasks.append(task_id)
+
+    def record_multi_assignee_completion(
+        self,
+        task_id: int,
+        recipient_ids: tuple[int, ...],
+        occurred_at: datetime,
+    ) -> None:
+        self.completions.append((task_id, recipient_ids, occurred_at))
+
+
 class Repository:
     def __init__(
         self, task: TaskSnapshot | None = None, assignees: tuple[int, ...] = (20,)
@@ -214,11 +244,14 @@ class Repository:
         self.added.append((task_id, user_ids, assigned_at))
         self.assignees = user_ids
 
-    def replace_assignees(self, delta: AssigneeDelta) -> None:
+    def replace_assignees(self, delta: AssigneeDelta) -> int:
         self.replacements.append((delta.remove_ids, delta.add_ids))
         self.assignees = tuple(
             sorted((set(self.assignees) - set(delta.remove_ids)) | set(delta.add_ids))
         )
+        assert self.task is not None
+        self.task = replace(self.task, assignment_version=self.task.assignment_version + 1)
+        return self.task.assignment_version
 
     def update_content(self, record: TaskContentUpdate) -> TaskSnapshot:
         assert self.task is not None

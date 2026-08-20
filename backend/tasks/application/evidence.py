@@ -20,7 +20,6 @@ from core.error_codes import (
     VALIDATION_FAILED,
 )
 from core.errors import IdentityAPIError
-from locations.domain.geofence import LocationValidationResult, ValidatedPosition
 from tasks.application.dependencies import TaskDependencies
 from tasks.application.dto import (
     AccessTaskPhotoCommand,
@@ -29,6 +28,7 @@ from tasks.application.dto import (
 )
 from tasks.domain.evidence import (
     EvidenceLocationResolution,
+    EvidencePosition,
     EvidenceUploadStatus,
     GpsQuality,
     classify_gps_quality,
@@ -169,6 +169,7 @@ class TaskEvidenceService:
             task = self._load_self_scoped(command.task_id, command.actor_id, lock=True)
             if task.status is TaskStatus.COMPLETED:
                 raise IdentityAPIError(TASK_ALREADY_COMPLETED, status_code=409)
+            current_assignee_ids = self._dependencies.repository.assignee_ids(task.id)
             claim = EvidenceUploadClaim(
                 prepared.upload_ids, command.task_id, command.actor_id, prepared.now
             )
@@ -185,8 +186,29 @@ class TaskEvidenceService:
             completed = self._dependencies.repository.update_lifecycle(
                 _completed_lifecycle(task.id, completion)
             )
+            self._notify_completion(task.id, current_assignee_ids, completion)
             self._append_field_audit(task, completion)
             return completed
+
+    def _notify_completion(
+        self,
+        task_id: int,
+        current_assignee_ids: tuple[int, ...],
+        completion: CompletionSnapshot,
+    ) -> None:
+        self._dependencies.notifications.suppress_task_reminders(task_id)
+        if completion.completed_by_id not in current_assignee_ids:
+            return
+        if len(current_assignee_ids) < 2:
+            return
+        recipients = tuple(
+            assignee_id
+            for assignee_id in current_assignee_ids
+            if assignee_id != completion.completed_by_id
+        )
+        self._dependencies.notifications.record_multi_assignee_completion(
+            task_id, recipients, completion.completed_at
+        )
 
     def _refresh_location_resolution(
         self,
@@ -196,7 +218,7 @@ class TaskEvidenceService:
         context = self._dependencies.locations.evidence_context(
             prepared.latitude, prepared.longitude
         )
-        position = ValidatedPosition(
+        position = EvidencePosition(
             prepared.latitude,
             prepared.longitude,
             prepared.accuracy_m,
@@ -207,9 +229,7 @@ class TaskEvidenceService:
         _ensure_valid_resolution(resolution)
         return replace(prepared, quality=quality, resolution=resolution)
 
-    def _append_field_audit(
-        self, task: TaskSnapshot, completion: CompletionSnapshot
-    ) -> None:
+    def _append_field_audit(self, task: TaskSnapshot, completion: CompletionSnapshot) -> None:
         after = {
             "task_id": task.id,
             "status": TaskStatus.COMPLETED.value,
@@ -333,13 +353,11 @@ def _validate_upload_command(command: CreateEvidenceUploadCommand) -> None:
         raise IdentityAPIError(VALIDATION_FAILED, status_code=400) from error
 
 
-def _validated_field_position(
-    command: CompleteTaskFieldCommand, now: datetime
-) -> ValidatedPosition:
+def _validated_field_position(command: CompleteTaskFieldCommand, now: datetime) -> EvidencePosition:
     if not command.idempotency_key.strip() or len(command.idempotency_key) > 128:
         raise IdentityAPIError(VALIDATION_FAILED, status_code=400)
     try:
-        position = ValidatedPosition(command.latitude, command.longitude, command.accuracy_m)
+        position = EvidencePosition(command.latitude, command.longitude, command.accuracy_m)
     except ValueError as error:
         raise IdentityAPIError(VALIDATION_FAILED, status_code=400) from error
     if command.captured_at is None or abs((now - command.captured_at).total_seconds()) > 60:
@@ -348,7 +366,7 @@ def _validated_field_position(
 
 
 def _field_location_resolution(
-    position: ValidatedPosition,
+    position: EvidencePosition,
     context: EvidenceLocationContext,
     selected_location_id: int | None,
 ) -> tuple[GpsQuality, EvidenceLocationResolution]:
@@ -463,7 +481,7 @@ def _field_update_record(
 
 def _field_validation_result(prepared: PreparedFieldCompletion) -> str | None:
     if prepared.resolution.location_id is not None:
-        return LocationValidationResult.INSIDE_GEOFENCE.value
+        return "INSIDE_GEOFENCE"
     if prepared.quality is GpsQuality.GOOD:
-        return LocationValidationResult.OUTSIDE_GEOFENCE.value
+        return "OUTSIDE_GEOFENCE"
     return None

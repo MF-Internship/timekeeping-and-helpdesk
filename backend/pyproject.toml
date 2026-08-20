@@ -10,6 +10,8 @@ dependencies = [
   "psycopg[binary]==3.2.9",
   "PyYAML==6.0.2",
   "django-storages[s3]==1.14.6",
+  "pywebpush==2.3.0",
+  "cryptography==50.0.0",
 ]
 
 [dependency-groups]
@@ -57,7 +59,7 @@ line-ending = "lf"
 [tool.mypy]
 python_version = "3.12"
 strict = true
-files = ["config", "core", "operations", "identity", "audit", "locations", "attendance", "tasks", "../scripts"]
+files = ["config", "core", "operations", "identity", "audit", "locations", "attendance", "tasks", "notifications", "../scripts"]
 exclude = ".venv|migrations|tests/fixtures|tests/migration_fixtures"
 mypy_path = "$MYPY_CONFIG_FILE_DIR/stubs"
 
@@ -66,4 +68,4 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["config", "core", "operations", "identity", "audit", "locations", "attendance", "tasks"]
+packages = ["config", "core", "operations", "identity", "audit", "locations", "attendance", "tasks", "notifications"]

@@ -66,6 +66,9 @@ class Task(models.Model):
         related_name="created_tasks",
     )
     assigned_date: models.DateField[Any, Any] = models.DateField()
+    assignment_version: models.PositiveBigIntegerField[int, int] = models.PositiveBigIntegerField(
+        default=1, db_default=1
+    )
     status: models.CharField[str, str] = models.CharField(
         max_length=16,
         choices=[(value.value, value.value) for value in TaskStatus],
@@ -105,6 +108,10 @@ class Task(models.Model):
     class Meta:
         constraints: ClassVar[list[models.BaseConstraint]] = [
             models.CheckConstraint(condition=_nonblank("title"), name="task_title_nonblank"),
+            models.CheckConstraint(
+                condition=models.Q(assignment_version__gt=0),
+                name="task_assignment_version_positive",
+            ),
             models.CheckConstraint(
                 condition=models.Q(status__in=[value.value for value in TaskStatus]),
                 name="task_status_valid",

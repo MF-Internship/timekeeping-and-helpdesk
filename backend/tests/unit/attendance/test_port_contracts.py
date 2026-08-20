@@ -17,6 +17,7 @@ def test_dependencies_expose_all_approved_boundaries() -> None:
         "attempts",
         "audit",
         "unit_of_work_factory",
+        "notifications",
     }
     assert Callable
 

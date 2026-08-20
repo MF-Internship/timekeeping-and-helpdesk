@@ -8,7 +8,6 @@ BACKEND_ROOT = Path(__file__).parents[2]
 BUSINESS_NAMES = {
     "auth",
     "reporting",
-    "notifications",
 }
 
 

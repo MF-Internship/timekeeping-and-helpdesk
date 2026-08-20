@@ -5,6 +5,7 @@ export type EmployeeNavigationItem = {
 };
 
 const ITEMS: readonly EmployeeNavigationItem[] = [
+  { label: "Thông báo", href: "/notifications", capability: "notification.view.self" },
   { label: "Công việc", href: "/tasks", capability: "task.view.self" },
   { label: "Chấm công", href: "/attendance", capability: "attendance.view.self" },
   { label: "Người dùng", href: "/users", capability: "user.view" },
@@ -15,7 +16,5 @@ const ITEMS: readonly EmployeeNavigationItem[] = [
 ];
 
 export function employeeNavigation(hasCapability: (capability: string) => boolean) {
-  return ITEMS.filter(
-    (item) => !item.capability || hasCapability(item.capability),
-  );
+  return ITEMS.filter((item) => !item.capability || hasCapability(item.capability));
 }

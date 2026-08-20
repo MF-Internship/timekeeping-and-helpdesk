@@ -80,6 +80,7 @@ def test_production_backend_obeys_module_boundaries() -> None:
         "attendance",
         "operations",
         "tasks",
+        "notifications",
         "config",
     ):
         result = run_checker(BACKEND / module)

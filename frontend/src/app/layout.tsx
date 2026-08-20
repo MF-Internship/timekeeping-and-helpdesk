@@ -15,7 +15,9 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html lang="vi">
       <body>
-        <AuthProvider><ApplicationFrame>{children}</ApplicationFrame></AuthProvider>
+        <AuthProvider>
+          <ApplicationFrame>{children}</ApplicationFrame>
+        </AuthProvider>
       </body>
     </html>
   );

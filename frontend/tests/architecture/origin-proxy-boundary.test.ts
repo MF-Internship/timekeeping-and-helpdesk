@@ -17,6 +17,7 @@ const CLIENT_MODULES = [
   "src/features/guidance",
   "src/features/identity",
   "src/features/locations",
+  "src/features/notifications",
   "src/features/operations",
   "src/features/tasks",
 ];
@@ -92,6 +93,11 @@ describe("no client module introduces an origin of its own", () => {
   it.each(CLIENT_MODULES)("%s reads no origin out of the environment", (module) => {
     const offenders = moduleSources(module)
       .filter(([, code]) => /process\s*\.\s*env|NEXT_PUBLIC_/.test(code))
+      .filter(
+        ([path, code]) =>
+          !path.endsWith("web-push-config.ts") ||
+          /NEXT_PUBLIC_(?!WEB_PUSH_APPLICATION_SERVER_KEY)/.test(code),
+      )
       .map(([path]) => path);
 
     expect(offenders).toEqual([]);

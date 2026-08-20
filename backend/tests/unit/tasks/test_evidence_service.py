@@ -15,7 +15,15 @@ from tasks.domain.tasks import TaskStatus
 from tasks.ports.evidence import EvidenceObject, PresignedUpload, StoredEvidenceObject
 from tasks.ports.locations import EvidenceLocationContext
 from tasks.ports.repositories import EvidenceUploadSnapshot, IdempotencySnapshot
-from tests.unit.tasks.fakes import Assignees, Audit, Clock, Repository, UnitOfWork, snapshot
+from tests.unit.tasks.fakes import (
+    Assignees,
+    Audit,
+    Clock,
+    Notifications,
+    Repository,
+    UnitOfWork,
+    snapshot,
+)
 
 
 class Authorization:
@@ -102,6 +110,7 @@ def service(
     repository: EvidenceRepository,
     candidates: tuple[EvidenceLocationCandidate, ...] = (),
     audit: Audit | None = None,
+    notifications: Notifications | None = None,
 ) -> TaskEvidenceService:
     return TaskEvidenceService(
         TaskDependencies(
@@ -113,6 +122,7 @@ def service(
             audit=audit or Audit(),
             unit_of_work_factory=UnitOfWork,
             storage=Storage(),
+            notifications=notifications or Notifications(),
         )
     )
 
@@ -148,6 +158,30 @@ def test_field_completion_binds_photo_and_completes_once() -> None:
     assert repository.bound_count == 1
     assert len(repository.updates) == 1
     assert repository.idempotency is not None
+
+
+def test_field_completion_suppresses_reminders_and_notifies_only_other_assignees() -> None:
+    repository = EvidenceRepository()
+    repository.assignees = (10, 20, 30)
+    notifications = Notifications()
+    upload_id = upload(repository)
+
+    service(repository, notifications=notifications).complete_field(command(upload_id))
+
+    assert notifications.suppressed_tasks == [1]
+    assert notifications.completions == [(1, (20, 30), Clock().now())]
+
+
+def test_non_assignee_field_completer_only_suppresses_reminders() -> None:
+    repository = EvidenceRepository()
+    repository.assignees = (20, 30)
+    notifications = Notifications()
+    upload_id = upload(repository)
+
+    service(repository, notifications=notifications).complete_field(command(upload_id))
+
+    assert notifications.suppressed_tasks == [1]
+    assert notifications.completions == []
 
 
 def test_field_completion_appends_privacy_safe_audit() -> None:

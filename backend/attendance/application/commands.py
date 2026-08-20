@@ -162,6 +162,10 @@ class AttendanceCommandService:
             if context.kind is AttendanceKind.IN
             else self._dependencies.repository.close_session(accepted.session, attendance)  # type: ignore[arg-type]
         )
+        if context.kind is AttendanceKind.OUT:
+            self._dependencies.notifications.suppress_open_session_reminder(
+                projection.id, context.actor_id
+            )
         punches = self._dependencies.repository.punches(context.actor_id, context.work_date)
         reconcile_punch_anomalies(
             self._dependencies.repository, punches, attendance, accepted.reference.config

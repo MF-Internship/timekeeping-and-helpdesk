@@ -11,6 +11,7 @@ import {
 } from "react";
 
 import * as identityApi from "@/features/identity/api/identity-api";
+import { clearPushForAccount } from "@/features/notifications/adapters/browser-push";
 import { purgeEvidenceDrafts } from "@/features/tasks/model/evidence-draft";
 import {
   clearSession,
@@ -63,9 +64,7 @@ function bootstrapAccount(): Promise<Account> {
   return promise;
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const state = useSyncExternalStore(subscribeSession, getSessionState, getSessionState);
-
+function useBootstrapAccount() {
   useEffect(() => {
     let current = true;
     void bootstrapAccount()
@@ -79,47 +78,71 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch((error: unknown) => {
         if (!current) return;
-        if (failureCode(error) === "ACCOUNT_INACTIVE") {
-          purgeEvidenceDrafts();
-          clearMemoryAccessToken();
-          setSessionState({ kind: "inactive" });
-        } else {
-          clearSession();
-        }
+        if (failureCode(error) === "ACCOUNT_INACTIVE") handleInactiveAccount();
+        else clearSession();
       });
     return () => {
       current = false;
     };
   }, []);
+}
 
+function handleInactiveAccount() {
+  purgeEvidenceDrafts();
+  void clearPushForAccount();
+  clearMemoryAccessToken();
+  setSessionState({ kind: "inactive" });
+}
+
+function useTransportAuthenticationFailures() {
   useEffect(() => {
     setAuthenticationFailureHandler((code) => {
-      if (code === "ACCOUNT_INACTIVE") {
-        purgeEvidenceDrafts();
-        setSessionState({ kind: "inactive" });
-      }
+      if (code === "ACCOUNT_INACTIVE") handleInactiveAccount();
       if (code === "PASSWORD_CHANGE_REQUIRED") setSessionState({ kind: "forced_change" });
       if (code === "INVALID_TOKEN") clearSession();
     });
     return () => setAuthenticationFailureHandler(undefined);
   }, []);
+}
 
-  const login = useCallback(async (username: string, password: string) => {
-    purgeEvidenceDrafts();
-    const session = await identityApi.login({ username, password });
-    setMemoryAccessToken(session.access);
-    if (session.must_change_password) {
-      setSessionState({ kind: "forced_change" });
-      return;
-    }
-    setSessionState({ kind: "authenticated", account: asAccount(await identityApi.getMe()) });
-  }, []);
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const state = useSyncExternalStore(subscribeSession, getSessionState, getSessionState);
+  useBootstrapAccount();
+  useTransportAuthenticationFailures();
+
+  const login = useCallback(
+    async (username: string, password: string) => {
+      if (state.kind === "authenticated") {
+        try {
+          await identityApi.logout();
+        } finally {
+          await clearPushForAccount(state.account.id).catch(() => undefined);
+          clearMemoryAccessToken();
+          clearSession();
+        }
+      } else {
+        await clearPushForAccount().catch(() => undefined);
+      }
+      purgeEvidenceDrafts();
+      const session = await identityApi.login({ username, password });
+      setMemoryAccessToken(session.access);
+      if (session.must_change_password) {
+        setSessionState({ kind: "forced_change" });
+        return;
+      }
+      setSessionState({ kind: "authenticated", account: asAccount(await identityApi.getMe()) });
+    },
+    [state],
+  );
 
   const logout = useCallback(async () => {
     try {
       await identityApi.logout();
     } finally {
       purgeEvidenceDrafts(state.kind === "authenticated" ? state.account.id : undefined);
+      await clearPushForAccount(
+        state.kind === "authenticated" ? state.account.id : undefined,
+      ).catch(() => undefined);
       clearMemoryAccessToken();
       clearSession();
     }

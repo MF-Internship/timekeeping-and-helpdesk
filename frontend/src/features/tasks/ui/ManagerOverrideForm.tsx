@@ -31,7 +31,8 @@ export function ManagerOverrideForm(props: {
         <Textarea name="completion_note" required />
       </label>
       <label className="checkbox">
-        <Input className="mt-0 min-h-5 w-5 shadow-none"
+        <Input
+          className="mt-0 min-h-5 w-5 shadow-none"
           type="checkbox"
           checked={confirmed}
           onChange={(event) => setConfirmed(event.target.checked)}
@@ -39,9 +40,11 @@ export function ManagerOverrideForm(props: {
         Xác nhận hoàn thành vĩnh viễn
       </label>
       {error ? <p role="alert">{UI_MESSAGES.tasks.completionNote}</p> : null}
-      <ActionGroup><Button type="submit" variant="destructive" loading={props.busy}>
-        Hoàn thành
-      </Button></ActionGroup>
+      <ActionGroup>
+        <Button type="submit" variant="destructive" loading={props.busy}>
+          Hoàn thành
+        </Button>
+      </ActionGroup>
     </form>
   );
 }

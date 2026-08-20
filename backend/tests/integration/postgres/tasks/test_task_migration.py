@@ -8,7 +8,7 @@ pytestmark = [pytest.mark.django_db(transaction=True), pytest.mark.postgres]
 def test_tasks_has_one_expand_only_leaf_and_expected_dependencies() -> None:
     loader = MigrationLoader(connection)
     assert [leaf for leaf in loader.graph.leaf_nodes() if leaf[0] == "tasks"] == [
-        ("tasks", "0003_task_correction")
+        ("tasks", "0004_task_assignment_version")
     ]
     migration = loader.disk_migrations[("tasks", "0001_initial")]
     assert ("locations", "0001_initial") in migration.dependencies
@@ -24,6 +24,7 @@ def test_task_tables_and_named_constraints_exist_after_migration() -> None:
             "task_completion_shape",
             "task_status_date_id_idx",
             "task_creator_status_idx",
+            "task_assignment_version_positive",
         },
         "tasks_taskassignee": {"task_assignee_unique", "task_assignee_user_idx"},
         "tasks_taskupdate": {

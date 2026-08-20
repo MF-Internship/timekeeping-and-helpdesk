@@ -30,6 +30,24 @@ class EvidenceUploadStatus(StrEnum):
 
 
 @dataclass(frozen=True, slots=True)
+class EvidencePosition:
+    latitude: Decimal
+    longitude: Decimal
+    accuracy_m: Decimal
+
+    def __post_init__(self) -> None:
+        values = (self.latitude, self.longitude, self.accuracy_m)
+        if not all(value.is_finite() for value in values):
+            raise ValueError("position")
+        if not Decimal("-90") <= self.latitude <= Decimal("90"):
+            raise ValueError("latitude")
+        if not Decimal("-180") <= self.longitude <= Decimal("180"):
+            raise ValueError("longitude")
+        if self.accuracy_m < 0:
+            raise ValueError("accuracy_m")
+
+
+@dataclass(frozen=True, slots=True)
 class EvidenceLocationCandidate:
     id: int
     code: str

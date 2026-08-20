@@ -4,6 +4,7 @@ from pathlib import Path
 from django.conf import settings
 
 from attendance.adapters.clock import DjangoClock
+from attendance.adapters.notification_facts import DjangoAttendanceNotificationFacts
 from attendance.adapters.persistence.attempts import DjangoAttemptWriter
 from attendance.adapters.persistence.reconciliation import DjangoReconciliationRepository
 from attendance.adapters.persistence.repositories import DjangoAttendanceRepository
@@ -15,6 +16,14 @@ from attendance.application.queries import AttendanceQueryService
 from attendance.application.reconciliation import ReconciliationDependencies, ReconciliationService
 from audit.adapters.persistence.recording import DjangoAuditRecorder
 from config.attendance_adapters import DjangoAttendanceAuthorization, DjangoAttendanceReferenceData
+from config.notification_adapters import (
+    DjangoNotificationAccountFacts,
+    DjangoNotificationAttendanceFacts,
+    DjangoNotificationAuthorization,
+    DjangoNotificationTaskFacts,
+    DjangoPushSubscriptionRevoker,
+    notification_shift_end,
+)
 from config.operations_adapters import DjangoReadOnlyRepeatableRead, DjangoReconciliationJobRuns
 from config.task_adapters import (
     DjangoAssigneeDirectory,
@@ -50,12 +59,27 @@ from locations.application.location_admin import LocationAdminService
 from locations.application.queries import ConfigQueryService, LocationQueryService
 from locations.application.readiness import ReadinessDependencies, ReferenceDataReadinessService
 from locations.application.seed import LocationSeedService
+from notifications.adapters.clock import DjangoClock as NotificationDjangoClock
+from notifications.adapters.persistence.repositories import (
+    DjangoDeliveryRepository,
+    DjangoNotificationRepository,
+    DjangoSubscriptionRepository,
+)
+from notifications.adapters.persistence.unit_of_work import (
+    DjangoUnitOfWork as NotificationUnitOfWork,
+)
+from notifications.adapters.security.endpoint_policy import ExactEndpointPolicy
+from notifications.adapters.security.subscription_cipher import FernetSubscriptionCipher
+from notifications.adapters.web_push import WebPushTransport
+from notifications.application.container import NotificationContainer, build_notification_container
+from notifications.application.dependencies import NotificationDependencies
 from operations.adapters.persistence.job_runs import DjangoJobRunRepository
 from operations.application.container import OperationsContainer
 from operations.application.dependencies import JobHealthDependencies
 from operations.application.job_health import JobHealthService
 from tasks.adapters.clock import DjangoClock as TaskDjangoClock
 from tasks.adapters.evidence_storage import S3EvidenceStorage
+from tasks.adapters.notification_facts import DjangoTaskNotificationFacts
 from tasks.adapters.persistence.repositories import DjangoTaskRepository
 from tasks.adapters.persistence.unit_of_work import DjangoUnitOfWork as TaskDjangoUnitOfWork
 from tasks.application.container import TaskContainer, build_task_container
@@ -74,6 +98,7 @@ def identity_container() -> IdentityContainer:
         sessions=sessions,
         unit_of_work_factory=DjangoUnitOfWork,
         audit=audit,
+        push_subscriptions=DjangoPushSubscriptionRevoker(notification_container().subscriptions),
     )
     authentication = AuthenticationService(dependencies)
     self_service = SelfService(dependencies)
@@ -160,6 +185,7 @@ def attendance_container() -> AttendanceContainer:
         attempts=DjangoAttemptWriter(),
         audit=DjangoAuditRecorder(),
         unit_of_work_factory=AttendanceUnitOfWork,
+        notifications=notification_container().occurrences,
     )
     return AttendanceContainer(
         authorization,
@@ -206,5 +232,43 @@ def task_container() -> TaskContainer:
         audit=DjangoAuditRecorder(),
         unit_of_work_factory=TaskDjangoUnitOfWork,
         storage=S3EvidenceStorage(),
+        notifications=notification_container().occurrences,
     )
     return build_task_container(dependencies)
+
+
+@lru_cache(maxsize=1)
+def notification_container() -> NotificationContainer:
+    cipher, endpoint_policy, transport = _web_push_adapters()
+    task_facts = DjangoNotificationTaskFacts(DjangoTaskNotificationFacts(DjangoTaskAuthorization()))
+    attendance_facts = DjangoNotificationAttendanceFacts(
+        DjangoAttendanceNotificationFacts(DjangoAttendanceAuthorization(), notification_shift_end)
+    )
+    return build_notification_container(
+        NotificationDependencies(
+            notifications=DjangoNotificationRepository(),
+            subscriptions=DjangoSubscriptionRepository(),
+            deliveries=DjangoDeliveryRepository(),
+            clock=NotificationDjangoClock(),
+            unit_of_work_factory=NotificationUnitOfWork,
+            accounts=DjangoNotificationAccountFacts(),
+            tasks=task_facts,
+            attendance=attendance_facts,
+            authorization=DjangoNotificationAuthorization(),
+            cipher=cipher,
+            endpoint_policy=endpoint_policy,
+            transport=transport,
+        )
+    )
+
+
+def _web_push_adapters() -> tuple[object | None, object | None, object | None]:
+    if not settings.WEB_PUSH_ENABLED:
+        return None, None, None
+    cipher = FernetSubscriptionCipher(tuple(settings.PUSH_SUBSCRIPTION_ENCRYPTION_KEYS))
+    endpoint_policy = ExactEndpointPolicy(tuple(settings.WEB_PUSH_ALLOWED_ORIGINS))
+    transport = WebPushTransport(
+        vapid_private_key=settings.WEB_PUSH_VAPID_PRIVATE_KEY,
+        vapid_subject=settings.WEB_PUSH_VAPID_SUBJECT,
+    )
+    return cipher, endpoint_policy, transport

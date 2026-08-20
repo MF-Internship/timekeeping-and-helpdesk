@@ -13,6 +13,7 @@ from identity.application.dto import (
 )
 from identity.domain.accounts import AccountSnapshot, NewAccount
 from identity.domain.authorization import ASSIGNABLE_ROLES, Role
+from identity.ports.push_subscriptions import PushSubscriptionRevocationReason
 from identity.ports.sessions import RevocationReason
 
 
@@ -39,6 +40,7 @@ class UserAdminService:
         self.sessions = dependencies.sessions
         self.unit_of_work_factory = dependencies.unit_of_work_factory
         self.audit = dependencies.audit
+        self.push_subscriptions = dependencies.push_subscriptions
 
     def create(self, actor_id: int, request: UserCreateRequest) -> GeneratedPasswordDisplayResult:
         if request.role not in ASSIGNABLE_ROLES:
@@ -149,6 +151,9 @@ class UserAdminService:
             )
             if before.is_active and not is_active:
                 count = self.sessions.revoke_all(target_id, RevocationReason.ACCOUNT_DEACTIVATED)
+                self.push_subscriptions.revoke_all(
+                    target_id, PushSubscriptionRevocationReason.ACCOUNT_DEACTIVATED
+                )
                 self._record_revocation(
                     actor_id,
                     target_id,

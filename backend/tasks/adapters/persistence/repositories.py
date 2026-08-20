@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from django.db.models import Q, QuerySet
+from django.db.models import F, Q, QuerySet
 
 from tasks.domain.evidence import EvidenceUploadStatus, GpsQuality, LocationResolutionMethod
 from tasks.domain.tasks import (
@@ -92,9 +92,11 @@ class DjangoTaskRepository:
             ]
         )
 
-    def replace_assignees(self, delta: AssigneeDelta) -> None:
+    def replace_assignees(self, delta: AssigneeDelta) -> int:
         TaskAssignee.objects.filter(task_id=delta.task_id, user_id__in=delta.remove_ids).delete()
         self.add_assignees(delta.task_id, delta.add_ids, delta.assigned_at)
+        Task.objects.filter(pk=delta.task_id).update(assignment_version=F("assignment_version") + 1)
+        return int(Task.objects.values_list("assignment_version", flat=True).get(pk=delta.task_id))
 
     def update_content(self, record: TaskContentUpdate) -> TaskSnapshot:
         Task.objects.filter(pk=record.task_id).update(
@@ -276,6 +278,7 @@ def task_snapshot(model: Task) -> TaskSnapshot:
         block_reason=model.block_reason,
         expected_location_text=model.expected_location_text,
         deleted_at=model.deleted_at,
+        assignment_version=model.assignment_version,
     )
 
 

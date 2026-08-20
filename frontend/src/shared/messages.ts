@@ -13,6 +13,13 @@ export const UI_MESSAGES = Object.freeze({
   validationFailed: "Dữ liệu không hợp lệ.",
   throttled: "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau",
   serviceUnavailable: "Dịch vụ tạm thời không khả dụng. Vui lòng thử lại sau.",
+  notifications: Object.freeze({
+    title: "Thông báo",
+    empty: "Bạn chưa có thông báo nào.",
+    loadFailure: "Không thể tải hộp thư thông báo.",
+    refreshFailure: "Không thể làm mới; danh sách trước đó vẫn được hiển thị.",
+    readFailure: "Chưa thể đánh dấu đã đọc.",
+  }),
   tasks: Object.freeze({
     title: "Công việc",
     empty: "Không có công việc trong các nhóm hiện tại.",

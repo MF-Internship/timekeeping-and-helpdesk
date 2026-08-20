@@ -160,7 +160,9 @@ function ConfigForm({ draft, errors, busy, onChange, onSubmit, onReset }: FormPr
       </div>
       {errors.non_field_errors && <p role="alert">{errors.non_field_errors}</p>}
       <div className="actions">
-        <Button variant="primary" disabled={busy}>Lưu cấu hình</Button>
+        <Button variant="primary" disabled={busy}>
+          Lưu cấu hình
+        </Button>
         <Button type="button" disabled={busy} onClick={onReset}>
           Hoàn tác
         </Button>

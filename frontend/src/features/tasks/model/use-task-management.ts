@@ -50,7 +50,12 @@ function useTaskMutation(refresh: () => Promise<void>) {
   const [mutation, setMutation] = useState<TaskMutationState>({ kind: "idle" });
   const flight = useRef(false);
   const runMutation = useCallback(
-    async (operation: Mutation, successMessage: string, conflictRefresh?: Mutation, propagate = false) => {
+    async (
+      operation: Mutation,
+      successMessage: string,
+      conflictRefresh?: Mutation,
+      propagate = false,
+    ) => {
       if (flight.current) return;
       flight.current = true;
       setMutation({ kind: "submitting" });
@@ -113,8 +118,7 @@ function taskManagement(context: ManagementContext) {
     ...context,
     create: (body: taskApi.TaskCreateInput) =>
       run(() => taskApi.createTask(body), UI_MESSAGES.tasks.created, undefined, true),
-    remove: (taskId: number) =>
-      run(() => taskApi.deleteTask(taskId), "Đã xóa công việc tự tạo."),
+    remove: (taskId: number) => run(() => taskApi.deleteTask(taskId), "Đã xóa công việc tự tạo."),
     update: (taskId: number, body: taskApi.TaskUpdateInput) =>
       run(() => taskApi.updateTask(taskId, body), UI_MESSAGES.tasks.saved),
     changeStatus: (taskId: number, body: taskApi.TaskStatusInput) =>

@@ -10,6 +10,7 @@ def test_task_snapshot_fields_constraints_and_indexes_are_closed() -> None:
         "description",
         "created_by",
         "assigned_date",
+        "assignment_version",
         "status",
         "location",
         "expected_location_text",
@@ -21,6 +22,8 @@ def test_task_snapshot_fields_constraints_and_indexes_are_closed() -> None:
         "block_reason",
     }
     assert Task._meta.get_field("status").db_default is not None
+    assert Task._meta.get_field("assignment_version").default == 1
+    assert Task._meta.get_field("assignment_version").db_default is not None
     assert {
         constraint.name
         for constraint in Task._meta.constraints
@@ -30,6 +33,7 @@ def test_task_snapshot_fields_constraints_and_indexes_are_closed() -> None:
         "task_status_valid",
         "task_block_reason_shape",
         "task_completion_shape",
+        "task_assignment_version_positive",
     }
     assert {index.name for index in Task._meta.indexes} == {
         "task_status_date_id_idx",
