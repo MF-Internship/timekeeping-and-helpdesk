@@ -18,3 +18,20 @@ Expected:
 - No employee, Task detail, GPS coordinate, photo, map URL, signed URL, token, or private evidence data appears in the push preview.
 Related requirement/R-xx: R-97.
 Status: PENDING
+
+## DW-F012-01
+
+Feature: 012 Reliable Outbox Relay
+Reason: Real external transport delivery requires approved provider/broker infrastructure and credentials.
+Prerequisites: Staging deployment, approved transport adapter configuration, provider credentials, reachable consumer endpoint.
+Steps:
+1. Configure `OUTBOX_RELAY_TRANSPORT` to the approved non-local provider.
+2. Append an approved `OutboxEvent` in staging.
+3. Run `relay_outbox` with a unique worker id.
+4. Confirm the provider receives exactly one delivery attempt for the event id.
+5. Confirm duplicate delivery is idempotently suppressed by the consumer.
+Expected:
+- `OutboxEvent` reaches `PUBLISHED` only after provider success;
+- retry/dead-letter behavior matches R-105 on controlled provider failures;
+- no payload, URL, token, credential, or GPS-sensitive value appears in logs/provider previews.
+Status: PENDING

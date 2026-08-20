@@ -177,6 +177,29 @@ LOGGING = {
     "root": {"handlers": ["console"], "level": "INFO"},
 }
 
+
+def _positive_int_env(key: str, default: int) -> int:
+    raw = os.environ.get(key, str(default))
+    try:
+        value = int(raw)
+    except ValueError as error:
+        raise ConfigurationError(key) from error
+    if value < 1:
+        raise ConfigurationError(key)
+    return value
+
+
+OUTBOX_RELAY_TRANSPORT = os.environ.get("OUTBOX_RELAY_TRANSPORT", "disabled")
+if OUTBOX_RELAY_TRANSPORT not in {"disabled", "logging"}:
+    raise ConfigurationError("OUTBOX_RELAY_TRANSPORT")
+OUTBOX_RELAY_BATCH_SIZE = _positive_int_env("OUTBOX_RELAY_BATCH_SIZE", 100)
+OUTBOX_RELAY_LEASE_SECONDS = _positive_int_env("OUTBOX_RELAY_LEASE_SECONDS", 60)
+OUTBOX_RELAY_MAX_ATTEMPTS = _positive_int_env("OUTBOX_RELAY_MAX_ATTEMPTS", 12)
+OUTBOX_RELAY_BACKOFF_BASE_SECONDS = _positive_int_env(
+    "OUTBOX_RELAY_BACKOFF_BASE_SECONDS", 30
+)
+OUTBOX_RELAY_BACKOFF_MAX_SECONDS = _positive_int_env("OUTBOX_RELAY_BACKOFF_MAX_SECONDS", 3600)
+
 LANGUAGE_CODE = "vi"
 TIME_ZONE = "Asia/Ho_Chi_Minh"
 USE_I18N = True
