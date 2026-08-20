@@ -19,6 +19,49 @@ Expected:
 Related requirement/R-xx: R-97.
 Status: PENDING
 
+## DW-F014-01
+
+Feature: 014 Production Readiness
+Reason: Real staging/production infrastructure values are not available in the repository.
+Prerequisites: Approved staging and production projects, database identities, migration/admin DB identities, buckets, Redis/cache identities, signing keys, origin credentials, and scheduler identities.
+Steps:
+1. Replace required `UNRESOLVED` identity values in `deploy/environments.yaml` with non-secret real identities.
+2. Run `scripts/deployment_check.py isolation`.
+3. Run `scripts/deployment_check.py production-ready`.
+Expected:
+- Isolation passes;
+- production-ready passes only when all required production values are resolved and distinct.
+Status: PENDING
+
+## DW-F014-02
+
+Feature: 014 Backup and Recovery
+Reason: Real backup execution and restore drill require provider infrastructure and a separate restore project/database.
+Prerequisites: Backup policy, restore project, `RECOVERY_DATABASE_URL`, operator access, runbook owner.
+Steps:
+1. Execute a provider backup or PITR restore into the separate recovery database.
+2. Run `manage.py verify_restore` with `DATABASE_URL`, `DATABASE_ADMIN_URL`, and `RECOVERY_DATABASE_URL`.
+3. Record measured RPO/RTO, categories, restore identity, timestamp, and remediation owner in `deploy/recovery-evidence.yaml`.
+4. Run `scripts/deployment_check.py recovery-ready`.
+Expected:
+- Restore verification uses read-only probes and passes;
+- recovery-ready passes only with current evidence within RPO/RTO/retention targets.
+Status: PENDING
+
+## DW-F014-03
+
+Feature: 014 Capacity Readiness
+Reason: Real capacity evidence requires at least 50 real authorized accounts and a staging/production-like target.
+Prerequisites: Temporary identities file kept outside Git, reachable `/api/v1/` capacity probe, concurrency allowance, remediation owner.
+Steps:
+1. Generate at least 50 real short-lived identities.
+2. Run `scripts/capacity_check.py measure --concurrency 20 --target-url <approved /api/v1/...>`.
+3. Store sanitized output outside secrets and summarize evidence in `deploy/recovery-evidence.yaml`.
+Expected:
+- p95 is within target or readiness remains failed with remediation owner;
+- identities/tokens are not printed or committed.
+Status: PENDING
+
 ## DW-F013-01
 
 Feature: 013 Operational Telemetry, Health and Retention
