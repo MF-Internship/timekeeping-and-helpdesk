@@ -19,6 +19,7 @@ const CLIENT_MODULES = [
   "src/features/locations",
   "src/features/notifications",
   "src/features/operations",
+  "src/features/reports",
   "src/features/tasks",
 ];
 

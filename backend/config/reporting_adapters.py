@@ -9,7 +9,7 @@ from django.utils import timezone
 from attendance.domain.attempts import FAILURE_OUTCOMES, AttendanceAttemptOutcome
 from attendance.models import Attendance, AttendanceAnomaly, AttendanceAttempt, AttendanceSession
 from identity.application.authorization import DjangoAuthorizationGateway
-from identity.domain.authorization import PermissionAction, Role
+from identity.domain.authorization import PermissionAction
 from identity.models import User
 from reporting.application.dto import AttendanceReport, FailureRate, ReportFilters, TaskReport
 from tasks.domain.evidence import GpsQuality
@@ -109,9 +109,7 @@ def _no_check_in_today(user_ids: tuple[int, ...]) -> int:
     checked_in = Attendance.objects.filter(
         user_id__in=user_ids, work_date=_today(), kind="IN"
     ).values("user_id")
-    return User.objects.filter(id__in=user_ids, role=Role.HELPDESK.value).exclude(
-        id__in=checked_in
-    ).count()
+    return User.objects.filter(id__in=user_ids, role="HELPDESK").exclude(id__in=checked_in).count()
 
 
 def _checked_out_today(user_ids: tuple[int, ...]) -> int:

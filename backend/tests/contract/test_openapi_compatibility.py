@@ -13,6 +13,8 @@ GATE = "scripts/check_openapi_compatibility.sh"
 
 
 def run_gate(baseline: str, candidate: str) -> subprocess.CompletedProcess[str]:
+    if os.name == "nt":
+        pytest.skip("shell compatibility gate is executed in Linux CI")
     environment = dict(os.environ)
     result = subprocess.run(
         [
@@ -63,6 +65,8 @@ def test_gate_uses_pinned_oasdiff_not_custom_compatibility_logic() -> None:
 def test_arbitrary_oasdiff_override_cannot_bypass_breaking_change(
     tmp_path: Path,
 ) -> None:
+    if os.name == "nt":
+        pytest.skip("shell compatibility gate is executed in Linux CI")
     override = tmp_path / "always-pass"
     marker = tmp_path / "override-ran"
     override.write_text(
@@ -88,6 +92,8 @@ def test_arbitrary_oasdiff_override_cannot_bypass_breaking_change(
 
 
 def test_installer_replaces_tampered_cached_executable(tmp_path: Path) -> None:
+    if os.name == "nt":
+        pytest.skip("shell installer is executed in Linux CI")
     fake_bin = tmp_path / "bin"
     fake_bin.mkdir()
     trusted_source = tmp_path / "oasdiff"
