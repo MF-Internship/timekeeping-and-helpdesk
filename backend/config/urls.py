@@ -8,12 +8,14 @@ from config.composition import (
     identity_target_lookup,
     locations_container,
     operations_container,
+    reporting_container,
     task_container,
 )
 from identity.adapters.api.urls import identity_urlpatterns
 from locations.adapters.api.urls import location_urlpatterns
 from notifications.adapters.api.urls import urlpatterns as notification_urlpatterns
 from operations.adapters.api.urls import operations_urlpatterns
+from reporting.adapters.api.urls import reporting_urlpatterns
 from tasks.adapters.api.urls import task_urlpatterns
 
 urlpatterns: list[URLPattern | URLResolver] = [
@@ -27,6 +29,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
             + location_urlpatterns(locations_container)
             + attendance_urlpatterns(attendance_container)
             + operations_urlpatterns(operations_container)
+            + reporting_urlpatterns(reporting_container)
             + task_urlpatterns(task_container)
             + notification_urlpatterns
         ),

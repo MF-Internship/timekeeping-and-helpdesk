@@ -8,6 +8,7 @@ const ITEMS: readonly EmployeeNavigationItem[] = [
   { label: "Thông báo", href: "/notifications", capability: "notification.view.self" },
   { label: "Công việc", href: "/tasks", capability: "task.view.self" },
   { label: "Chấm công", href: "/attendance", capability: "attendance.view.self" },
+  { label: "Báo cáo", href: "/reports", capability: "report.view.self" },
   { label: "Người dùng", href: "/users", capability: "user.view" },
   { label: "Địa điểm", href: "/locations", capability: "location.view" },
   { label: "Ngày nghỉ", href: "/holidays", capability: "holiday.manage" },
