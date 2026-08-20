@@ -1,9 +1,12 @@
+from typing import Any
+
 from rest_framework import serializers
 
 from operations.application.job_health import ScopedJobHealth
+from operations.domain.job_runs import JobRunSnapshot
 
 
-class JobRunSerializer(serializers.Serializer):
+class JobRunSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField()
     job_name = serializers.ChoiceField(choices=["MISSING_CHECK_OUT"])
     started_at = serializers.DateTimeField()
@@ -17,14 +20,14 @@ class JobRunSerializer(serializers.Serializer):
     )
 
 
-class EvidenceSerializer(serializers.Serializer):
+class EvidenceSerializer(serializers.Serializer[Any]):
     job_closed_session_count = serializers.IntegerField(min_value=0)
     missing_checkout_anomaly_count = serializers.IntegerField(min_value=0)
     job_closed_without_anomaly_count = serializers.IntegerField(min_value=0)
     anomaly_without_job_closed_count = serializers.IntegerField(min_value=0)
 
 
-class ReasonsSerializer(serializers.Serializer):
+class ReasonsSerializer(serializers.Serializer[Any]):
     no_run_history = serializers.BooleanField()
     missing_timely_success = serializers.BooleanField()
     unfinished_run = serializers.BooleanField()
@@ -35,11 +38,11 @@ class ReasonsSerializer(serializers.Serializer):
     overdue_open_sessions = serializers.BooleanField()
 
 
-class LinksSerializer(serializers.Serializer):
+class LinksSerializer(serializers.Serializer[Any]):
     accounts = serializers.ChoiceField(choices=["/api/v1/users/"])
 
 
-class JobHealthSerializer(serializers.Serializer):
+class JobHealthSerializer(serializers.Serializer[Any]):
     state = serializers.ChoiceField(choices=["ok", "alert", "unknown"])
     timezone = serializers.ChoiceField(choices=["Asia/Ho_Chi_Minh"])
     cutoff_at = serializers.DateTimeField()
@@ -79,7 +82,7 @@ def job_health_payload(scoped: ScopedJobHealth) -> dict[str, object]:
     }
 
 
-def _run_payload(run):  # type: ignore[no-untyped-def]
+def _run_payload(run: JobRunSnapshot | None) -> dict[str, object] | None:
     if run is None:
         return None
     return {

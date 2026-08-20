@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import ClassVar
 
 from django.db import models
@@ -9,8 +10,10 @@ from operations.domain.job_runs import JobName, JobRunErrorCode, JobRunStatus
 
 class JobRun(models.Model):
     job_name: models.CharField[str, str] = models.CharField(max_length=32)
-    started_at: models.DateTimeField = models.DateTimeField()
-    finished_at: models.DateTimeField = models.DateTimeField(null=True, blank=True)
+    started_at: models.DateTimeField[datetime, datetime] = models.DateTimeField()
+    finished_at: models.DateTimeField[datetime | None, datetime | None] = models.DateTimeField(
+        null=True, blank=True
+    )
     status: models.CharField[str, str] = models.CharField(
         max_length=32,
         default=JobRunStatus.RUNNING.value,

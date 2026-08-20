@@ -189,10 +189,23 @@ Người quản lý tạo công việc và phân công trực tiếp cho một h
 Quản lý được phép giao việc cho ngày tương lai để lập kế hoạch trước. Công việc
 tương lai hiển thị trong nhóm **Sắp tới** và không tính vào KPI của ngày hiện tại
 trước khi tới ngày được giao.
+Quản lý không có nhánh tự tạo việc cho chính mình: mọi Task do Quản lý tạo phải
+có ít nhất một người nhận là Helpdesk đang hoạt động (R-140).
 
 **Helpdesk tự tạo việc**
 
 Trong quá trình làm việc, nhân viên có thể tự tạo công việc phát sinh mà không cần chờ quản lý giao.
+Task này luôn lấy người đang đăng nhập làm người tạo và tự gán đúng người đó làm
+người thực hiện ban đầu. Helpdesk không được chọn người khác khi tự tạo và không
+được thêm, gỡ hoặc thay người thực hiện sau đó, kể cả với Task do mình tạo hoặc
+được giao. Chỉ Quản lý được quản lý danh sách người thực hiện; mọi người mới
+được thêm vẫn phải là Helpdesk đang hoạt động và request có bất kỳ người không
+hợp lệ nào bị từ chối toàn bộ (R-135).
+Khi tự tạo, hệ thống khóa và kiểm lại chính tài khoản đang đăng nhập trong cùng
+giao dịch để thao tác đồng thời với khóa tài khoản/đổi vai trò không tạo assignee
+không hợp lệ (R-142).
+Task chỉ hiển thị `id` và họ tên của người tạo/người thực hiện/người cập nhật;
+không dùng response Task để lộ username hay trạng thái tài khoản (R-143).
 
 #### **Thông tin công việc**
 
@@ -230,6 +243,23 @@ Mỗi công việc có một trong bốn trạng thái:
 
 Task `BLOCKED` được tiếp tục ở ngày sau trên chính task đó, không tạo task mới.
 
+Với ba trạng thái chưa hoàn thành, gửi lại đúng trạng thái hiện tại là thao tác
+no-op thành công sau khi đã qua quyền, kiểm tra dữ liệu và object scope: không
+ghi Task, không thêm dòng lịch sử, không audit/outbox và không tăng version.
+Task đang `BLOCKED` không phải gửi lại lý do chỉ để thực hiện no-op (R-136).
+
+Hai request trạng thái cạnh tranh được xử lý tuần tự trên Task và request đến
+sau luôn kiểm lại trạng thái mới nhất: còn là transition hợp lệ thì ghi thêm một
+dòng lịch sử riêng; đã trùng state thì no-op; không còn hợp lệ hoặc Task đã hoàn
+thành thì từ chối không side effect. Không last-write-wins và không thêm version
+Task chỉ để từ chối request thứ hai (R-138).
+
+`COMPLETED` là hồ sơ chỉ đọc toàn bộ: mọi request sửa status (kể cả gửi lại
+`COMPLETED`), tên, mô tả, địa điểm dự kiến hoặc người thực hiện đều bị từ chối;
+đọc, danh sách và báo cáo vẫn hoạt động. Nếu phase sau cần sửa sai phải có luồng
+correction riêng với quyền, lý do và audit, không dùng quyền cập nhật thường để
+lách terminal rule (R-139).
+
 ### **3.3. Hoàn thành công việc**
 
 Khi đến hiện trường và hoàn thành công việc, nhân viên thực hiện:
@@ -252,8 +282,8 @@ Khi đến hiện trường và hoàn thành công việc, nhân viên thực hi
 
 Ràng buộc ảnh và GPS ở trên **chỉ áp dụng cho hoàn thành tại hiện trường**
 (`FIELD_EVIDENCE`): trong luồng này ảnh minh chứng luôn phải kèm tọa độ.
-**`MANAGER_OVERRIDE` là ngoại lệ** — 0 đến 5 ảnh và không bắt buộc GPS, bù lại
-bắt buộc ghi chú lý do (xem cuối §3.3). Ngoài tọa độ, nếu xác định được thì hệ
+**`MANAGER_OVERRIDE` là ngoại lệ** — không nhận ảnh hoặc GPS, bù lại bắt buộc
+ghi chú lý do (xem cuối §3.3). Ngoài tọa độ, nếu xác định được thì hệ
 thống hiển thị luôn **địa chỉ đã xác nhận** — xem §3.4.
 
 GPS của Task là bằng chứng hiện trường, khác với GPS xác thực chấm công. Nếu
@@ -280,9 +310,21 @@ Khi đó công việc vẫn được giữ lại để tiếp tục xử lý và
 
 Ngoài luồng hoàn thành tại hiện trường, Quản lý được phép đóng việc hộ trong
 trường hợp quản trị hoặc xác nhận ngoại lệ. Khi đó hệ thống ghi
-`completion_method = MANAGER_OVERRIDE`, bắt buộc có ghi chú lý do, cho phép 0 đến
-5 ảnh và không cần GPS, có ghi nhật ký thao tác, và báo cáo phải tách riêng với
+`completion_method = MANAGER_OVERRIDE`, bắt buộc có ghi chú lý do, không nhận
+ảnh/GPS, có ghi nhật ký thao tác, và báo cáo phải tách riêng với
 hoàn thành có bằng chứng hiện trường (`FIELD_EVIDENCE`).
+
+Trong Feature 007, cả hai đường hoàn thành được triển khai. HELPDESK hoặc người
+trong creator/assignee scope hoàn thành tại hiện trường bằng `FIELD_EVIDENCE`
+với 1-5 ảnh và GPS mới; completion này ghi AuditLog action
+`task.completion.field_evidence` cùng TaskUpdate/TaskPhoto/upload bindings/Task
+snapshot. Quản lý có đường ngoại lệ riêng: bắt buộc ghi chú, không nhận ảnh/GPS,
+và TaskUpdate/ảnh chụp completion/AuditLog cùng commit. Mọi completion AuditLog
+chỉ giữ ID, trạng thái,
+phương thức, actor và thời gian server, không sao chép hoặc sửa nội dung ghi chú
+(R-143). Endpoint cập nhật trạng thái thông thường không nhận target `COMPLETED`;
+ba cạnh đi vào `COMPLETED` của state machine chỉ được gọi qua một use case hoàn
+thành chuyên biệt (R-137).
 
 Luồng hoàn thành tại hiện trường vẫn giữ phạm vi "người tạo hoặc người được
 giao", kể cả với Quản lý: bằng chứng hiện trường khẳng định chính người bấm đã
@@ -419,6 +461,9 @@ khóa. Dù chọn cách nào, giao việc cho tài khoản đã khóa vẫn bị
 ở phía máy chủ. Ngược lại, công việc đã giao trước đó vẫn
 giữ nguyên người phụ trách và trạng thái, vẫn nằm ở nhóm Quá hạn để quản lý nhìn
 thấy và tự xử — giao thêm người khác, hoặc tự xác nhận hoàn thành kèm ghi chú.
+Phép kiểm người nhận mới là nguyên tử: mọi ID không tồn tại, không phải Helpdesk
+hoặc đã khóa đều được trả cùng nhau trong `422 INACTIVE_ASSIGNEE`; không có phần
+giao việc hợp lệ nào được ghi dở dang (R-141).
 Báo cáo và lịch sử vẫn đếm đủ phần việc người đó đã làm; số liệu tháng trước
 không được tự đổi chỉ vì hôm nay có người nghỉ việc.
 
@@ -612,6 +657,8 @@ Có toàn bộ quyền của Lãnh đạo và bổ sung các chức năng quản
   quyền; mỗi màn đích vẫn kiểm quyền độc lập.
 
 - Tạo và giao công việc cho nhân viên.
+- Thêm, gỡ hoặc thay người thực hiện trên Task chưa hoàn thành; đây là quyền chỉ
+  Quản lý có, Helpdesk không được quản lý assignee.
 - Theo dõi tiến độ thực hiện công việc.
 - Cập nhật trạng thái công việc.
 - Trực tiếp hoàn thành công việc tại hiện trường bằng ảnh/GPS.
@@ -674,6 +721,8 @@ Các chức năng gồm:
 Helpdesk không được quản trị người dùng, không quản trị địa điểm, không xem toàn
 bộ dữ liệu nếu không có action tương ứng, và không được đóng việc bằng
 `MANAGER_OVERRIDE`.
+Helpdesk cũng không được thêm, gỡ hoặc thay người thực hiện Task; tự tạo việc
+luôn tự gán chính mình, còn mọi thay đổi assignee thuộc quyền Quản lý (R-135).
 
 Với chức năng mang hậu tố “của bản thân”, Helpdesk chỉ xem/cập nhật/hoàn thành
 Task do mình tạo hoặc được giao. Hệ thống kiểm tra phạm vi Task ở backend, không

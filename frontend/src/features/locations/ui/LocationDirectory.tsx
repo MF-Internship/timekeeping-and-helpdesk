@@ -12,6 +12,9 @@ import {
   pendingLocationUpdate,
   warningText,
 } from "@/features/locations/model/location-editor";
+import { Button } from "@/shared/ui/button";
+import { Input, Select, Textarea } from "@/shared/ui/form";
+import { StatusBadge } from "@/shared/ui/status-badge";
 
 type Filters = {
   kind: "" | "BUSINESS_CENTER" | "SHOP";
@@ -38,18 +41,18 @@ function LocationFilters({
     <div className="filter-grid">
       <label>
         Loại địa điểm
-        <select
+        <Select
           value={value.kind}
           onChange={(event) => onChange({ ...value, kind: event.target.value as Filters["kind"] })}
         >
           <option value="">Tất cả</option>
           <option value="BUSINESS_CENTER">Trung tâm kinh doanh</option>
           <option value="SHOP">Cửa hàng</option>
-        </select>
+        </Select>
       </label>
       <label>
         Mã cha
-        <input
+        <Input
           type="number"
           min="1"
           value={value.parent}
@@ -58,7 +61,7 @@ function LocationFilters({
       </label>
       <label>
         Trạng thái
-        <select
+        <Select
           value={value.active}
           onChange={(event) =>
             onChange({ ...value, active: event.target.value as Filters["active"] })
@@ -67,7 +70,7 @@ function LocationFilters({
           <option value="">Tất cả</option>
           <option value="true">Đang hoạt động</option>
           <option value="false">Ngừng hoạt động</option>
-        </select>
+        </Select>
       </label>
     </div>
   );
@@ -92,7 +95,9 @@ function LocationList({
             </strong>
             <br />
             {item.kind} · cha {item.parent_code ?? "—"} ·{" "}
-            {item.is_active ? "đang hoạt động" : "ngừng hoạt động"}
+            <StatusBadge tone={item.is_active ? "ready" : "critical"}>
+              {item.is_active ? "Đang hoạt động" : "Ngừng hoạt động"}
+            </StatusBadge>
             <br />
             {item.address}
             <br />
@@ -100,9 +105,9 @@ function LocationList({
             {item.version}
           </div>
           {canManage && (
-            <button aria-label={`Chỉnh sửa ${item.code}`} onClick={() => onEdit(item)}>
+            <Button aria-label={`Chỉnh sửa ${item.code}`} onClick={() => onEdit(item)}>
               Chỉnh sửa
-            </button>
+            </Button>
           )}
         </li>
       ))}
@@ -130,7 +135,7 @@ function LocationEditForm({ draft, busy, onChange, onCancel, onSubmit }: EditPro
       <div className="form-grid">
         <label>
           Tên địa điểm
-          <input
+          <Input
             required
             value={draft.name}
             onChange={(event) => text("name", event.target.value)}
@@ -138,7 +143,7 @@ function LocationEditForm({ draft, busy, onChange, onCancel, onSubmit }: EditPro
         </label>
         <label>
           Địa chỉ
-          <input
+          <Input
             required
             value={draft.address}
             onChange={(event) => text("address", event.target.value)}
@@ -146,7 +151,7 @@ function LocationEditForm({ draft, busy, onChange, onCancel, onSubmit }: EditPro
         </label>
         <label>
           Vĩ độ
-          <input
+          <Input
             required
             inputMode="decimal"
             value={draft.latitude}
@@ -155,7 +160,7 @@ function LocationEditForm({ draft, busy, onChange, onCancel, onSubmit }: EditPro
         </label>
         <label>
           Kinh độ
-          <input
+          <Input
             required
             inputMode="decimal"
             value={draft.longitude}
@@ -164,7 +169,7 @@ function LocationEditForm({ draft, busy, onChange, onCancel, onSubmit }: EditPro
         </label>
         <label>
           Bán kính (m)
-          <input
+          <Input
             required
             inputMode="decimal"
             value={draft.radius_m}
@@ -172,7 +177,7 @@ function LocationEditForm({ draft, busy, onChange, onCancel, onSubmit }: EditPro
           />
         </label>
         <label className="checkbox">
-          <input
+          <Input
             type="checkbox"
             checked={draft.is_active}
             onChange={(event) => onChange({ ...draft, is_active: event.target.checked })}
@@ -182,17 +187,17 @@ function LocationEditForm({ draft, busy, onChange, onCancel, onSubmit }: EditPro
       </div>
       <label>
         Lý do thay đổi
-        <textarea
+        <Textarea
           maxLength={500}
           value={draft.reason}
           onChange={(event) => text("reason", event.target.value)}
         />
       </label>
       <div className="actions">
-        <button disabled={busy}>Lưu địa điểm</button>
-        <button type="button" disabled={busy} onClick={onCancel}>
+        <Button variant="primary" disabled={busy}>Lưu địa điểm</Button>
+        <Button type="button" disabled={busy} onClick={onCancel}>
           Hủy
-        </button>
+        </Button>
       </div>
     </form>
   );

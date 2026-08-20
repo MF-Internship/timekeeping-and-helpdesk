@@ -323,6 +323,27 @@ Hai con số này khớp đúng cấu hình tooling ở §9 (`max-args = 4`, ESL
   `Task.status` mà không kèm `TaskUpdate` — `MANAGER_OVERRIDE` cũng phải tạo
   `TaskUpdate`. TaskUpdate chỉ `INSERT`; Location mơ hồ phải được chọn trước khi
   completion transaction tạo bản ghi.
+- Task status non-terminal đặt lại đúng state hiện hành là no-op `200` sau đủ permission, DTO
+  và object scope: không save `Task`, không `TaskUpdate`, không audit/outbox và
+  không tăng version. Không được chạy no-op check trước scope hoặc dùng request
+  lặp để tạo lịch sử giả (R-136). `COMPLETED` không đi nhánh no-op này.
+- Status use case thường không được nhận target `COMPLETED`. Ba cạnh completion
+  trong domain matrix chỉ được gọi từ completion use case chuyên biệt. Feature
+  007 bật cả hai đường: `MANAGER_OVERRIDE` dùng MANAGER + completion note, không
+  nhận ảnh/GPS; `FIELD_EVIDENCE` dùng creator-or-assignee scope + 1-5 ảnh + GPS
+  mới. Mỗi đường ghi `TaskUpdate`/Task snapshot/AuditLog trong cùng transaction;
+  FIELD_EVIDENCE dùng action `task.completion.field_evidence` với payload chỉ gồm
+  ID/status/method/actor/server time và không chứa note/GPS/candidates/photo,
+  object key hay URL (R-137).
+- Status Task cạnh tranh phải `select_for_update` Task, đọc lại state rồi mới
+  gọi domain transition. Request lấy lock sau: transition còn hợp lệ thì ghi
+  `TaskUpdate` riêng; target trùng state thì no-op R-136; invalid/terminal thì
+  reject. Không thêm version field, không reject stale vô điều kiện và không
+  last-write-wins (R-138). Race test phải dùng PostgreSQL transaction thật.
+- Task `COMPLETED` là read-only toàn bộ: chặn mọi status/content/expected
+  Location/assignee mutation trước write, kể cả request gửi lại `COMPLETED`;
+  `task.update.any` không bypass. Nhánh từ chối không sinh TaskUpdate/audit/outbox.
+  Correction nếu có là workflow phase sau, không PATCH lén (R-139).
 - Anomaly ca làm tính theo **ngày công**, không theo từng lượt bấm: hàm quyết định
   nhận danh sách lượt trong ngày, không nhận một `Attendance` đơn lẻ.
 - Không dùng boolean flag thay enum/trạng thái nghiệp vụ.
@@ -496,6 +517,25 @@ RBAC không phải ownership. `task.view.self`, `task.update.self` và
 tạo hoặc actor là assignee. Ưu tiên scope trong query/policy, ví dụ
 `Task.objects.filter(id=task_id).filter(Q(created_by=actor) | Q(assignees=actor))`.
 `task.update.any` không bỏ qua state transition; Leader luôn bị từ chối mutation.
+`task.create.self` luôn tạo đúng một `TaskAssignee` cho actor đã xác thực;
+HELPDESK không được gửi người nhận khác. `task.update.self` không có quyền thêm,
+gỡ hay thay assignee dù object scope đã qua; chỉ MANAGER có
+`task.create.assign`/`task.update.any` quản lý tập assignee (R-135). Test phải
+chặn cả create lẫn update của HELPDESK mang thay đổi assignee và khẳng định không
+có side effect.
+MANAGER không được cấp `task.create.self`: create của MANAGER luôn dùng
+`task.create.assign`, bắt buộc ít nhất một assignee HELPDESK active; quyền
+`task.complete.field` của MANAGER giữ nguyên (R-140).
+Các User mới được gán phải được khóa theo ID tăng dần và revalidate trong cùng
+transaction với Task; mọi ID thiếu/sai role/inactive được gom vào một
+`422 INACTIVE_ASSIGNEE`, rollback toàn bộ (R-141). Test PostgreSQL thật phải race
+create/update assignment với khóa tài khoản hoặc đổi role.
+SELF create phải khóa User actor trong transaction và re-authorize direct
+`task.create.self`: inactive trả `401 ACCOUNT_INACTIVE`, mất action sau đổi role
+trả `403 PERMISSION_DENIED`, không dùng `INACTIVE_ASSIGNEE` (R-142).
+Serializer Task chỉ trả `{id, full_name}` cho mọi identity projection; không trả
+`username`/`is_active`. Audit override không chứa `completion_note`, chỉ chứa
+ID/status/method/actor/time an toàn; note nguyên văn ở Task/TaskUpdate (R-143).
 
 `user.assign_role` chỉ gán được `LEADER` và `HELPDESK` (CHOT §8). Khai báo tập
 này thành một hằng số ở module phân quyền (`ASSIGNABLE_ROLES`), dùng nó cho cả

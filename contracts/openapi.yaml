@@ -114,7 +114,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - attendance
+      - api
   /api/v1/attendance/check-out:
     post:
       operationId: attendance_check_out
@@ -226,7 +226,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - attendance
+      - api
   /api/v1/attendance/today:
     get:
       operationId: attendance_today_retrieve
@@ -240,7 +240,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - attendance
+      - api
   /api/v1/auth/login:
     post:
       operationId: auth_login_create
@@ -288,7 +288,7 @@ paths:
                 $ref: '#/components/schemas/IdentityError'
           description: ''
       tags:
-      - auth
+      - api
   /api/v1/auth/logout:
     post:
       operationId: auth_logout_create
@@ -316,7 +316,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - auth
+      - api
   /api/v1/auth/refresh:
     post:
       operationId: auth_refresh_create
@@ -358,7 +358,7 @@ paths:
                 $ref: '#/components/schemas/IdentityError'
           description: ''
       tags:
-      - auth
+      - api
   /api/v1/change-password:
     post:
       operationId: identity_change_password_create
@@ -414,7 +414,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - change-password
+      - api
   /api/v1/config/:
     get:
       operationId: config_retrieve
@@ -446,7 +446,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - config
+      - api
     patch:
       operationId: config_partial_update
       requestBody:
@@ -494,7 +494,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - config
+      - api
   /api/v1/holidays/:
     get:
       operationId: holidays_list
@@ -522,7 +522,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - holidays
+      - api
     post:
       operationId: holidays_create
       requestBody:
@@ -565,7 +565,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - holidays
+      - api
   /api/v1/holidays/{holiday_id}/:
     delete:
       operationId: holidays_destroy
@@ -599,7 +599,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - holidays
+      - api
   /api/v1/locations/:
     get:
       operationId: locations_list
@@ -649,7 +649,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - locations
+      - api
   /api/v1/locations/{location_id}/:
     patch:
       operationId: locations_partial_update
@@ -711,7 +711,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - locations
+      - api
   /api/v1/me/:
     get:
       operationId: identity_me_retrieve
@@ -737,7 +737,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - me
+      - api
     patch:
       operationId: identity_me_partial_update
       requestBody:
@@ -779,7 +779,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - me
+      - api
   /api/v1/operations/job-health:
     get:
       operationId: operations_job_health_retrieve
@@ -793,7 +793,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - operations
+      - api
   /api/v1/schema/:
     get:
       description: Machine-readable schema endpoint; no interactive UI is registered.
@@ -934,7 +934,613 @@ paths:
       - bearerAuth: []
       - {}
       tags:
-      - schema
+      - api
+  /api/v1/tasks/:
+    get:
+      operationId: tasks_list
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupedTaskList'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+    post:
+      operationId: tasks_create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                assigned_date:
+                  format: date
+                  type: string
+                assignee_ids:
+                  items:
+                    minimum: 1
+                    type: integer
+                  minItems: 1
+                  type: array
+                description:
+                  default: ''
+                  type: string
+                expected_location:
+                  default: ''
+                  maxLength: 500
+                  type: string
+                location_id:
+                  minimum: 1
+                  type:
+                  - integer
+                  - 'null'
+                title:
+                  minLength: 1
+                  type: string
+              required:
+              - title
+              - assigned_date
+              type: object
+          application/x-www-form-urlencoded:
+            schema:
+              additionalProperties: false
+              properties:
+                assigned_date:
+                  format: date
+                  type: string
+                assignee_ids:
+                  items:
+                    minimum: 1
+                    type: integer
+                  minItems: 1
+                  type: array
+                description:
+                  default: ''
+                  type: string
+                expected_location:
+                  default: ''
+                  maxLength: 500
+                  type: string
+                location_id:
+                  minimum: 1
+                  type:
+                  - integer
+                  - 'null'
+                title:
+                  minLength: 1
+                  type: string
+              required:
+              - title
+              - assigned_date
+              type: object
+          multipart/form-data:
+            schema:
+              additionalProperties: false
+              properties:
+                assigned_date:
+                  format: date
+                  type: string
+                assignee_ids:
+                  items:
+                    minimum: 1
+                    type: integer
+                  minItems: 1
+                  type: array
+                description:
+                  default: ''
+                  type: string
+                expected_location:
+                  default: ''
+                  maxLength: 500
+                  type: string
+                location_id:
+                  minimum: 1
+                  type:
+                  - integer
+                  - 'null'
+                title:
+                  minLength: 1
+                  type: string
+              required:
+              - title
+              - assigned_date
+              type: object
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InactiveAssigneeError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/tasks/{task_id}/:
+    delete:
+      operationId: tasks_destroy
+      parameters:
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+    get:
+      operationId: tasks_retrieve
+      parameters:
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDetail'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+    patch:
+      operationId: tasks_partial_update
+      parameters:
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InactiveAssigneeError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/tasks/{task_id}/complete-field:
+    post:
+      operationId: tasks_complete_field_create
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskFieldCompletion'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TaskFieldCompletion'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TaskFieldCompletion'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/tasks/{task_id}/complete-override:
+    post:
+      operationId: tasks_complete_override_create
+      parameters:
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskOverride'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TaskOverride'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TaskOverride'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskAlreadyCompletedError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/tasks/{task_id}/evidence-uploads:
+    post:
+      operationId: tasks_evidence_uploads_create
+      parameters:
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvidenceUpload'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EvidenceUpload'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EvidenceUpload'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvidenceUploadIntent'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/tasks/{task_id}/photos/{photo_id}/access:
+    post:
+      operationId: tasks_photos_access_create
+      parameters:
+      - in: path
+        name: photo_id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhotoAccess'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/tasks/{task_id}/status:
+    post:
+      operationId: tasks_status_create
+      parameters:
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskStatus'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TaskStatus'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TaskStatus'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
   /api/v1/users/:
     get:
       operationId: users_list
@@ -983,7 +1589,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - users
+      - api
     post:
       operationId: users_create
       requestBody:
@@ -1026,7 +1632,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - users
+      - api
   /api/v1/users/{user_id}/:
     get:
       operationId: users_retrieve
@@ -1064,7 +1670,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - users
+      - api
     patch:
       operationId: users_partial_update
       parameters:
@@ -1118,7 +1724,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - users
+      - api
   /api/v1/users/{user_id}/reset-password:
     post:
       operationId: users_reset_password_create
@@ -1162,7 +1768,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - users
+      - api
   /api/v1/users/{user_id}/role:
     patch:
       operationId: users_role_partial_update
@@ -1218,7 +1824,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - users
+      - api
   /api/v1/users/{user_id}/status:
     patch:
       operationId: users_status_partial_update
@@ -1274,7 +1880,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - users
+      - api
 components:
   schemas:
     AccessResponse:
@@ -1712,6 +2318,43 @@ components:
       - job_closed_without_anomaly_count
       - missing_checkout_anomaly_count
       type: object
+    EvidenceUpload:
+      properties:
+        checksum_sha256:
+          pattern: ^[0-9a-f]{64}$
+          type: string
+        mime:
+          $ref: '#/components/schemas/MimeEnum'
+        size_bytes:
+          maximum: 5242880
+          minimum: 1
+          type: integer
+      required:
+      - checksum_sha256
+      - mime
+      - size_bytes
+      type: object
+    EvidenceUploadIntent:
+      properties:
+        expires_at:
+          format: date-time
+          type: string
+        headers:
+          additionalProperties:
+            type: string
+          type: object
+        upload_id:
+          format: uuid
+          type: string
+        upload_url:
+          format: uri
+          type: string
+      required:
+      - expires_at
+      - headers
+      - upload_id
+      - upload_url
+      type: object
     FoundationError:
       properties:
         details:
@@ -1783,6 +2426,34 @@ components:
       - WEAK_GPS
       - OUTSIDE_RADIUS
       type: string
+    GroupedTaskList:
+      properties:
+        business_date:
+          format: date
+          type: string
+        completed:
+          items:
+            $ref: '#/components/schemas/TaskItem'
+          type: array
+        overdue:
+          items:
+            $ref: '#/components/schemas/TaskItem'
+          type: array
+        today:
+          items:
+            $ref: '#/components/schemas/TaskItem'
+          type: array
+        upcoming:
+          items:
+            $ref: '#/components/schemas/TaskItem'
+          type: array
+      required:
+      - business_date
+      - completed
+      - overdue
+      - today
+      - upcoming
+      type: object
     Holiday:
       properties:
         date:
@@ -1838,6 +2509,39 @@ components:
       - message
       - request_id
       type: object
+    InactiveAssigneeDetails:
+      properties:
+        assignee_ids:
+          items:
+            type: integer
+          type: array
+      required:
+      - assignee_ids
+      type: object
+    InactiveAssigneeError:
+      properties:
+        details:
+          $ref: '#/components/schemas/InactiveAssigneeDetails'
+        error:
+          type: string
+        error_code:
+          $ref: '#/components/schemas/InactiveAssigneeErrorErrorCodeEnum'
+        message:
+          type: string
+        request_id:
+          format: uuid
+          type: string
+      required:
+      - details
+      - error
+      - error_code
+      - message
+      - request_id
+      type: object
+    InactiveAssigneeErrorErrorCodeEnum:
+      enum:
+      - INACTIVE_ASSIGNEE
+      type: string
     IndexedAttendancePunch:
       properties:
         accuracy_m:
@@ -2036,7 +2740,7 @@ components:
           format: date-time
           type: string
         status:
-          $ref: '#/components/schemas/StatusEnum'
+          $ref: '#/components/schemas/JobRunStatusEnum'
       required:
       - anomaly_count
       - changed_count
@@ -2052,6 +2756,13 @@ components:
       enum:
       - SESSION_PROCESSING_FAILED
       - RUN_ABORTED
+      type: string
+    JobRunStatusEnum:
+      enum:
+      - RUNNING
+      - SUCCEEDED
+      - PARTIAL_FAILED
+      - FAILED
       type: string
     Links:
       properties:
@@ -2261,6 +2972,12 @@ components:
       - must_change_password
       - role
       type: object
+    MimeEnum:
+      enum:
+      - image/jpeg
+      - image/png
+      - image/webp
+      type: string
     NoOpenSessionError:
       properties:
         details:
@@ -2295,6 +3012,12 @@ components:
     NullEnum:
       enum:
       - null
+    OrdinaryTaskStatusEnum:
+      enum:
+      - TODO
+      - IN_PROGRESS
+      - BLOCKED
+      type: string
     PasswordChange:
       properties:
         current_password:
@@ -2306,6 +3029,18 @@ components:
       required:
       - current_password
       - new_password
+      type: object
+    PhotoAccess:
+      properties:
+        expires_at:
+          format: date-time
+          type: string
+        url:
+          format: uri
+          type: string
+      required:
+      - expires_at
+      - url
       type: object
     Profile:
       properties:
@@ -2470,13 +3205,419 @@ components:
       required:
       - is_active
       type: object
-    StatusEnum:
+    TaskAlreadyCompletedError:
+      properties:
+        details:
+          additionalProperties: {}
+          type: object
+        error:
+          type: string
+        error_code:
+          $ref: '#/components/schemas/TaskAlreadyCompletedErrorErrorCodeEnum'
+        message:
+          type: string
+        request_id:
+          format: uuid
+          type: string
+      required:
+      - details
+      - error
+      - error_code
+      - message
+      - request_id
+      type: object
+    TaskAlreadyCompletedErrorErrorCodeEnum:
       enum:
-      - RUNNING
-      - SUCCEEDED
-      - PARTIAL_FAILED
-      - FAILED
+      - TASK_ALREADY_COMPLETED
       type: string
+    TaskAssignee:
+      properties:
+        assigned_at:
+          format: date-time
+          type: string
+        user:
+          $ref: '#/components/schemas/TaskUser'
+      required:
+      - assigned_at
+      - user
+      type: object
+    TaskDetail:
+      properties:
+        assigned_date:
+          format: date
+          type: string
+        assignees:
+          items:
+            $ref: '#/components/schemas/TaskAssignee'
+          type: array
+        block_reason:
+          nullable: true
+          type: string
+        completed_at:
+          format: date-time
+          nullable: true
+          type: string
+        completed_by:
+          allOf:
+          - $ref: '#/components/schemas/TaskUser'
+          nullable: true
+        completion_method:
+          nullable: true
+          type: string
+        completion_note:
+          nullable: true
+          type: string
+        created_by:
+          $ref: '#/components/schemas/TaskUser'
+        description:
+          type: string
+        expected_location:
+          type: string
+        group:
+          type: string
+        id:
+          type: integer
+        location:
+          allOf:
+          - $ref: '#/components/schemas/TaskLocation'
+          nullable: true
+        overdue_days:
+          nullable: true
+          type: integer
+        status:
+          $ref: '#/components/schemas/TaskStatusEnum'
+        title:
+          type: string
+        updates:
+          items:
+            $ref: '#/components/schemas/TaskLifecycleUpdate'
+          type: array
+      required:
+      - assigned_date
+      - assignees
+      - block_reason
+      - completed_at
+      - completed_by
+      - completion_method
+      - completion_note
+      - created_by
+      - description
+      - expected_location
+      - group
+      - id
+      - location
+      - overdue_days
+      - status
+      - title
+      - updates
+      type: object
+    TaskError:
+      properties:
+        details:
+          additionalProperties: {}
+          type: object
+        error:
+          type: string
+        error_code:
+          type: string
+        message:
+          type: string
+        request_id:
+          format: uuid
+          type: string
+      required:
+      - details
+      - error
+      - error_code
+      - message
+      - request_id
+      type: object
+    TaskFieldCompletion:
+      properties:
+        accuracy_m:
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+          type: string
+        captured_at:
+          format: date-time
+          type: string
+        completion_note:
+          nullable: true
+          type: string
+        latitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          type: string
+        longitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          type: string
+        selected_location_id:
+          minimum: 1
+          nullable: true
+          type: integer
+        upload_ids:
+          items:
+            format: uuid
+            type: string
+          maxItems: 5
+          minItems: 1
+          type: array
+      required:
+      - accuracy_m
+      - captured_at
+      - latitude
+      - longitude
+      - upload_ids
+      type: object
+    TaskItem:
+      properties:
+        assigned_date:
+          format: date
+          type: string
+        assignees:
+          items:
+            $ref: '#/components/schemas/TaskAssignee'
+          type: array
+        block_reason:
+          nullable: true
+          type: string
+        completed_at:
+          format: date-time
+          nullable: true
+          type: string
+        completed_by:
+          allOf:
+          - $ref: '#/components/schemas/TaskUser'
+          nullable: true
+        completion_method:
+          nullable: true
+          type: string
+        completion_note:
+          nullable: true
+          type: string
+        created_by:
+          $ref: '#/components/schemas/TaskUser'
+        description:
+          type: string
+        expected_location:
+          type: string
+        group:
+          type: string
+        id:
+          type: integer
+        location:
+          allOf:
+          - $ref: '#/components/schemas/TaskLocation'
+          nullable: true
+        overdue_days:
+          nullable: true
+          type: integer
+        status:
+          $ref: '#/components/schemas/TaskStatusEnum'
+        title:
+          type: string
+      required:
+      - assigned_date
+      - assignees
+      - block_reason
+      - completed_at
+      - completed_by
+      - completion_method
+      - completion_note
+      - created_by
+      - description
+      - expected_location
+      - group
+      - id
+      - location
+      - overdue_days
+      - status
+      - title
+      type: object
+    TaskLifecycleUpdate:
+      properties:
+        accuracy_m:
+          nullable: true
+          type: string
+        actor:
+          $ref: '#/components/schemas/TaskUser'
+        actual_location:
+          allOf:
+          - $ref: '#/components/schemas/TaskLocation'
+          nullable: true
+        actual_location_id:
+          nullable: true
+          type: integer
+        block_reason:
+          nullable: true
+          type: string
+        captured_at:
+          format: date-time
+          nullable: true
+          type: string
+        captured_latitude:
+          nullable: true
+          type: string
+        captured_longitude:
+          nullable: true
+          type: string
+        completion_method:
+          nullable: true
+          type: string
+        completion_note:
+          nullable: true
+          type: string
+        distance_m:
+          nullable: true
+          type: string
+        gps_quality:
+          nullable: true
+          type: string
+        id:
+          type: integer
+        location_candidates:
+          items:
+            type: integer
+          type: array
+        maps_url:
+          format: uri
+          nullable: true
+          type: string
+        note:
+          nullable: true
+          type: string
+        photos:
+          items:
+            $ref: '#/components/schemas/TaskPhoto'
+          type: array
+        recorded_at:
+          format: date-time
+          type: string
+        resolution_method:
+          nullable: true
+          type: string
+        resolved_address:
+          nullable: true
+          type: string
+        status:
+          $ref: '#/components/schemas/TaskStatusEnum'
+        validation_result:
+          nullable: true
+          type: string
+      required:
+      - accuracy_m
+      - actor
+      - actual_location
+      - actual_location_id
+      - block_reason
+      - captured_at
+      - captured_latitude
+      - captured_longitude
+      - completion_method
+      - completion_note
+      - distance_m
+      - gps_quality
+      - id
+      - location_candidates
+      - maps_url
+      - note
+      - photos
+      - recorded_at
+      - resolution_method
+      - resolved_address
+      - status
+      - validation_result
+      type: object
+    TaskLocation:
+      properties:
+        address:
+          type: string
+        code:
+          type: string
+        id:
+          type: integer
+        is_active:
+          type: boolean
+        name:
+          type: string
+      required:
+      - address
+      - code
+      - id
+      - is_active
+      - name
+      type: object
+    TaskOverride:
+      properties:
+        completion_note:
+          type: string
+      required:
+      - completion_note
+      type: object
+    TaskPhoto:
+      properties:
+        id:
+          type: integer
+        mime:
+          $ref: '#/components/schemas/MimeEnum'
+        size_bytes:
+          minimum: 1
+          type: integer
+      required:
+      - id
+      - mime
+      - size_bytes
+      type: object
+    TaskStatus:
+      properties:
+        block_reason:
+          nullable: true
+          type: string
+        note:
+          nullable: true
+          type: string
+        status:
+          $ref: '#/components/schemas/OrdinaryTaskStatusEnum'
+      required:
+      - status
+      type: object
+    TaskStatusEnum:
+      enum:
+      - TODO
+      - IN_PROGRESS
+      - BLOCKED
+      - COMPLETED
+      type: string
+    TaskUpdate:
+      properties:
+        assignee_ids:
+          items:
+            minimum: 1
+            type: integer
+          type: array
+        description:
+          type: string
+        expected_location:
+          maxLength: 500
+          type: string
+        location_id:
+          minimum: 1
+          nullable: true
+          type: integer
+        title:
+          type: string
+      type: object
+    TaskUser:
+      properties:
+        full_name:
+          type: string
+        id:
+          type: integer
+      required:
+      - full_name
+      - id
+      type: object
     TimezoneEnum:
       enum:
       - Asia/Ho_Chi_Minh

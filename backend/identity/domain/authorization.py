@@ -24,6 +24,7 @@ class PermissionAction(StrEnum):
     TASK_COMPLETE_FIELD = "task.complete.field"
     TASK_VIEW_SELF = "task.view.self"
     TASK_UPDATE_SELF = "task.update.self"
+    TASK_DELETE_SELF = "task.delete.self"
     TASK_VIEW_ALL = "task.view.all"
     TASK_CREATE_ASSIGN = "task.create.assign"
     TASK_UPDATE_ANY = "task.update.any"
@@ -77,7 +78,6 @@ ROLE_PERMISSIONS: dict[Role, frozenset[PermissionAction]] = {
     Role.MANAGER: frozenset(
         {
             PermissionAction.ATTENDANCE_VIEW_ALL,
-            PermissionAction.TASK_CREATE_SELF,
             PermissionAction.TASK_COMPLETE_FIELD,
             PermissionAction.TASK_VIEW_ALL,
             PermissionAction.TASK_CREATE_ASSIGN,
@@ -106,6 +106,7 @@ ROLE_PERMISSIONS: dict[Role, frozenset[PermissionAction]] = {
             PermissionAction.TASK_COMPLETE_FIELD,
             PermissionAction.TASK_VIEW_SELF,
             PermissionAction.TASK_UPDATE_SELF,
+            PermissionAction.TASK_DELETE_SELF,
             PermissionAction.LOCATION_VIEW,
             PermissionAction.CONFIG_VIEW,
             PermissionAction.REPORT_VIEW_SELF,
@@ -147,6 +148,10 @@ def effective_capabilities(role: Role) -> frozenset[PermissionAction]:
     direct = ROLE_PERMISSIONS[role]
     implied = {PERMISSION_IMPLIES[action] for action in direct if action in PERMISSION_IMPLIES}
     return direct | implied
+
+
+def is_task_assignee_eligible(role: Role | str, *, is_active: bool) -> bool:
+    return is_active and Role(role) is Role.HELPDESK
 
 
 def job_health_access_scope(role: Role) -> JobHealthAccessScope:

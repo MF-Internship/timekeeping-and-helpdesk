@@ -21,7 +21,7 @@ class JobHealthView(APIView):
     def get(self, request: Request) -> Response:
         if self.container_provider is None:
             raise RuntimeError("operations container is not configured")
-        actor_id = cast(int, request.user.pk)  # type: ignore[union-attr]
+        actor_id = cast(int, request.user.pk)
         result = self.container_provider().job_health.read(actor_id)
         if request.query_params or request.data:
             raise IdentityAPIError(VALIDATION_FAILED, status_code=400)

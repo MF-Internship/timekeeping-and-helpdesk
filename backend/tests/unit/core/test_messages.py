@@ -20,4 +20,10 @@ def test_messages_are_centralized_safe_vietnamese_text() -> None:
         "INVALID_LOCATION_CHOICE": "Địa điểm đã chọn không còn hợp lệ.",
         "NO_OPEN_SESSION": "Không có phiên chấm công đang mở.",
         "SESSION_ALREADY_OPEN": "Đã có một phiên chấm công đang mở.",
+        "INACTIVE_ASSIGNEE": "Một hoặc nhiều người nhận việc không đủ điều kiện.",
+        "BLOCK_REASON_REQUIRED": "Công việc bị chặn phải có lý do.",
+        "TASK_ALREADY_COMPLETED": "Công việc đã hoàn thành.",
+        "EVIDENCE_UPLOAD_INVALID": "Ảnh minh chứng không hợp lệ hoặc không thuộc công việc này.",
+        "EVIDENCE_UPLOAD_NOT_READY": "Ảnh minh chứng chưa tải lên hoàn tất hoặc đã hết hạn.",
+        "IDEMPOTENCY_CONFLICT": "Mã gửi lại đã được dùng với nội dung khác.",
     }

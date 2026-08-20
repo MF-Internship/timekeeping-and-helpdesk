@@ -679,6 +679,17 @@ endpoint/action riêng `attendance.adjust.any`.
 ### 6.1 Giao việc và danh sách
 
 Quản lý được giao việc cho một hoặc nhiều Helpdesk, kể cả `assigned_date > today`.
+HELPDESK có `task.create.self` được tạo Task phát sinh cho chính mình: backend lấy
+actor đã xác thực làm `created_by` và tạo đúng một `TaskAssignee` ban đầu cho
+actor. HELPDESK không được chỉ định người khác khi tạo và `task.update.self`
+không cho thêm, gỡ hay thay assignee, kể cả trên Task do chính họ tạo. Chỉ
+MANAGER có `task.create.assign`/`task.update.any` được quản lý tập assignee
+(R-135); mọi assignee mới vẫn phải là HELPDESK active theo luật bên dưới.
+SELF create khóa User actor trong transaction rồi re-authorize; actor đã bị khóa
+tài khoản trả `401 ACCOUNT_INACTIVE`, actor đã đổi role mất quyền trả
+`403 PERMISSION_DENIED`, và không tạo Task/TaskAssignee (R-142).
+MANAGER không có `task.create.self`: mọi Task do MANAGER tạo phải đi qua nhánh
+giao việc và có ít nhất một assignee HELPDESK active (R-140).
 Màn hình có bốn nhóm theo ngày hệ thống (Asia/Ho_Chi_Minh):
 
 | Nhóm | Điều kiện |
@@ -691,6 +702,20 @@ Màn hình có bốn nhóm theo ngày hệ thống (Asia/Ho_Chi_Minh):
 Task tương lai không được tính KPI/ngày công của hôm nay. Một người hoàn thành là
 hoàn thành task: `Task.status = COMPLETED` và `Task.completed_by` là người thực
 hiện.
+Mọi identity projection trong Task response chỉ có `id` và `full_name`; không
+trả `username` hay `is_active`, kể cả cho assignee lịch sử (R-143).
+
+**Địa điểm dự kiến không bị giới hạn bởi danh mục Location.** Người tạo có thể
+nhập tự do nơi dự kiến làm việc như ủy ban, công an phường hoặc trường học.
+Danh mục Location chỉ cung cấp gợi ý; giá trị nhập được lưu độc lập dưới dạng
+planning text, không tạo Location mới, không ảnh hưởng chấm công và không được
+dùng thay cho GPS hoàn thành.
+
+**Helpdesk được gỡ task tự tạo bị nhầm bằng soft-delete có audit.** Chỉ actor có
+`task.delete.self`, đồng thời là `created_by` và sole assignee ban đầu của một
+Task chưa `COMPLETED`, mới được thực hiện. Thao tác đặt `deleted_at`, ghi
+`AuditLog`, ẩn Task khỏi list/detail/mutation thông thường và không hard-delete
+Task, TaskAssignee, TaskUpdate, upload hay ảnh. Task hoàn thành luôn bị từ chối.
 
 **Task quá hạn “trôi” sang ngày mới thuần ở tầng hiển thị (chốt R-86).**
 `Task.assigned_date` là **bất biến sau khi tạo**: không job nào, không endpoint
@@ -754,15 +779,43 @@ tục ngày sau, không tạo task mới. Không có `NOT_COMPLETED` làm trạn
 Không có reopen bằng `task.update.any`; phase sau phải thêm action/endpoint
 `task.reopen` và completion cycle rõ ràng.
 
+Terminal đồng thời là **read-only toàn bộ** trong MVP (R-139). Sau completion,
+không endpoint mutation nào được sửa status, title, description, expected
+Location hoặc tập assignee; gửi lại `COMPLETED` cũng bị từ chối thay vì no-op.
+Read/list/report vẫn hoạt động. Sửa sai cần workflow correction riêng ở phase
+sau với permission, reason và audit; `task.update.any` không bypass được luật này.
+
 | From \ To | TODO | IN_PROGRESS | BLOCKED | COMPLETED |
 |---|:---:|:---:|:---:|:---:|
 | TODO | - | ✅ | ✅ | ✅ |
 | IN_PROGRESS | - | - | ✅ | ✅ |
 | BLOCKED | - | ✅ | - | ✅ |
-| COMPLETED | ❌ | ❌ | ❌ | - |
+| COMPLETED | ❌ | ❌ | ❌ | ❌ |
 
 Đây là transition matrix canonical. Test mọi ô ✅ cùng permission/object scope,
 và phải reject toàn bộ ô ❌; không thay terminal rule bằng `task.update.any`.
+Với ba state non-terminal, dấu `-` trên đường chéo là request đặt lại đúng state hiện tại: sau khi qua đủ
+permission, DTO và object scope, trả `200` cùng Task hiện hành nhưng không ghi
+`Task`, không tạo `TaskUpdate`, không AuditLog/OutboxEvent và không tăng aggregate
+version (R-136). Đây không phải transition; Task đang `BLOCKED` không phải gửi
+lại lý do chỉ để đọc được kết quả no-op. Riêng hàng `COMPLETED` bị từ chối toàn
+bộ, kể cả gửi lại `COMPLETED`, theo read-only rule R-139. Các dấu `-` ngoài đường
+chéo vẫn là transition không hợp lệ và bị từ chối.
+
+Các cạnh đi vào `COMPLETED` là invariant domain dùng chung nhưng không đi qua
+endpoint status thường. `POST /api/tasks/{task_id}/status` không nhận target
+`COMPLETED`; completion phải đi qua use case/action chuyên biệt để không bypass
+scope, evidence hoặc Manager override. Feature 007 triển khai cả
+`task.complete.field` theo §6.2 và `task.complete.override` theo §6.3; hai đường
+hoàn thành dùng chung terminal invariant nhưng giữ nguyên scope, dữ liệu và audit
+khác nhau (R-137).
+
+Status update cạnh tranh phải serialize bằng lock trên Task trong transaction và
+xét lại matrix từ state đã commit mới nhất (R-138). Request lấy lock sau vẫn
+commit cùng `TaskUpdate` riêng nếu transition còn hợp lệ; target đã bằng state
+mới nhất thì no-op theo R-136; transition không còn hợp lệ hoặc Task đã terminal
+thì reject không side effect. Feature 007 không thêm optimistic `Task.version`
+và tuyệt đối không last-write-wins mà bỏ qua state machine.
 
 ### 6.2 Hoàn thành tại hiện trường
 
@@ -786,7 +839,10 @@ và phải reject toàn bộ ô ❌; không thay terminal rule bằng `task.upda
 6. Chỉ khi `gps_quality = GOOD` mới tính ứng viên `INSIDE_GEOFENCE` theo §4.2,
    giải quyết Location theo bảng dưới đây và suy `resolved_address` (§6.2.1).
 7. Trong một transaction, tạo `TaskUpdate`/`TaskPhoto`, chuyển Task sang
-   `COMPLETED` và đánh dấu staging objects đã được bind. Request finalize có
+   `COMPLETED`, đánh dấu staging objects đã được bind và ghi `AuditLog` action
+   `task.completion.field_evidence`. Audit payload chỉ giữ Task ID, trạng thái
+   trước/sau, completion method, actor ID và server time; cấm note, GPS,
+   candidate ID, photo/image data, object key và mọi URL. Request finalize có
    `Idempotency-Key`. Response pre-commit như `LOCATION_CHOICE_REQUIRED`,
    `INVALID_LOCATION_CHOICE`, GPS/file validation failure **không consume/bind
    key**; client được gửi lại cùng key với lựa chọn hoặc fix mới. Key chỉ bind khi
@@ -831,7 +887,9 @@ Mảng này là dữ liệu lịch sử, **không** tính lại khi đọc. `HCM
 
 Task completion dùng compare-and-set/row lock trong một transaction: chỉ request
 đầu tiên chuyển `Task.status` sang `COMPLETED` được tạo `TaskUpdate COMPLETED` và
-audit. Request thắng sau nhận lỗi `TASK_ALREADY_COMPLETED`. MVP không hỗ trợ
+AuditLog tương ứng (`task.completion.field_evidence` hoặc
+`task.completion.overridden`). Request thắng sau nhận lỗi
+`TASK_ALREADY_COMPLETED`. MVP không hỗ trợ
 reopen; nếu thêm sau này phải có completion cycle riêng.
 
 Staging object chưa bind không phải dữ liệu nghiệp vụ và không hiện ở báo cáo hay
@@ -840,8 +898,9 @@ công không phụ thuộc việc đổi tên/move object, có thể bind nguyê
 tránh copy không atomic. Một staging key chỉ bind được đúng một lần, đúng Task và
 đúng actor đã tạo intent; presigned URL không được lưu DB/log/AuditLog.
 
-`Task.location` là địa điểm dự kiến của công việc, nullable. `TaskUpdate.location`
-là địa điểm GPS thực tế, nullable theo bảng trên; hai giá trị này không được ghi
+`Task.expected_location_text` là địa điểm dự kiến nhập tự do của công việc;
+`Task.location` cũ vẫn nullable để tương thích dữ liệu đã có. `TaskUpdate.location`
+là địa điểm GPS thực tế, nullable theo bảng trên; các giá trị này không được ghi
 đè lẫn nhau.
 
 #### 6.2.1 Địa chỉ minh chứng và link Google Maps
@@ -891,9 +950,14 @@ Quy tắc hiển thị này áp dụng cho cả `Attendance` (tọa độ chấm
 ### 6.3 Quản lý xác nhận hoàn thành
 
 Quản lý có quyền `task.complete.override` có thể hoàn thành task bằng
-`CompletionMethod.MANAGER_OVERRIDE`: 0-5 ảnh, không bắt buộc GPS, nhưng bắt buộc
+`CompletionMethod.MANAGER_OVERRIDE`: không nhận ảnh/GPS, nhưng bắt buộc
 `completion_note` và tạo `AuditLog`. Báo cáo tách rõ `FIELD_EVIDENCE` và
 `MANAGER_OVERRIDE`.
+
+Feature 007 triển khai nhánh này độc lập với `FIELD_EVIDENCE`: tạo `TaskUpdate`
+trạng thái `COMPLETED`, cập nhật snapshot completion trên `Task` và ghi
+`AuditLog` trong cùng transaction. Manager override không nhận ảnh hoặc GPS.
+Endpoint status thường không được dùng thay thế nhánh này (R-137).
 
 `task.complete.field` giữ scope “người tạo **hoặc** người được giao” kể cả với
 Manager có `task.update.any`, vì `FIELD_EVIDENCE` khẳng định chính người bấm đã
@@ -1076,7 +1140,8 @@ trong view/service. Client chỉ ẩn/hiện UI, không thay thế backend autho
 |---|:---:|:---:|:---:|
 | `attendance.check_in.self`, `attendance.check_out.self`, `attendance.view.self` | - | - | ✅ |
 | `attendance.view.all` | ✅ | ✅ | - |
-| `task.create.self`, `task.complete.field` | - | ✅ | ✅ |
+| `task.create.self` | - | - | ✅ |
+| `task.complete.field` | - | ✅ | ✅ |
 | `task.view.self`, `task.update.self` | - | - | ✅ |
 | `task.view.all` | ✅ | ✅ | - |
 | `task.create.assign`, `task.update.any` | - | ✅ | - |
@@ -1345,7 +1410,7 @@ Attendance, Task và TaskUpdate.
 - MVP: nhận ảnh camera hoặc thư viện ở JPEG/PNG/WebP, tối đa 5 MB/ảnh sau khi nén
   client; backend vẫn kiểm MIME/type/kích thước độc lập.
   Số lượng ảnh phụ thuộc `completion_method`: `FIELD_EVIDENCE` bắt buộc **1-5**
-  ảnh (§6.2), `MANAGER_OVERRIDE` cho phép **0-5** ảnh (§6.3), cập nhật trạng thái
+  ảnh (§6.2), `MANAGER_OVERRIDE` không nhận ảnh/GPS (§6.3), cập nhật trạng thái
   thường cho phép 0-5 ảnh.
 - Không hard delete Attendance/Task; điều chỉnh qua nghiệp vụ có `AuditLog`.
 - Bắt buộc audit cho manager override, thay đổi Location/Config, quản lý tài khoản
@@ -2131,8 +2196,26 @@ khóa **không** bị đụng tới, nên `PATCH` chỉ kiểm các id **mới t
 này, không kiểm lại toàn bộ assignee cũ; nếu không thì mọi lần sửa tiêu đề task
 cũ đều vấp lỗi vì trong đó có một người đã nghỉ.
 
+`assignee_ids` chỉ thuộc nhánh MANAGER `task.create.assign`/`task.update.any`.
+Nhánh HELPDESK `task.create.self` không nhận tập người dùng từ client mà tự gán
+đúng actor; `task.update.self` không được thay đổi assignee. Request HELPDESK cố
+thêm, gỡ hoặc thay assignee bị từ chối toàn bộ và không tạo `Task`/`TaskAssignee`
+hay thay đổi tập hiện hữu (R-135).
+Mọi ID assignee mới được khóa theo thứ tự tăng trong cùng transaction và phải
+đồng thời tồn tại, có role HELPDESK, `is_active = True`. Nếu có bất kỳ ID vi phạm,
+server trả `422 INACTIVE_ASSIGNEE` với `details.assignee_ids` chứa toàn bộ ID vi
+phạm đã khử trùng lặp/sắp tăng rồi rollback toàn bộ; mã lỗi giữ tên lịch sử nhưng
+bao trùm cả ID thiếu, sai role và inactive (R-141).
+Mọi `PATCH` lên Task đã `COMPLETED` bị từ chối trước khi ghi, kể cả sửa title,
+description, expected Location hoặc assignee; không có partial update hay evidence
+cho request bị từ chối (R-139).
+
 `POST /api/tasks/{task_id}/status` nhận `status` và `note`/`block_reason`; status
-`BLOCKED` thiếu lý do trả `422 BLOCK_REASON_REQUIRED`. `POST
+`BLOCKED` thiếu lý do trả `422 BLOCK_REASON_REQUIRED`, còn target `COMPLETED` bị
+từ chối vì phải dùng completion endpoint/action chuyên biệt (R-137). `POST
+/api/tasks/{task_id}/status` đặt lại đúng status hiện tại trả `200` no-op sau
+permission/DTO/object scope, không ghi bất kỳ state/evidence/version nào (R-136).
+`POST
 /api/tasks/{task_id}/evidence-uploads` nhận metadata của 1 ảnh (`mime`,
 `size_bytes`, `checksum_sha256`), kiểm quyền/scope/Task chưa terminal và trả
 `upload_id`, object key cùng presigned `PUT`. `POST
@@ -2148,6 +2231,9 @@ thành công luôn trả `gps_quality`,
 đúng giá trị đã lưu trên `TaskUpdate`, không tính lại. `POST /api/tasks/{task_id}/complete-override` cho 0-5 ảnh,
 không cần GPS, bắt `completion_note`; task đã hoàn thành trả
 `409 TASK_ALREADY_COMPLETED` ở cả hai endpoint.
+Audit override chỉ ghi Task ID, status trước/sau, method, actor ID và server time;
+`completion_note` giữ nguyên trên Task/TaskUpdate nhưng không sao chép hoặc
+sanitize vào AuditLog (R-143).
 
 `GET /api/notifications/`, `PATCH /api/notifications/{id}/read`, `POST
 /api/push-subscriptions/` và `DELETE /api/push-subscriptions/{id}/` chỉ thao tác

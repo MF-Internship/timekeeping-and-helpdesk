@@ -28,10 +28,14 @@ export async function authenticatedFetch(
   if (!target) {
     throw new TypeError("API target must be a relative /api/v1/ path");
   }
+  const requestGeneration = sessionGeneration;
   const response = await fetch(fetchInput(input), requestOptions(input, init));
   const errorCode = await responseErrorCode(response);
   if (handleAuthenticationFailure(errorCode)) return response;
   if (!shouldRefresh(target, response, errorCode)) return response;
+  if (requestGeneration !== sessionGeneration) {
+    return fetch(fetchInput(input), requestOptions(input, init));
+  }
   if (!(await refreshOnce())) return response;
   return fetch(fetchInput(input), requestOptions(input, init));
 }
@@ -103,7 +107,7 @@ async function responseErrorCode(response: Response): Promise<string | undefined
 }
 
 function refreshOnce(): Promise<boolean> {
-  if (refreshFlight?.generation === sessionGeneration) return refreshFlight.promise;
+  if (refreshFlight) return refreshFlight.promise;
   const generation = sessionGeneration;
   const promise = performRefresh(generation).finally(() => {
     if (refreshFlight?.promise === promise) refreshFlight = undefined;

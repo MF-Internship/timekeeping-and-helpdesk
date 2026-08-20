@@ -245,6 +245,118 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/tasks/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["tasks_list"];
+    put?: never;
+    post: operations["tasks_create"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/tasks/{task_id}/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["tasks_retrieve"];
+    put?: never;
+    post?: never;
+    delete: operations["tasks_destroy"];
+    options?: never;
+    head?: never;
+    patch: operations["tasks_partial_update"];
+    trace?: never;
+  };
+  "/api/v1/tasks/{task_id}/complete-field": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["tasks_complete_field_create"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/tasks/{task_id}/complete-override": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["tasks_complete_override_create"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/tasks/{task_id}/evidence-uploads": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["tasks_evidence_uploads_create"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/tasks/{task_id}/photos/{photo_id}/access": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["tasks_photos_access_create"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/tasks/{task_id}/status": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["tasks_status_create"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/users/": {
     parameters: {
       query?: never;
@@ -481,6 +593,22 @@ export interface components {
       job_closed_without_anomaly_count: number;
       missing_checkout_anomaly_count: number;
     };
+    EvidenceUpload: {
+      checksum_sha256: string;
+      mime: components["schemas"]["MimeEnum"];
+      size_bytes: number;
+    };
+    EvidenceUploadIntent: {
+      /** Format: date-time */
+      expires_at: string;
+      headers: {
+        [key: string]: string;
+      };
+      /** Format: uuid */
+      upload_id: string;
+      /** Format: uri */
+      upload_url: string;
+    };
     FoundationError: {
       details: {
         [key: string]: string[];
@@ -509,6 +637,14 @@ export interface components {
     };
     /** @enum {string} */
     GpsBoundaryErrorErrorCodeEnum: "WEAK_GPS" | "OUTSIDE_RADIUS";
+    GroupedTaskList: {
+      /** Format: date */
+      business_date: string;
+      completed: components["schemas"]["TaskItem"][];
+      overdue: components["schemas"]["TaskItem"][];
+      today: components["schemas"]["TaskItem"][];
+      upcoming: components["schemas"]["TaskItem"][];
+    };
     Holiday: {
       /** Format: date */
       readonly date: string;
@@ -530,6 +666,19 @@ export interface components {
       /** Format: uuid */
       readonly request_id: string;
     };
+    InactiveAssigneeDetails: {
+      assignee_ids: number[];
+    };
+    InactiveAssigneeError: {
+      details: components["schemas"]["InactiveAssigneeDetails"];
+      error: string;
+      error_code: components["schemas"]["InactiveAssigneeErrorErrorCodeEnum"];
+      message: string;
+      /** Format: uuid */
+      request_id: string;
+    };
+    /** @enum {string} */
+    InactiveAssigneeErrorErrorCodeEnum: "INACTIVE_ASSIGNEE";
     IndexedAttendancePunch: {
       /** Format: decimal */
       readonly accuracy_m: string;
@@ -598,10 +747,12 @@ export interface components {
       scanned_count: number;
       /** Format: date-time */
       started_at: string;
-      status: components["schemas"]["StatusEnum"];
+      status: components["schemas"]["JobRunStatusEnum"];
     };
     /** @enum {string} */
     JobRunErrorCodeEnum: "SESSION_PROCESSING_FAILED" | "RUN_ABORTED";
+    /** @enum {string} */
+    JobRunStatusEnum: "RUNNING" | "SUCCEEDED" | "PARTIAL_FAILED" | "FAILED";
     Links: {
       accounts: components["schemas"]["AccountsEnum"];
     };
@@ -670,6 +821,8 @@ export interface components {
       readonly must_change_password: boolean;
       readonly role: string;
     };
+    /** @enum {string} */
+    MimeEnum: "image/jpeg" | "image/png" | "image/webp";
     NoOpenSessionError: {
       readonly details: {
         [key: string]: unknown;
@@ -684,9 +837,17 @@ export interface components {
     NoOpenSessionErrorErrorCodeEnum: "NO_OPEN_SESSION";
     /** @enum {unknown} */
     NullEnum: null;
+    /** @enum {string} */
+    OrdinaryTaskStatusEnum: "TODO" | "IN_PROGRESS" | "BLOCKED";
     PasswordChange: {
       current_password: string;
       new_password: string;
+    };
+    PhotoAccess: {
+      /** Format: date-time */
+      expires_at: string;
+      /** Format: uri */
+      url: string;
     };
     Profile: {
       /** Format: email */
@@ -745,8 +906,147 @@ export interface components {
     Status: {
       is_active: boolean;
     };
+    TaskAlreadyCompletedError: {
+      details: {
+        [key: string]: unknown;
+      };
+      error: string;
+      error_code: components["schemas"]["TaskAlreadyCompletedErrorErrorCodeEnum"];
+      message: string;
+      /** Format: uuid */
+      request_id: string;
+    };
     /** @enum {string} */
-    StatusEnum: "RUNNING" | "SUCCEEDED" | "PARTIAL_FAILED" | "FAILED";
+    TaskAlreadyCompletedErrorErrorCodeEnum: "TASK_ALREADY_COMPLETED";
+    TaskAssignee: {
+      /** Format: date-time */
+      assigned_at: string;
+      user: components["schemas"]["TaskUser"];
+    };
+    TaskDetail: {
+      /** Format: date */
+      assigned_date: string;
+      assignees: components["schemas"]["TaskAssignee"][];
+      block_reason: string | null;
+      /** Format: date-time */
+      completed_at: string | null;
+      completed_by: components["schemas"]["TaskUser"] | null;
+      completion_method: string | null;
+      completion_note: string | null;
+      created_by: components["schemas"]["TaskUser"];
+      description: string;
+      expected_location: string;
+      group: string;
+      id: number;
+      location: components["schemas"]["TaskLocation"] | null;
+      overdue_days: number | null;
+      status: components["schemas"]["TaskStatusEnum"];
+      title: string;
+      updates: components["schemas"]["TaskLifecycleUpdate"][];
+    };
+    TaskError: {
+      details: {
+        [key: string]: unknown;
+      };
+      error: string;
+      error_code: string;
+      message: string;
+      /** Format: uuid */
+      request_id: string;
+    };
+    TaskFieldCompletion: {
+      /** Format: decimal */
+      accuracy_m: string;
+      /** Format: date-time */
+      captured_at: string;
+      completion_note?: string | null;
+      /** Format: decimal */
+      latitude: string;
+      /** Format: decimal */
+      longitude: string;
+      selected_location_id?: number | null;
+      upload_ids: string[];
+    };
+    TaskItem: {
+      /** Format: date */
+      assigned_date: string;
+      assignees: components["schemas"]["TaskAssignee"][];
+      block_reason: string | null;
+      /** Format: date-time */
+      completed_at: string | null;
+      completed_by: components["schemas"]["TaskUser"] | null;
+      completion_method: string | null;
+      completion_note: string | null;
+      created_by: components["schemas"]["TaskUser"];
+      description: string;
+      expected_location: string;
+      group: string;
+      id: number;
+      location: components["schemas"]["TaskLocation"] | null;
+      overdue_days: number | null;
+      status: components["schemas"]["TaskStatusEnum"];
+      title: string;
+    };
+    TaskLifecycleUpdate: {
+      accuracy_m: string | null;
+      actor: components["schemas"]["TaskUser"];
+      actual_location: components["schemas"]["TaskLocation"] | null;
+      actual_location_id: number | null;
+      block_reason: string | null;
+      /** Format: date-time */
+      captured_at: string | null;
+      captured_latitude: string | null;
+      captured_longitude: string | null;
+      completion_method: string | null;
+      completion_note: string | null;
+      distance_m: string | null;
+      gps_quality: string | null;
+      id: number;
+      location_candidates: number[];
+      /** Format: uri */
+      maps_url: string | null;
+      note: string | null;
+      photos: components["schemas"]["TaskPhoto"][];
+      /** Format: date-time */
+      recorded_at: string;
+      resolution_method: string | null;
+      resolved_address: string | null;
+      status: components["schemas"]["TaskStatusEnum"];
+      validation_result: string | null;
+    };
+    TaskLocation: {
+      address: string;
+      code: string;
+      id: number;
+      is_active: boolean;
+      name: string;
+    };
+    TaskOverride: {
+      completion_note: string;
+    };
+    TaskPhoto: {
+      id: number;
+      mime: components["schemas"]["MimeEnum"];
+      size_bytes: number;
+    };
+    TaskStatus: {
+      block_reason?: string | null;
+      note?: string | null;
+      status: components["schemas"]["OrdinaryTaskStatusEnum"];
+    };
+    /** @enum {string} */
+    TaskStatusEnum: "TODO" | "IN_PROGRESS" | "BLOCKED" | "COMPLETED";
+    TaskUpdate: {
+      assignee_ids?: number[];
+      description?: string;
+      expected_location?: string;
+      location_id?: number | null;
+      title?: string;
+    };
+    TaskUser: {
+      full_name: string;
+      id: number;
+    };
     /** @enum {string} */
     TimezoneEnum: "Asia/Ho_Chi_Minh";
     TodayAttendance: {
@@ -1735,6 +2035,624 @@ export interface operations {
           "application/yaml": {
             [key: string]: unknown;
           };
+        };
+      };
+    };
+  };
+  tasks_list: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GroupedTaskList"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+    };
+  };
+  tasks_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": {
+          /** Format: date */
+          assigned_date: string;
+          assignee_ids?: number[];
+          /** @default  */
+          description?: string;
+          /** @default  */
+          expected_location?: string;
+          location_id?: number | null;
+          title: string;
+        };
+        "application/x-www-form-urlencoded": {
+          /** Format: date */
+          assigned_date: string;
+          assignee_ids?: number[];
+          /** @default  */
+          description?: string;
+          /** @default  */
+          expected_location?: string;
+          location_id?: number | null;
+          title: string;
+        };
+        "multipart/form-data": {
+          /** Format: date */
+          assigned_date: string;
+          assignee_ids?: number[];
+          /** @default  */
+          description?: string;
+          /** @default  */
+          expected_location?: string;
+          location_id?: number | null;
+          title: string;
+        };
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskDetail"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["InactiveAssigneeError"];
+        };
+      };
+    };
+  };
+  tasks_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        task_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskDetail"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+    };
+  };
+  tasks_destroy: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        task_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No response body */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+    };
+  };
+  tasks_partial_update: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        task_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["TaskUpdate"];
+        "application/x-www-form-urlencoded": components["schemas"]["TaskUpdate"];
+        "multipart/form-data": components["schemas"]["TaskUpdate"];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskDetail"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["InactiveAssigneeError"];
+        };
+      };
+    };
+  };
+  tasks_complete_field_create: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path: {
+        task_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TaskFieldCompletion"];
+        "application/x-www-form-urlencoded": components["schemas"]["TaskFieldCompletion"];
+        "multipart/form-data": components["schemas"]["TaskFieldCompletion"];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskDetail"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+    };
+  };
+  tasks_complete_override_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        task_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TaskOverride"];
+        "application/x-www-form-urlencoded": components["schemas"]["TaskOverride"];
+        "multipart/form-data": components["schemas"]["TaskOverride"];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskDetail"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskAlreadyCompletedError"];
+        };
+      };
+    };
+  };
+  tasks_evidence_uploads_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        task_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["EvidenceUpload"];
+        "application/x-www-form-urlencoded": components["schemas"]["EvidenceUpload"];
+        "multipart/form-data": components["schemas"]["EvidenceUpload"];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EvidenceUploadIntent"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+    };
+  };
+  tasks_photos_access_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        photo_id: string;
+        task_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PhotoAccess"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+    };
+  };
+  tasks_status_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        task_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TaskStatus"];
+        "application/x-www-form-urlencoded": components["schemas"]["TaskStatus"];
+        "multipart/form-data": components["schemas"]["TaskStatus"];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskDetail"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
         };
       };
     };

@@ -11,7 +11,7 @@ def test_records_are_immutable_and_use_closed_vocabularies() -> None:
     entry = AuditEntry(1, AuditAction.USER_CREATED, "User", "2", {}, {"role": "HELPDESK"})
     with pytest.raises(AttributeError):
         entry.actor_id = 3  # type: ignore[misc]
-    assert len(AuditAction) == 9
+    assert len(AuditAction) == 12
     assert len(IdentityEventType) == 7
 
 
@@ -51,4 +51,16 @@ def test_owner_defined_closed_enum_is_accepted_without_changing_identity_vocabul
 def test_attendance_audit_actions_are_closed_additions() -> None:
     assert AuditAction.ATTENDANCE_CHECK_IN_CREATED.value == "attendance.check_in.created"
     assert AuditAction.ATTENDANCE_CHECK_OUT_CREATED.value == "attendance.check_out.created"
-    assert len(AuditAction) == 9
+    assert len(AuditAction) == 12
+
+
+@pytest.mark.unit
+def test_task_audit_actions_are_closed_additions() -> None:
+    assert AuditAction.TASK_COMPLETION_OVERRIDDEN.value == "task.completion.overridden"
+    assert AuditAction.TASK_COMPLETION_FIELD_EVIDENCE.value == "task.completion.field_evidence"
+    assert AuditAction.TASK_SELF_DELETED.value == "task.self_deleted"
+    assert [action for action in AuditAction if action.value.startswith("task.")] == [
+        AuditAction.TASK_COMPLETION_OVERRIDDEN,
+        AuditAction.TASK_COMPLETION_FIELD_EVIDENCE,
+        AuditAction.TASK_SELF_DELETED,
+    ]

@@ -79,6 +79,8 @@ only for the stated foundation requirement.
 | `@eslint/eslintrc` | ESLint configuration compatibility used by the pinned Next toolchain. |
 | `prettier` | Deterministic frontend formatting. |
 | `vitest` | Frontend unit, architecture, and contract test runner. |
+| `@playwright/test` | Browser-level employee journey and generated-client integration verification. |
+| `@axe-core/playwright` | Accessibility assertions within approved Playwright browser journeys. |
 | `jsdom` | Browser DOM implementation for frontend tests. |
 | `@testing-library/react` | Accessible React component behavior tests. |
 | `@testing-library/jest-dom` | DOM assertions for shared UI states. |
@@ -91,3 +93,11 @@ CI additionally uses GitHub `actions/checkout`, `actions/setup-node`,
 PostgreSQL 17 service image. No queue,
 object-storage SDK, observability product, alternate HTTP client, or Redis
 runtime package is approved by this feature.
+### Feature 007 UI and evidence dependencies
+
+The source-owned UI layer uses `@radix-ui/react-slot`, `class-variance-authority`,
+`clsx`, `lucide-react`, `tailwind-merge`, `tailwindcss`, `@tailwindcss/postcss`,
+`tw-animate-css`, and `vite` for the shared shadcn-style primitives, icons,
+styling pipeline, and test runner. Private task evidence uses `django-storages`
+for the S3-compatible adapter; storage credentials and object keys remain
+server-owned.

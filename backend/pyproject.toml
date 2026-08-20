@@ -9,6 +9,7 @@ dependencies = [
   "djangorestframework-simplejwt==5.5.1",
   "psycopg[binary]==3.2.9",
   "PyYAML==6.0.2",
+  "django-storages[s3]==1.14.6",
 ]
 
 [dependency-groups]
@@ -56,7 +57,7 @@ line-ending = "lf"
 [tool.mypy]
 python_version = "3.12"
 strict = true
-files = ["config", "core", "operations", "identity", "audit", "locations", "attendance", "../scripts"]
+files = ["config", "core", "operations", "identity", "audit", "locations", "attendance", "tasks", "../scripts"]
 exclude = ".venv|migrations|tests/fixtures|tests/migration_fixtures"
 mypy_path = "$MYPY_CONFIG_FILE_DIR/stubs"
 
@@ -65,4 +66,4 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["config", "core", "operations", "identity", "audit", "locations", "attendance"]
+packages = ["config", "core", "operations", "identity", "audit", "locations", "attendance", "tasks"]

@@ -21,12 +21,12 @@ django.setup()
 
 from django.db import transaction  # noqa: E402
 
-from attendance.application.dto import AttendanceCommand  # type: ignore[import-untyped] # noqa: E402
-from config.composition import attendance_container  # type: ignore[import-untyped] # noqa: E402
-from identity.models import User  # type: ignore[import-untyped] # noqa: E402
-from locations.domain.geofence import haversine_distance_m  # type: ignore[import-untyped] # noqa: E402
-from locations.domain.locations import Coordinates  # type: ignore[import-untyped] # noqa: E402
-from locations.models import Config, Location  # type: ignore[import-untyped] # noqa: E402
+from attendance.application.dto import AttendanceCommand  # noqa: E402
+from config.composition import attendance_container  # noqa: E402
+from identity.models import User  # noqa: E402
+from locations.domain.geofence import haversine_distance_m  # noqa: E402
+from locations.domain.locations import Coordinates  # noqa: E402
+from locations.models import Config, Location  # noqa: E402
 
 TRIALS = 100
 USER_COUNT = 50

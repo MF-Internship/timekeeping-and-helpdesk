@@ -61,7 +61,9 @@ def test_thin_client_business_logic_has_one_expected_finding() -> None:
     client = FIXTURES / "thin_client" / "frontend/src/shared/api/client.ts"
     findings = check_paths([client])
     assert [finding.rule for finding in findings] == ["MAINT-THIN-CLIENT"]
-    assert findings[0].path.endswith("frontend/src/shared/api/client.ts")
+    assert findings[0].path.replace("\\", "/").endswith(
+        "frontend/src/shared/api/client.ts"
+    )
 
 
 def test_repository_thin_client_passes() -> None:
@@ -80,3 +82,9 @@ def test_operations_production_code_passes_maintainability_rules() -> None:
     from scripts.check_function_length import check_paths
 
     assert check_paths([ROOT / "backend/operations"]) == []
+
+
+def test_tasks_production_code_passes_maintainability_rules() -> None:
+    from scripts.check_function_length import check_paths
+
+    assert check_paths([ROOT / "backend/tasks"]) == []

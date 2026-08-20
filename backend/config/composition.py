@@ -16,6 +16,11 @@ from attendance.application.reconciliation import ReconciliationDependencies, Re
 from audit.adapters.persistence.recording import DjangoAuditRecorder
 from config.attendance_adapters import DjangoAttendanceAuthorization, DjangoAttendanceReferenceData
 from config.operations_adapters import DjangoReadOnlyRepeatableRead, DjangoReconciliationJobRuns
+from config.task_adapters import (
+    DjangoAssigneeDirectory,
+    DjangoTaskAuthorization,
+    DjangoTaskLocationDirectory,
+)
 from identity.adapters.persistence.unit_of_work import DjangoUnitOfWork
 from identity.adapters.persistence.users import DjangoUserRepository
 from identity.adapters.security.passwords import DjangoPasswordService
@@ -49,6 +54,12 @@ from operations.adapters.persistence.job_runs import DjangoJobRunRepository
 from operations.application.container import OperationsContainer
 from operations.application.dependencies import JobHealthDependencies
 from operations.application.job_health import JobHealthService
+from tasks.adapters.clock import DjangoClock as TaskDjangoClock
+from tasks.adapters.evidence_storage import S3EvidenceStorage
+from tasks.adapters.persistence.repositories import DjangoTaskRepository
+from tasks.adapters.persistence.unit_of_work import DjangoUnitOfWork as TaskDjangoUnitOfWork
+from tasks.application.container import TaskContainer, build_task_container
+from tasks.application.dependencies import TaskDependencies
 
 
 @lru_cache(maxsize=1)
@@ -182,3 +193,18 @@ def operations_container() -> OperationsContainer:
             )
         )
     )
+
+
+@lru_cache(maxsize=1)
+def task_container() -> TaskContainer:
+    dependencies = TaskDependencies(
+        authorization=DjangoTaskAuthorization(),
+        assignees=DjangoAssigneeDirectory(),
+        locations=DjangoTaskLocationDirectory(),
+        repository=DjangoTaskRepository(),
+        clock=TaskDjangoClock(),
+        audit=DjangoAuditRecorder(),
+        unit_of_work_factory=TaskDjangoUnitOfWork,
+        storage=S3EvidenceStorage(),
+    )
+    return build_task_container(dependencies)

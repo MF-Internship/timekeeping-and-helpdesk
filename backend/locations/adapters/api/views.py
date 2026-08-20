@@ -43,7 +43,7 @@ def _positive_id(raw: str) -> int:
 
 
 def _actor_id(request: Request) -> int:
-    return cast(int, request.user.pk)  # type: ignore[union-attr]
+    return cast(int, request.user.pk)
 
 
 class LocationsView(APIView):

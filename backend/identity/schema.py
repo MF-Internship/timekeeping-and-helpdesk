@@ -1,7 +1,7 @@
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
 
 
-class DatabaseBackedJWTAuthenticationScheme(OpenApiAuthenticationExtension):
+class DatabaseBackedJWTAuthenticationScheme(OpenApiAuthenticationExtension):  # type: ignore[no-untyped-call]
     target_class = "identity.adapters.security.authentication.DatabaseBackedJWTAuthentication"
     name = "bearerAuth"
 

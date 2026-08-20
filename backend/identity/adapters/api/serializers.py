@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from rest_framework import serializers
 
@@ -16,14 +16,14 @@ class StrictInputSerializer(serializers.Serializer[Any]):
 
     def to_internal_value(self, data: Any) -> dict[str, Any]:
         if not isinstance(data, dict):
-            return super().to_internal_value(data)
+            return cast(dict[str, Any], super().to_internal_value(data))
         unexpected = set(data) - self.allowed_fields
         if unexpected:
             raise IdentityAPIError(
                 SERVER_OWNED_FIELD,
                 status_code=400,
             )
-        return super().to_internal_value(data)
+        return cast(dict[str, Any], super().to_internal_value(data))
 
 
 class LoginSerializer(StrictInputSerializer):
@@ -38,7 +38,7 @@ class EmptySerializer(StrictInputSerializer):
 
 class RuntimeRoleField(serializers.CharField):
     def to_internal_value(self, data: Any) -> str:
-        value = super().to_internal_value(data)
+        value = cast(str, super().to_internal_value(data))
         try:
             Role(value)
         except ValueError as error:
@@ -50,14 +50,14 @@ class NullableBlankCharField(serializers.CharField):
     def run_validation(self, data: Any = serializers.empty) -> str | None:
         if isinstance(data, str) and not data.strip():
             return None
-        return super().run_validation(data)
+        return cast(str | None, super().run_validation(data))
 
 
 class NullableBlankEmailField(serializers.EmailField):
     def run_validation(self, data: Any = serializers.empty) -> str | None:
         if isinstance(data, str) and not data.strip():
             return None
-        return super().run_validation(data)
+        return cast(str | None, super().run_validation(data))
 
 
 class ProfileSerializer(StrictInputSerializer):

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, cast
 
 from rest_framework import serializers
 
@@ -29,7 +29,7 @@ class AttendanceCommandSerializer(serializers.Serializer[Any]):
     def to_internal_value(self, data: Any) -> dict[str, Any]:
         if isinstance(data, dict) and set(data) - self.allowed_fields:
             raise IdentityAPIError(SERVER_OWNED_FIELD, status_code=400)
-        return super().to_internal_value(data)
+        return cast(dict[str, Any], super().to_internal_value(data))
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         captured_at = attrs.get("captured_at")

@@ -91,7 +91,7 @@ def _no_store(response: Response) -> Response:
 
 
 def _actor_id(request: Request) -> int:
-    return cast(int, request.user.pk)  # type: ignore[union-attr]
+    return cast(int, request.user.pk)
 
 
 def _target_id(raw_user_id: str) -> int:

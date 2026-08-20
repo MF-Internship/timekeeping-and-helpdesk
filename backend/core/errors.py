@@ -53,7 +53,14 @@ def build_error_envelope(
 
 def validation_details(detail: object) -> dict[str, object]:
     if isinstance(detail, Mapping):
-        return {str(key): _normalize_messages(value) for key, value in detail.items()}
+        normalized: dict[str, object] = {
+            str(key): _normalize_messages(value) for key, value in detail.items()
+        }
+        try:
+            validate_event_payload(normalized)
+        except ProtectedPayloadError:
+            return {"fields": ["Giá trị đầu vào được bảo vệ không hợp lệ."]}
+        return normalized
     return {}
 
 

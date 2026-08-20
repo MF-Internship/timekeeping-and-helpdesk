@@ -6,8 +6,8 @@ export default defineConfig({
   retries: 0,
   use: { baseURL: "http://127.0.0.1:3100", trace: "retain-on-failure" },
   webServer: {
-    command:
-      "env ORIGIN_CREDENTIAL=test-origin-credential-at-least-32-chars npm run dev -- --hostname 127.0.0.1 --port 3100",
+    command: "npm run dev -- --hostname 127.0.0.1 --port 3100",
+    env: { ORIGIN_CREDENTIAL: "test-origin-credential-at-least-32-chars" },
     url: "http://127.0.0.1:3100",
     reuseExistingServer: true,
     timeout: 120_000,

@@ -26,6 +26,12 @@ def test_authorized_codes_are_closed() -> None:
                 "INVALID_LOCATION_CHOICE",
                 "NO_OPEN_SESSION",
                 "SESSION_ALREADY_OPEN",
+                "INACTIVE_ASSIGNEE",
+                "BLOCK_REASON_REQUIRED",
+                "TASK_ALREADY_COMPLETED",
+                "EVIDENCE_UPLOAD_INVALID",
+                "EVIDENCE_UPLOAD_NOT_READY",
+                "IDEMPOTENCY_CONFLICT",
             }
         )
         == AUTHORIZED_FOUNDATION_ERROR_CODES
@@ -77,3 +83,17 @@ def test_protected_detail_is_rejected_without_value_in_error() -> None:
             {"field_name": [secret]},
         )
     assert secret not in str(captured.value)
+
+
+def test_protected_validation_details_are_redacted_before_envelope_validation() -> None:
+    from core.errors import build_error_envelope, validation_details
+
+    details = validation_details({"latitude": ["Ensure that there are no more than 9 digits."]})
+    payload = build_error_envelope(
+        "VALIDATION_FAILED", "00000000-0000-4000-8000-000000000000", details
+    )
+
+    assert payload["details"] == {
+        "fields": ["Giá trị đầu vào được bảo vệ không hợp lệ."]
+    }
+    assert "latitude" not in str(payload)
