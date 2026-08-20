@@ -70,7 +70,8 @@ async function mockTasks(
         expected_location: request.postDataJSON().expected_location ?? "",
         assignees: (capabilities.includes("task.create.self")
           ? [{ id: 1, full_name: "Actor" }]
-          : activeUsers).map((user) => ({
+          : activeUsers
+        ).map((user) => ({
           user: { id: user.id, full_name: user.full_name },
           assigned_at: "2026-08-20T08:00:00Z",
         })),
@@ -83,12 +84,16 @@ async function mockTasks(
       return route.fulfill({ status: 204 });
     }
     if (path.endsWith("/evidence-uploads"))
-      return json(route, {
-        upload_id: "00000000-0000-4000-8000-000000000001",
-        upload_url: "https://storage.invalid/upload",
-        headers: { "Content-Type": "image/jpeg" },
-        expires_at: "2026-08-20T12:00:00Z",
-      }, 201);
+      return json(
+        route,
+        {
+          upload_id: "00000000-0000-4000-8000-000000000001",
+          upload_url: "https://storage.invalid/upload",
+          headers: { "Content-Type": "image/jpeg" },
+          expires_at: "2026-08-20T12:00:00Z",
+        },
+        201,
+      );
     if (path.endsWith("/complete-field")) {
       const body = request.postDataJSON();
       if (options.ambiguity && body.selected_location_id === null) {
@@ -109,8 +114,10 @@ async function mockTasks(
       }
       return json(route, {
         ...task(5, "Việc phát sinh", {
-          status: "COMPLETED", completion_method: "FIELD_EVIDENCE",
-          group: "COMPLETED", overdue_days: null,
+          status: "COMPLETED",
+          completion_method: "FIELD_EVIDENCE",
+          group: "COMPLETED",
+          overdue_days: null,
         }),
         updates: [],
       });
@@ -164,12 +171,18 @@ test("Manager creates for multiple assignees and confirms override", async ({ pa
 
 test("mobile Tasks keeps Tasks and Attendance visible without page overflow", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 760 });
-  await mockTasks(page, ["task.view.self", "attendance.view.self"], grouped([task(5, "Việc mobile")]));
+  await mockTasks(
+    page,
+    ["task.view.self", "attendance.view.self"],
+    grouped([task(5, "Việc mobile")]),
+  );
   await page.goto("/tasks");
   const navigation = page.getByRole("navigation", { name: "Điều hướng chính" });
   await expect(navigation.getByRole("link", { name: "Công việc" })).toBeVisible();
   await expect(navigation.getByRole("link", { name: "Chấm công" })).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
 });
 
 test("Helpdesk uploads evidence, captures GPS and sends an idempotency key", async ({
@@ -188,7 +201,9 @@ test("Helpdesk uploads evidence, captures GPS and sends an idempotency key", asy
   const card = page.getByRole("region", { name: "Việc phát sinh" });
   await card.getByRole("button", { name: "Nộp minh chứng" }).click();
   await card.getByLabel("Ảnh minh chứng").setInputFiles({
-    name: "proof.jpg", mimeType: "image/jpeg", buffer: Buffer.from("proof"),
+    name: "proof.jpg",
+    mimeType: "image/jpeg",
+    buffer: Buffer.from("proof"),
   });
   const completion = page.waitForRequest((request) => request.url().endsWith("/complete-field"));
   await card.getByRole("button", { name: "Nộp minh chứng & hoàn thành" }).click();
@@ -221,7 +236,9 @@ test("Helpdesk resolves an overlapping location without uploading evidence twice
   const card = page.getByRole("region", { name: "Việc phát sinh" });
   await card.getByRole("button", { name: "Nộp minh chứng" }).click();
   await card.getByLabel("Ảnh minh chứng").setInputFiles({
-    name: "proof.jpg", mimeType: "image/jpeg", buffer: Buffer.from("proof"),
+    name: "proof.jpg",
+    mimeType: "image/jpeg",
+    buffer: Buffer.from("proof"),
   });
   const completionRequests: string[] = [];
   page.on("request", (request) => {
@@ -231,8 +248,10 @@ test("Helpdesk resolves an overlapping location without uploading evidence twice
   });
   await card.getByRole("button", { name: "Nộp minh chứng & hoàn thành" }).click();
   await card.getByLabel("Địa điểm thực tế").selectOption("4");
-  const resolved = page.waitForRequest((request) =>
-    request.url().endsWith("/complete-field") && request.postDataJSON().selected_location_id === 4,
+  const resolved = page.waitForRequest(
+    (request) =>
+      request.url().endsWith("/complete-field") &&
+      request.postDataJSON().selected_location_id === 4,
   );
   await card.getByRole("button", { name: "Nộp minh chứng & hoàn thành" }).click();
   await resolved;
@@ -244,12 +263,9 @@ test("Helpdesk resolves an overlapping location without uploading evidence twice
 test("authorized task history opens evidence through the protected access endpoint", async ({
   page,
 }) => {
-  await mockTasks(
-    page,
-    ["task.view.self"],
-    grouped([task(5, "Việc phát sinh")]),
-    {
-      detailUpdates: [{
+  await mockTasks(page, ["task.view.self"], grouped([task(5, "Việc phát sinh")]), {
+    detailUpdates: [
+      {
         id: 11,
         status: "COMPLETED",
         actor: { id: 2, full_name: "Helpdesk An" },
@@ -276,15 +292,19 @@ test("authorized task history opens evidence through the protected access endpoi
         block_reason: null,
         note: null,
         photos: [{ id: 21, mime: "image/jpeg", size_bytes: 5 }],
-      }],
-    },
-  );
+      },
+    ],
+  });
   await page.goto("/tasks");
-  await page.getByRole("region", { name: "Việc phát sinh" })
-    .getByRole("button", { name: "Xem lịch sử" }).click();
+  await page
+    .getByRole("region", { name: "Việc phát sinh" })
+    .getByRole("button", { name: "Xem lịch sử" })
+    .click();
   await expect(page.getByText(/Trường THCS Nguyễn Du — Quận 1, TP\.HCM/)).toBeVisible();
-  await expect(page.getByRole("link", { name: "Mở vị trí trên Google Maps" }))
-    .toHaveAttribute("href", /query=10\.0000000,106\.0000000/);
+  await expect(page.getByRole("link", { name: "Mở vị trí trên Google Maps" })).toHaveAttribute(
+    "href",
+    /query=10\.0000000,106\.0000000/,
+  );
   const access = page.waitForRequest((request) => request.url().endsWith("/photos/21/access"));
   await page.getByRole("button", { name: "Xem ảnh 1" }).click();
   await access;
@@ -311,14 +331,17 @@ test("Helpdesk creates an external-place task, sees reset fields, and soft delet
   page,
 }) => {
   await mockTasks(page, [
-    "task.view.self", "task.create.self", "task.update.self", "task.delete.self",
+    "task.view.self",
+    "task.create.self",
+    "task.update.self",
+    "task.delete.self",
   ]);
   await page.goto("/tasks");
   await page.getByLabel("Tiêu đề").fill("Làm việc tại trường học");
   await page.getByLabel("Ngày giao").fill("2026-08-20");
   await page.getByLabel("Địa điểm dự kiến").fill("Trường THCS Nguyễn Du");
-  const create = page.waitForRequest((request) =>
-    request.url().endsWith("/api/v1/tasks/") && request.method() === "POST",
+  const create = page.waitForRequest(
+    (request) => request.url().endsWith("/api/v1/tasks/") && request.method() === "POST",
   );
   await page.getByRole("button", { name: "Tạo công việc" }).click();
   expect((await create).postDataJSON().expected_location).toBe("Trường THCS Nguyễn Du");

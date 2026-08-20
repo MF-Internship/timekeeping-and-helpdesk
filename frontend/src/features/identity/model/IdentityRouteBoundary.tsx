@@ -15,6 +15,7 @@ type IdentityRoute =
   | "holidays"
   | "attendance"
   | "tasks"
+  | "notifications"
   | "job-health";
 
 const REQUIRED_CAPABILITY = {
@@ -24,6 +25,7 @@ const REQUIRED_CAPABILITY = {
   holidays: "holiday.manage",
   attendance: "attendance.view.self",
   tasks: "task.view.self",
+  notifications: "notification.view.self",
   "job-health": "operations.job_health.view",
 } as const;
 

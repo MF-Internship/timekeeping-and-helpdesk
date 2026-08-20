@@ -989,7 +989,7 @@ AttendanceAttempt(id, user, kind[IN|OUT], work_date, recorded_at, outcome,
                   attendance?, captured_latitude, captured_longitude, accuracy_m,
                   nearest_location?, nearest_distance_m?, candidate_count,
                   device_metadata, request_ip?)
-Task(id, title, description, created_by, assigned_date, status, location?,
+Task(id, title, description, created_by, assigned_date, assignment_version, status, location?,
      completed_by?, completed_at?, completion_method?, completion_note?,
      block_reason?)
 TaskAssignee(id, task, user, assigned_at)
@@ -1005,6 +1005,9 @@ Notification(id, recipient, event_type, object_type, object_id, dedupe_key,
              title, created_at, read_at?)
 PushSubscription(id, user, endpoint_hash, encrypted_subscription,
                  user_agent_family, is_active, last_used_at, created_at)
+PushDelivery(id, notification, subscription, state, not_before, expires_at,
+             collapse_key, attempt_count, next_attempt_at, lease_expires_at?,
+             attempted_at?, failure_code?)
 JobRun(id, job_name, started_at, finished_at?, status, scanned_count,
        changed_count, anomaly_count, error_code?)
 Holiday(id, date, name)
@@ -1091,6 +1094,16 @@ Ghi chú model:
   account switch hoặc `is_active = False` vô hiệu hóa subscription liên quan;
   endpoint plaintext không ghi log. Notification luôn kiểm lại object scope khi
   đọc/deep-link, không coi push payload là quyền truy cập.
+- `Task.assignment_version` là số nguyên dương, bắt đầu từ 1 với database default
+  và chỉ tăng dưới Task row lock khi tập assignee thực sự thêm hoặc gỡ phần tử;
+  đây không phải optimistic version của HTTP và không tăng khi content/status đổi
+  hoặc assignee update là no-op (R-145).
+- `PushDelivery` là hàng đợi bền theo từng cặp Notification + PushSubscription,
+  có `UNIQUE(notification, subscription)`, `not_before < expires_at`, TTL tối đa
+  24 giờ, collapse key ổn định và state đóng
+  `PENDING|LEASED|DELIVERED|SUPPRESSED|EXPIRED`. Claim dùng row lock + lease ngắn;
+  provider call luôn nằm ngoài transaction. Dòng không lưu push payload hay
+  endpoint; lỗi chỉ lưu mã đóng không nhạy cảm (R-146).
 - `resolved_address` và link Google Maps (§6.2.1) là **giá trị dẫn xuất**, không
   lưu thành cột: suy từ `location` và tọa độ tại thời điểm hiển thị. Lưu thành cột
   sẽ tạo nguồn sự thật thứ hai và lệch khi `Location.address` được sửa.
@@ -1153,6 +1166,50 @@ trong view/service. Client chỉ ẩn/hiện UI, không thay thế backend autho
 | `report.view.all`, `report.export`, `photo.view.all` | ✅ | ✅ | - |
 | `photo.view.self` | - | - | ✅ |
 | `operations.job_health.view` | ✅ | ✅ | - |
+| `notification.view.self`, `notification.update.self`, `push_subscription.manage.self` | ✅ | ✅ | ✅ |
+
+**Notification self-service (chốt, R-144).** Các endpoint notification/push ở
+§10 không được dựa vào authentication ngầm hay kiểm role rải rác. `GET
+/api/v1/notifications/` dùng `notification.view.self`; `PATCH
+/api/v1/notifications/{id}/read` dùng `notification.update.self`; `POST` và
+`DELETE /api/v1/push-subscriptions/...` dùng
+`push_subscription.manage.self`. Resolver deep-link `GET
+/api/v1/notifications/{public_id}/target` cũng dùng `notification.view.self`,
+kiểm owner trước rồi gọi authorization/object-scope của object đích; possession
+of `public_id` không cấp quyền. Cả ba action được cấp trực tiếp cho ba vai trò,
+luôn khóa scope vào `request.user`, không nhận `user_id` và không thêm cặp nào
+vào `PERMISSION_IMPLIES`. Hai action ghi là ngoại lệ self-service hẹp đối với
+nguyên tắc LEADER chỉ đọc: LEADER vẫn không có quyền ghi bất kỳ state Task,
+Attendance, Location, Config, User, báo cáo hay vận hành nào; họ chỉ được đổi
+`read_at` của Notification thuộc mình và opt-in/revoke browser subscription
+thuộc mình.
+
+**Assignment occurrence cho notification (chốt, R-145).** Dedupe Task mới giao
+ở R-97 dùng đúng `(Task, assignee, assignment_version)`, nên Task giữ một
+`assignment_version` server-owned bắt đầu từ 1. Mọi thay đổi tập assignee thực sự
+được serialize bằng Task row lock rồi tăng đúng một lần trong cùng transaction;
+create dùng version 1, remove rồi add lại ở lần sau tạo occurrence mới. Update
+không đổi tập assignee không tăng version. Field này không xuất hiện trong input,
+không biến thành expected-version và không thay đổi luật concurrency Task R-138.
+
+**Push delivery bền nhưng best-effort (chốt, R-146).** Mỗi Notification tạo tối
+đa một `PushDelivery` cho mỗi PushSubscription đang active tại occurrence. Dòng
+delivery chỉ giữ scheduling/lease/result metadata, không giữ payload, endpoint
+hay subscription plaintext. Worker claim bằng `select_for_update(skip_locked)`
+và lease trong transaction ngắn, commit rồi mới gọi web-push; sau đó ghi kết quả
+trong transaction ngắn khác. Trước claim/send phải kiểm lại account,
+subscription, recipient/object scope, state, quiet hours và TTL; nhánh không còn
+hợp lệ chuyển `SUPPRESSED`/`EXPIRED`. Provider failure được retry có giới hạn tới
+TTL bằng `next_attempt_at`, không xóa hay sửa Notification, read state hoặc state
+Task/Attendance. Không Celery, broker hoặc timer trong web process; scheduler
+triển khai gọi management command idempotent theo manifest kiểm chứng được.
+
+**Event hoàn thành nhiều assignee (chốt, R-147).** Event thứ năm chỉ tồn tại khi
+Task có ít nhất hai assignee hiện hành và `completed_by` là một phần tử của tập
+đó. Recipient là các assignee hiện hành còn lại; `completed_by` không nhận.
+Manager override hoặc completion bởi actor không thuộc assignee set vẫn suppress
+upcoming/overdue push đã stale nhưng không tạo event “được assignee khác hoàn
+thành”. Cách phát event này cho mọi completion bị loại vì đổi nghĩa event đã chốt.
 
 **`config.view` và `holiday.manage` (chốt, R-83).** Hai action này được tách ra
 để mọi endpoint ở §10 đều có đúng một action canonical, không còn endpoint nào
@@ -1484,7 +1541,7 @@ MVP có in-app notification và web push opt-in; không email/SMS. Năm event:
 | Task sắp đến ngày thực hiện | assignee của Task chưa `COMPLETED` | 17:00 ngày trước `assigned_date` |
 | Task quá hạn | assignee của Task chưa `COMPLETED` | 08:00 mỗi ngày, tối đa một lần/Task/ngày |
 | Phiên còn mở gần cuối ngày | HELPDESK sở hữu phiên | `shift_end - 30 phút`; hủy nếu đã Check Out |
-| Task nhiều assignee được người khác hoàn thành | các assignee còn lại | ngay sau commit; không gửi cho `completed_by` |
+| Task nhiều assignee được một assignee khác hoàn thành | các assignee còn lại | ngay sau commit; chỉ phát khi `completed_by` thuộc tập assignee hiện hành và không gửi cho `completed_by` |
 
 Quiet hours 21:00–07:00 Asia/Ho_Chi_Minh; event rơi vào quiet hours chỉ ghi
 in-app và dời push tới 07:00 nếu trạng thái vẫn còn phù hợp. Push dùng nội dung
@@ -2235,9 +2292,12 @@ Audit override chỉ ghi Task ID, status trước/sau, method, actor ID và serv
 `completion_note` giữ nguyên trên Task/TaskUpdate nhưng không sao chép hoặc
 sanitize vào AuditLog (R-143).
 
-`GET /api/notifications/`, `PATCH /api/notifications/{id}/read`, `POST
-/api/push-subscriptions/` và `DELETE /api/push-subscriptions/{id}/` chỉ thao tác
-trên `request.user`; không nhận `user_id`. `GET /api/v1/operations/job-health` yêu
+`GET /api/v1/notifications/`, `PATCH /api/v1/notifications/{id}/read`, `GET
+/api/v1/notifications/{public_id}/target`, `POST /api/v1/push-subscriptions/` và
+`DELETE /api/v1/push-subscriptions/{id}/` dùng đúng ba action self-service ở
+R-144, chỉ thao tác trên `request.user`; không nhận `user_id`. Resolver target
+chỉ trả destination/target tối thiểu sau khi endpoint đích đã authorize lại.
+`GET /api/v1/operations/job-health` yêu
 cầu `operations.job_health.view`, cho MANAGER/LEADER đọc health model §9;
 response LEADER không chứa account/AuditLog link. HELPDESK nhận `403
 PERMISSION_DENIED`. Không có endpoint rerun/repair job trong MVP.

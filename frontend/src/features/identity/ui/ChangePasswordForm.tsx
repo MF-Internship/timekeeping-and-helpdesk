@@ -46,7 +46,11 @@ export function ChangePasswordForm() {
         {error?.fields.new_password ? <span>{error.fields.new_password}</span> : null}
       </label>
       <IdentityFailureNotice failure={error} />
-      <ActionGroup><Button type="submit" variant="primary">Đổi mật khẩu</Button></ActionGroup>
+      <ActionGroup>
+        <Button type="submit" variant="primary">
+          Đổi mật khẩu
+        </Button>
+      </ActionGroup>
     </form>
   );
 }

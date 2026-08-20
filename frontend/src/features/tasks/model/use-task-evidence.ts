@@ -21,7 +21,9 @@ export function useTaskEvidenceDraft(accountId: number, taskId: number) {
     void saveEvidenceDraft(accountId, taskId, files, note).then((result) => {
       if (current) setPersistence(result);
     });
-    return () => { current = false; };
+    return () => {
+      current = false;
+    };
   }, [accountId, taskId, files, note]);
 
   function discard() {

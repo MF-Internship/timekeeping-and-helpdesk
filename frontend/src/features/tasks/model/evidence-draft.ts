@@ -70,7 +70,11 @@ export async function saveEvidenceDraft(
     const photos = await Promise.all(files.map(asDraftPhoto));
     localStorage.setItem(
       key(accountId, taskId),
-      JSON.stringify({ photos, note, expiresAt: Date.now() + RETENTION_MS } satisfies EvidenceDraft),
+      JSON.stringify({
+        photos,
+        note,
+        expiresAt: Date.now() + RETENTION_MS,
+      } satisfies EvidenceDraft),
     );
     sessionStorage.setItem(markerKey(accountId, taskId), "1");
     return { kind: "saved" };
@@ -107,20 +111,33 @@ function removeMatching(storage: Storage, prefix: string) {
 }
 
 function validPhotos(value: unknown): value is EvidenceDraftPhoto[] {
-  return Array.isArray(value) && value.length <= 5 && value.every((photo) =>
-    typeof photo === "object" && photo !== null
-    && typeof (photo as EvidenceDraftPhoto).name === "string"
-    && typeof (photo as EvidenceDraftPhoto).mime === "string"
-    && typeof (photo as EvidenceDraftPhoto).lastModified === "number"
-    && typeof (photo as EvidenceDraftPhoto).base64 === "string"
+  return (
+    Array.isArray(value) &&
+    value.length <= 5 &&
+    value.every(
+      (photo) =>
+        typeof photo === "object" &&
+        photo !== null &&
+        typeof (photo as EvidenceDraftPhoto).name === "string" &&
+        typeof (photo as EvidenceDraftPhoto).mime === "string" &&
+        typeof (photo as EvidenceDraftPhoto).lastModified === "number" &&
+        typeof (photo as EvidenceDraftPhoto).base64 === "string",
+    )
   );
 }
 
 async function asDraftPhoto(file: File): Promise<EvidenceDraftPhoto> {
   const bytes = new Uint8Array(await new Response(file).arrayBuffer());
   let binary = "";
-  bytes.forEach((value) => { binary += String.fromCharCode(value); });
-  return { name: file.name, mime: file.type, lastModified: file.lastModified, base64: btoa(binary) };
+  bytes.forEach((value) => {
+    binary += String.fromCharCode(value);
+  });
+  return {
+    name: file.name,
+    mime: file.type,
+    lastModified: file.lastModified,
+    base64: btoa(binary),
+  };
 }
 
 function asFile(photo: EvidenceDraftPhoto): File {
@@ -130,6 +147,8 @@ function asFile(photo: EvidenceDraftPhoto): File {
 }
 
 function isQuotaError(error: unknown) {
-  return error instanceof DOMException
-    && (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED");
+  return (
+    error instanceof DOMException &&
+    (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED")
+  );
 }

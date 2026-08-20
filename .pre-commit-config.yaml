@@ -13,12 +13,12 @@ repos:
         pass_filenames: false
       - id: maintainability
         name: Maintainability boundaries
-        entry: uv run --project backend python scripts/check_function_length.py backend/core backend/config backend/operations backend/identity backend/audit scripts frontend/src/shared/api/client.ts
+        entry: uv run --project backend python scripts/check_function_length.py backend/core backend/config backend/operations backend/identity backend/audit backend/locations backend/attendance backend/tasks backend/notifications scripts frontend/src/shared/api/client.ts
         language: system
         pass_filenames: false
       - id: backend-types
         name: Backend strict types
-        entry: uv run --project backend mypy backend/core backend/config backend/operations backend/identity backend/audit scripts
+        entry: uv run --project backend mypy backend/core backend/config backend/operations backend/identity backend/audit backend/locations backend/attendance backend/tasks backend/notifications scripts
         language: system
         pass_filenames: false
       - id: architecture

@@ -212,6 +212,54 @@ export interface paths {
     patch: operations["identity_me_partial_update"];
     trace?: never;
   };
+  "/api/v1/notifications/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["notifications_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/notifications/{public_id}/read": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations["notifications_mark_read"];
+    trace?: never;
+  };
+  "/api/v1/notifications/{public_id}/target": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["notifications_resolve_target"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/operations/job-health": {
     parameters: {
       query?: never;
@@ -223,6 +271,38 @@ export interface paths {
     put?: never;
     post?: never;
     delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/push-subscriptions/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["push_subscriptions_upsert"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/push-subscriptions/{public_id}/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: operations["push_subscriptions_revoke"];
     options?: never;
     head?: never;
     patch?: never;
@@ -587,6 +667,15 @@ export interface components {
       readonly config: components["schemas"]["Config"];
       readonly warnings: components["schemas"]["Warning"][];
     };
+    /** @enum {string} */
+    DestinationEnum: "TASK" | "ATTENDANCE";
+    /** @enum {string} */
+    EventTypeEnum:
+      | "TASK_ASSIGNED"
+      | "TASK_UPCOMING"
+      | "TASK_OVERDUE"
+      | "ATTENDANCE_SESSION_OPEN_NEAR_SHIFT_END"
+      | "MULTI_ASSIGNEE_TASK_COMPLETED";
     Evidence: {
       anomaly_without_job_closed_count: number;
       job_closed_session_count: number;
@@ -679,6 +768,10 @@ export interface components {
     };
     /** @enum {string} */
     InactiveAssigneeErrorErrorCodeEnum: "INACTIVE_ASSIGNEE";
+    Inbox: {
+      items: components["schemas"]["NotificationItem"][];
+      unread_count: number;
+    };
     IndexedAttendancePunch: {
       /** Format: decimal */
       readonly accuracy_m: string;
@@ -835,6 +928,17 @@ export interface components {
     };
     /** @enum {string} */
     NoOpenSessionErrorErrorCodeEnum: "NO_OPEN_SESSION";
+    NotificationItem: {
+      /** Format: date-time */
+      created_at: string;
+      event_type: components["schemas"]["EventTypeEnum"];
+      is_unread: boolean;
+      /** Format: uuid */
+      public_id: string;
+      /** Format: date-time */
+      read_at: string | null;
+      title: string;
+    };
     /** @enum {unknown} */
     NullEnum: null;
     /** @enum {string} */
@@ -854,6 +958,19 @@ export interface components {
       email?: string | null;
       full_name?: string;
       phone?: string | null;
+    };
+    PushSubscriptionInput: {
+      auth: string;
+      /** Format: uri */
+      endpoint: string;
+      p256dh: string;
+    };
+    PushSubscriptionResult: {
+      /** Format: date-time */
+      created_at: string;
+      /** Format: uuid */
+      id: string;
+      is_active: boolean;
     };
     Reasons: {
       latest_terminal_failed: boolean;
@@ -905,6 +1022,10 @@ export interface components {
     StateEnum: "ok" | "alert" | "unknown";
     Status: {
       is_active: boolean;
+    };
+    Target: {
+      destination: components["schemas"]["DestinationEnum"];
+      target_id: number | null;
     };
     TaskAlreadyCompletedError: {
       details: {
@@ -1888,6 +2009,67 @@ export interface operations {
       };
     };
   };
+  notifications_list: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Inbox"];
+        };
+      };
+    };
+  };
+  notifications_mark_read: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        public_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NotificationItem"];
+        };
+      };
+    };
+  };
+  notifications_resolve_target: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        public_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Target"];
+        };
+      };
+    };
+  };
   operations_job_health_retrieve: {
     parameters: {
       query?: never;
@@ -1904,6 +2086,51 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["JobHealth"];
         };
+      };
+    };
+  };
+  push_subscriptions_upsert: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PushSubscriptionInput"];
+        "application/x-www-form-urlencoded": components["schemas"]["PushSubscriptionInput"];
+        "multipart/form-data": components["schemas"]["PushSubscriptionInput"];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PushSubscriptionResult"];
+        };
+      };
+    };
+  };
+  push_subscriptions_revoke: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        public_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No response body */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
     };
   };

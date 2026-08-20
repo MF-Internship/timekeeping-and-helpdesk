@@ -6,6 +6,7 @@ from core.errors import IdentityAPIError
 from identity.application.dto import ProfileUpdateRequest, UserCreateRequest
 from identity.application.user_admin import UserAdminService
 from identity.domain.authorization import Role
+from identity.ports.push_subscriptions import PushSubscriptionRevocationReason
 from identity.ports.sessions import RevocationReason
 from tests.unit.identity.helpers import account, dependency_mocks
 
@@ -98,6 +99,9 @@ def test_deactivation_revokes_refresh_and_records_both_mutation_events() -> None
     sessions.revoke_all.return_value = 3
     UserAdminService(dependencies).change_status(1, 7, False)
     sessions.revoke_all.assert_called_once_with(7, RevocationReason.ACCOUNT_DEACTIVATED)
+    dependencies.push_subscriptions.revoke_all.assert_called_once_with(
+        7, PushSubscriptionRevocationReason.ACCOUNT_DEACTIVATED
+    )
     assert audit.append_audit_entry.call_count == 2
     assert audit.append_outbox_event.call_count == 2
 
@@ -113,6 +117,7 @@ def test_same_status_is_a_noop(active: bool) -> None:
     assert result is before
     users.save.assert_not_called()
     sessions.revoke_all.assert_not_called()
+    dependencies.push_subscriptions.revoke_all.assert_not_called()
     audit.append_audit_entry.assert_not_called()
     audit.append_outbox_event.assert_not_called()
 

@@ -42,12 +42,18 @@ The closed cross-module exemptions are tests, migrations, and the `config/`
 composition root. An exemption changes wiring or verification only; it never
 moves business rules into an adapter, command, serializer, view, or component.
 
-## Current feature boundary
+## Notification feature boundary
 
-Feature 002 adds only Identity/Auth/RBAC and audit/outbox persistence. It adds no
-location, Attendance, Task, notification, reporting, or outbox-relay behavior.
-The pre-existing cache is the sole technical table; it remains owned by
-`operations` and identified by `core.cache`.
+`backend/notifications/` owns the complete in-app inbox, browser subscriptions,
+delivery policy and durable PostgreSQL push-delivery queue for exactly five
+approved event types. Task, Attendance and Identity retain their aggregates and
+expose output ports; only `backend/config/` wires notification adapters into them.
+Delivery is driven by the external scheduler, never an in-process timer, broker,
+WebSocket or SSE relay. Email, SMS and account-security notifications remain out
+of scope.
+
+The cache remains the sole technical table; notification tables are owned
+business persistence and do not expand `core` or `operations` ownership.
 
 ## Dependency provenance
 
@@ -87,12 +93,14 @@ only for the stated foundation requirement.
 | `@types/node` | Node and build-script TypeScript definitions. |
 | `@types/react` | React TypeScript definitions. |
 | `@types/react-dom` | React DOM TypeScript definitions. |
+| `pywebpush` | Standards-compliant encrypted Web Push delivery and VAPID signing. |
+| `cryptography` | Explicit encryption at rest for browser push subscription material. |
 
 CI additionally uses GitHub `actions/checkout`, `actions/setup-node`,
 `astral-sh/setup-uv`, checksum-verified `oasdiff` 1.26.1, and the official
-PostgreSQL 17 service image. No queue,
-object-storage SDK, observability product, alternate HTTP client, or Redis
-runtime package is approved by this feature.
+PostgreSQL 17 service image. Feature 008 adds no queue, broker, observability
+product, application-owned alternate HTTP client, or Redis runtime; the pinned
+Web Push library owns its locked transport/crypto dependency graph.
 ### Feature 007 UI and evidence dependencies
 
 The source-owned UI layer uses `@radix-ui/react-slot`, `class-variance-authority`,

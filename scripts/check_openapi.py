@@ -19,6 +19,15 @@ from core.event_payload import (  # noqa: E402
 )
 
 _SNAKE_CASE = re.compile(r"^[a-z][a-z0-9_]*$")
+_NOTIFICATION_SCHEMA_FIELDS = {
+    "Inbox": frozenset({"items", "unread_count"}),
+    "NotificationItem": frozenset(
+        {"public_id", "event_type", "title", "created_at", "read_at", "is_unread"}
+    ),
+    "PushSubscriptionInput": frozenset({"endpoint", "p256dh", "auth"}),
+    "PushSubscriptionResult": frozenset({"id", "is_active", "created_at"}),
+    "Target": frozenset({"destination", "target_id"}),
+}
 _ALLOWED_PROTECTED_SCHEMA_PATHS = frozenset(
     {
         "$.components.schemas.Login.properties.password",
@@ -64,6 +73,7 @@ def check_openapi_text(text: str, artifact: str) -> None:
         validate_event_payload(document, allowed_paths=_ALLOWED_PROTECTED_SCHEMA_PATHS)
         _check_strings(document, "$")
         _check_property_names(document, "$")
+        _check_notification_contracts(document)
     except (yaml.YAMLError, ProtectedPayloadError, ValueError) as error:
         path = error.path if isinstance(error, ProtectedPayloadError) else "$"
         raise OpenAPISafetyError(f"OPENAPI-SAFETY: {artifact}:{path}") from error
@@ -90,6 +100,25 @@ def _check_property_names(value: object, path: str) -> None:
                 raise ValueError(f"{path}.properties.{name}")
     for key, item in value.items():
         _check_property_names(item, f"{path}.{key}")
+
+
+def _check_notification_contracts(document: object) -> None:
+    if not isinstance(document, Mapping):
+        raise ValueError("$")
+    components = document.get("components")
+    schemas = components.get("schemas") if isinstance(components, Mapping) else None
+    if not isinstance(schemas, Mapping):
+        return
+    for schema_name, allowed_fields in _NOTIFICATION_SCHEMA_FIELDS.items():
+        schema = schemas.get(schema_name)
+        if schema is None:
+            continue
+        properties = schema.get("properties") if isinstance(schema, Mapping) else None
+        if (
+            not isinstance(properties, Mapping)
+            or frozenset(properties) != allowed_fields
+        ):
+            raise ValueError(f"$.components.schemas.{schema_name}.properties")
 
 
 def main() -> int:

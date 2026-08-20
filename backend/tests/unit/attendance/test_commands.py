@@ -51,6 +51,14 @@ class Authorization:
         assert actor_id == 42
 
 
+class Notifications:
+    def __init__(self) -> None:
+        self.closed: list[tuple[int, int]] = []
+
+    def suppress_open_session_reminder(self, session_id: int, owner_id: int) -> None:
+        self.closed.append((session_id, owner_id))
+
+
 class Clock:
     value = NOW
 
@@ -195,7 +203,10 @@ class Repository:
 
 
 def service(
-    *, writer_fails: bool = False, reference_fails: bool = False
+    *,
+    writer_fails: bool = False,
+    reference_fails: bool = False,
+    notifications: Notifications | None = None,
 ) -> tuple[AttendanceCommandService, Repository, Attempts, Audit]:
     repository = Repository()
     attempts = Attempts(fail=writer_fails)
@@ -208,12 +219,14 @@ def service(
         attempts,
         audit,
         UnitOfWork,
+        notifications or Notifications(),
     )
     return AttendanceCommandService(dependencies), repository, attempts, audit
 
 
 def test_check_in_out_owns_fields_state_attempts_audit_and_projection() -> None:
-    commands, repository, attempts, audit = service()
+    notifications = Notifications()
+    commands, repository, attempts, audit = service(notifications=notifications)
     check_in = commands.check_in(42, COMMAND)
     assert (check_in.attendance.user_id, check_in.attendance.kind, check_in.punch_index) == (
         42,
@@ -241,6 +254,7 @@ def test_check_in_out_owns_fields_state_attempts_audit_and_projection() -> None:
     ]
     assert audit.outbox == [] and len(repository.attendances) == 2
     assert repository.anomalies[1] == ()
+    assert notifications.closed == [(10, 42)]
 
 
 def test_attempt_writer_failure_does_not_change_accepted_result_or_retry(

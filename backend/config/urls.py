@@ -12,6 +12,7 @@ from config.composition import (
 )
 from identity.adapters.api.urls import identity_urlpatterns
 from locations.adapters.api.urls import location_urlpatterns
+from notifications.adapters.api.urls import urlpatterns as notification_urlpatterns
 from operations.adapters.api.urls import operations_urlpatterns
 from tasks.adapters.api.urls import task_urlpatterns
 
@@ -27,6 +28,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
             + attendance_urlpatterns(attendance_container)
             + operations_urlpatterns(operations_container)
             + task_urlpatterns(task_container)
+            + notification_urlpatterns
         ),
     ),
 ]

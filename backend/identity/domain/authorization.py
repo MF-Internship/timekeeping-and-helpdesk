@@ -43,6 +43,9 @@ class PermissionAction(StrEnum):
     PHOTO_VIEW_ALL = "photo.view.all"
     PHOTO_VIEW_SELF = "photo.view.self"
     OPERATIONS_JOB_HEALTH_VIEW = "operations.job_health.view"
+    NOTIFICATION_VIEW_SELF = "notification.view.self"
+    NOTIFICATION_UPDATE_SELF = "notification.update.self"
+    PUSH_SUBSCRIPTION_MANAGE_SELF = "push_subscription.manage.self"
 
     @property
     def is_mutation(self) -> bool:
@@ -59,6 +62,7 @@ class PermissionAction(StrEnum):
             self.PHOTO_VIEW_ALL,
             self.PHOTO_VIEW_SELF,
             self.OPERATIONS_JOB_HEALTH_VIEW,
+            self.NOTIFICATION_VIEW_SELF,
         }
 
 
@@ -73,6 +77,9 @@ ROLE_PERMISSIONS: dict[Role, frozenset[PermissionAction]] = {
             PermissionAction.REPORT_EXPORT,
             PermissionAction.PHOTO_VIEW_ALL,
             PermissionAction.OPERATIONS_JOB_HEALTH_VIEW,
+            PermissionAction.NOTIFICATION_VIEW_SELF,
+            PermissionAction.NOTIFICATION_UPDATE_SELF,
+            PermissionAction.PUSH_SUBSCRIPTION_MANAGE_SELF,
         }
     ),
     Role.MANAGER: frozenset(
@@ -95,6 +102,9 @@ ROLE_PERMISSIONS: dict[Role, frozenset[PermissionAction]] = {
             PermissionAction.REPORT_EXPORT,
             PermissionAction.PHOTO_VIEW_ALL,
             PermissionAction.OPERATIONS_JOB_HEALTH_VIEW,
+            PermissionAction.NOTIFICATION_VIEW_SELF,
+            PermissionAction.NOTIFICATION_UPDATE_SELF,
+            PermissionAction.PUSH_SUBSCRIPTION_MANAGE_SELF,
         }
     ),
     Role.HELPDESK: frozenset(
@@ -111,6 +121,9 @@ ROLE_PERMISSIONS: dict[Role, frozenset[PermissionAction]] = {
             PermissionAction.CONFIG_VIEW,
             PermissionAction.REPORT_VIEW_SELF,
             PermissionAction.PHOTO_VIEW_SELF,
+            PermissionAction.NOTIFICATION_VIEW_SELF,
+            PermissionAction.NOTIFICATION_UPDATE_SELF,
+            PermissionAction.PUSH_SUBSCRIPTION_MANAGE_SELF,
         }
     ),
 }

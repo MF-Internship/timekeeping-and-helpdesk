@@ -74,9 +74,11 @@ export function TaskStatusForm(props: {
         </label>
       ) : null}
       {reasonError ? <p role="alert">{UI_MESSAGES.tasks.blockedReason}</p> : null}
-      <ActionGroup><Button type="submit" loading={props.busy}>
-        Cập nhật trạng thái
-      </Button></ActionGroup>
+      <ActionGroup>
+        <Button type="submit" loading={props.busy}>
+          Cập nhật trạng thái
+        </Button>
+      </ActionGroup>
     </form>
   );
 }

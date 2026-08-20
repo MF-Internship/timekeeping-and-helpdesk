@@ -76,6 +76,4 @@ def test_delete_targets_the_private_bucket_object() -> None:
     client = FakeS3Client()
     storage = S3EvidenceStorage(client=client, bucket="private-test")
     storage.delete("task-evidence/staging/1/2/id.jpg")
-    assert client.deleted == [
-        {"Bucket": "private-test", "Key": "task-evidence/staging/1/2/id.jpg"}
-    ]
+    assert client.deleted == [{"Bucket": "private-test", "Key": "task-evidence/staging/1/2/id.jpg"}]

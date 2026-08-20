@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 import yaml
-from scripts.deployment_check import scheduled_jobs_readiness
+from scripts.deployment_check import scheduled_jobs_readiness, validate_inventory
 
 
 def test_feature003_reference_data_release_order_is_mandatory() -> None:
@@ -60,3 +60,25 @@ def test_scheduler_checker_reports_stable_safe_findings(defect: str) -> None:
     findings = scheduled_jobs_readiness(jobs, inventory)
     assert findings
     assert all("secret" not in finding.lower() for finding in findings)
+
+
+def test_web_push_egress_and_secret_identities_are_explicit() -> None:
+    inventory = yaml.safe_load(Path("deploy/environments.yaml").read_text(encoding="utf-8"))
+
+    assert validate_inventory(inventory) == []
+    for environment_name in ("staging", "production"):
+        environment = inventory["environments"][environment_name]
+        assert environment["web_push_allowed_origins"]
+        assert environment["web_push_vapid_key_identity"] != "UNRESOLVED"
+        assert environment["push_subscription_encryption_key_identity"] != "UNRESOLVED"
+
+
+def test_web_push_egress_rejects_arbitrary_urls() -> None:
+    inventory = yaml.safe_load(Path("deploy/environments.yaml").read_text(encoding="utf-8"))
+    inventory["environments"]["staging"]["web_push_allowed_origins"] = [
+        "https://push.example.invalid/path"
+    ]
+
+    findings = validate_inventory(inventory)
+
+    assert ("DEPLOY-WEB-PUSH-EGRESS", "environments.staging.web_push_allowed_origins") in findings

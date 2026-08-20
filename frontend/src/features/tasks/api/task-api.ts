@@ -76,17 +76,23 @@ export async function completeTaskOverride(taskId: number, body: TaskOverrideInp
 }
 
 export async function createEvidenceUpload(taskId: number, body: EvidenceUploadInput) {
-  return await unwrap(await apiClient.POST("/api/v1/tasks/{task_id}/evidence-uploads", {
-    params: { path: { task_id: String(taskId) } },
-    body,
-  }));
+  return await unwrap(
+    await apiClient.POST("/api/v1/tasks/{task_id}/evidence-uploads", {
+      params: { path: { task_id: String(taskId) } },
+      body,
+    }),
+  );
 }
 
 export async function uploadEvidenceFile(
   intent: components["schemas"]["EvidenceUploadIntent"],
   file: File,
 ) {
-  const response = await fetch(intent.upload_url, { method: "PUT", headers: intent.headers, body: file });
+  const response = await fetch(intent.upload_url, {
+    method: "PUT",
+    headers: intent.headers,
+    body: file,
+  });
   if (!response.ok) throw new Error("Không thể tải ảnh minh chứng lên kho lưu trữ.");
 }
 
@@ -95,14 +101,18 @@ export async function completeTaskField(
   body: TaskFieldCompletionInput,
   idempotencyKey: string,
 ) {
-  return await unwrap(await apiClient.POST("/api/v1/tasks/{task_id}/complete-field", {
-    params: { path: { task_id: String(taskId) }, header: { "Idempotency-Key": idempotencyKey } },
-    body,
-  }));
+  return await unwrap(
+    await apiClient.POST("/api/v1/tasks/{task_id}/complete-field", {
+      params: { path: { task_id: String(taskId) }, header: { "Idempotency-Key": idempotencyKey } },
+      body,
+    }),
+  );
 }
 
 export async function accessTaskPhoto(taskId: number, photoId: number) {
-  return await unwrap(await apiClient.POST("/api/v1/tasks/{task_id}/photos/{photo_id}/access", {
-    params: { path: { task_id: String(taskId), photo_id: String(photoId) } },
-  }));
+  return await unwrap(
+    await apiClient.POST("/api/v1/tasks/{task_id}/photos/{photo_id}/access", {
+      params: { path: { task_id: String(taskId), photo_id: String(photoId) } },
+    }),
+  );
 }

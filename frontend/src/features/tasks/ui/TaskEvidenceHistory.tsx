@@ -12,32 +12,49 @@ export function TaskEvidenceHistory({ detail, error }: { detail?: TaskDetail; er
   return (
     <section aria-label={`Lịch sử ${detail.title}`}>
       <h2>Lịch sử — {detail.title}</h2>
-      {detail.updates.length === 0 ? <p>Chưa có cập nhật trạng thái.</p> : (
-        <ol>{detail.updates.map((update) => (
-          <li key={update.id}>
-            <div><strong>{update.status}</strong> — {update.actor.full_name} —{" "}
-              <time dateTime={update.recorded_at}>{new Date(update.recorded_at).toLocaleString("vi-VN")}</time>
-            </div>
-            {update.captured_latitude && update.captured_longitude ? (
-              <div className={styles.evidenceMeta}>
-                <span>GPS: {update.captured_latitude}, {update.captured_longitude}</span>
-                <span>Sai số: {update.accuracy_m} m</span>
-                <span>Chất lượng: {update.gps_quality ?? "Chưa phân loại"}</span>
-                <span>Đối chiếu: {evidenceLocationLabel(update)}</span>
-                {update.maps_url ? <a href={update.maps_url} target="_blank" rel="noopener noreferrer">
-                  Mở vị trí trên Google Maps
-                </a> : null}
+      {detail.updates.length === 0 ? (
+        <p>Chưa có cập nhật trạng thái.</p>
+      ) : (
+        <ol>
+          {detail.updates.map((update) => (
+            <li key={update.id}>
+              <div>
+                <strong>{update.status}</strong> — {update.actor.full_name} —{" "}
+                <time dateTime={update.recorded_at}>
+                  {new Date(update.recorded_at).toLocaleString("vi-VN")}
+                </time>
               </div>
-            ) : null}
-            {update.photos?.length ? <div className={styles.photoActions}>
-              {update.photos.map((photo, index) => <Button
-                key={photo.id}
-                variant="quiet"
-                onClick={() => void openPhoto(detail.id, photo.id)}
-              >Xem ảnh {index + 1}</Button>)}
-            </div> : null}
-          </li>
-        ))}</ol>
+              {update.captured_latitude && update.captured_longitude ? (
+                <div className={styles.evidenceMeta}>
+                  <span>
+                    GPS: {update.captured_latitude}, {update.captured_longitude}
+                  </span>
+                  <span>Sai số: {update.accuracy_m} m</span>
+                  <span>Chất lượng: {update.gps_quality ?? "Chưa phân loại"}</span>
+                  <span>Đối chiếu: {evidenceLocationLabel(update)}</span>
+                  {update.maps_url ? (
+                    <a href={update.maps_url} target="_blank" rel="noopener noreferrer">
+                      Mở vị trí trên Google Maps
+                    </a>
+                  ) : null}
+                </div>
+              ) : null}
+              {update.photos?.length ? (
+                <div className={styles.photoActions}>
+                  {update.photos.map((photo, index) => (
+                    <Button
+                      key={photo.id}
+                      variant="quiet"
+                      onClick={() => void openPhoto(detail.id, photo.id)}
+                    >
+                      Xem ảnh {index + 1}
+                    </Button>
+                  ))}
+                </div>
+              ) : null}
+            </li>
+          ))}
+        </ol>
       )}
     </section>
   );
@@ -54,7 +71,7 @@ function resolutionLabel(method: string | null) {
     USER_SELECTED: "Người dùng chọn trong vùng chồng lấn",
     GPS_ONLY: "Chỉ ghi nhận GPS",
   };
-  return method ? labels[method] ?? method : "Chưa đối chiếu";
+  return method ? (labels[method] ?? method) : "Chưa đối chiếu";
 }
 
 function evidenceLocationLabel(update: TaskDetail["updates"][number]) {

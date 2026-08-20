@@ -780,6 +780,60 @@ paths:
       - bearerAuth: []
       tags:
       - api
+  /api/v1/notifications/:
+    get:
+      operationId: notifications_list
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Inbox'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/notifications/{public_id}/read:
+    patch:
+      operationId: notifications_mark_read
+      parameters:
+      - in: path
+        name: public_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationItem'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/notifications/{public_id}/target:
+    get:
+      operationId: notifications_resolve_target
+      parameters:
+      - in: path
+        name: public_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Target'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
   /api/v1/operations/job-health:
     get:
       operationId: operations_job_health_retrieve
@@ -790,6 +844,48 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobHealth'
           description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/push-subscriptions/:
+    post:
+      operationId: push_subscriptions_upsert
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PushSubscriptionInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PushSubscriptionInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PushSubscriptionInput'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushSubscriptionResult'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/push-subscriptions/{public_id}/:
+    delete:
+      operationId: push_subscriptions_revoke
+      parameters:
+      - in: path
+        name: public_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: No response body
       security:
       - bearerAuth: []
       tags:
@@ -2298,6 +2394,19 @@ components:
       - config
       - warnings
       type: object
+    DestinationEnum:
+      enum:
+      - TASK
+      - ATTENDANCE
+      type: string
+    EventTypeEnum:
+      enum:
+      - TASK_ASSIGNED
+      - TASK_UPCOMING
+      - TASK_OVERDUE
+      - ATTENDANCE_SESSION_OPEN_NEAR_SHIFT_END
+      - MULTI_ASSIGNEE_TASK_COMPLETED
+      type: string
     Evidence:
       properties:
         anomaly_without_job_closed_count:
@@ -2542,6 +2651,19 @@ components:
       enum:
       - INACTIVE_ASSIGNEE
       type: string
+    Inbox:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/NotificationItem'
+          type: array
+        unread_count:
+          minimum: 0
+          type: integer
+      required:
+      - items
+      - unread_count
+      type: object
     IndexedAttendancePunch:
       properties:
         accuracy_m:
@@ -3009,6 +3131,32 @@ components:
       enum:
       - NO_OPEN_SESSION
       type: string
+    NotificationItem:
+      properties:
+        created_at:
+          format: date-time
+          type: string
+        event_type:
+          $ref: '#/components/schemas/EventTypeEnum'
+        is_unread:
+          type: boolean
+        public_id:
+          format: uuid
+          type: string
+        read_at:
+          format: date-time
+          nullable: true
+          type: string
+        title:
+          type: string
+      required:
+      - created_at
+      - event_type
+      - is_unread
+      - public_id
+      - read_at
+      - title
+      type: object
     NullEnum:
       enum:
       - null
@@ -3053,6 +3201,38 @@ components:
         phone:
           nullable: true
           type: string
+      type: object
+    PushSubscriptionInput:
+      properties:
+        auth:
+          maxLength: 256
+          type: string
+        endpoint:
+          format: uri
+          maxLength: 2048
+          type: string
+        p256dh:
+          maxLength: 512
+          type: string
+      required:
+      - auth
+      - endpoint
+      - p256dh
+      type: object
+    PushSubscriptionResult:
+      properties:
+        created_at:
+          format: date-time
+          type: string
+        id:
+          format: uuid
+          type: string
+        is_active:
+          type: boolean
+      required:
+      - created_at
+      - id
+      - is_active
       type: object
     Reasons:
       properties:
@@ -3204,6 +3384,18 @@ components:
           type: boolean
       required:
       - is_active
+      type: object
+    Target:
+      properties:
+        destination:
+          $ref: '#/components/schemas/DestinationEnum'
+        target_id:
+          minimum: 1
+          nullable: true
+          type: integer
+      required:
+      - destination
+      - target_id
       type: object
     TaskAlreadyCompletedError:
       properties:

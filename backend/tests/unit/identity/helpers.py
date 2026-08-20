@@ -39,5 +39,8 @@ def dependency_mocks() -> tuple[IdentityDependencies, Mock, Mock, Mock, Mock]:
     passwords = Mock()
     sessions = Mock()
     audit = Mock()
-    dependencies = IdentityDependencies(users, passwords, sessions, NoopUnitOfWork, audit)
+    push_subscriptions = Mock()
+    dependencies = IdentityDependencies(
+        users, passwords, sessions, NoopUnitOfWork, audit, push_subscriptions
+    )
     return dependencies, users, passwords, sessions, audit

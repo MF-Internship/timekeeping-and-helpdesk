@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { UI_MESSAGES } from "@/shared/messages";
 import { Button } from "@/shared/ui/button";
@@ -9,6 +9,7 @@ import { PageIntro } from "@/shared/ui/typography";
 
 import type { TaskDetail } from "../api/task-api";
 import { TASK_GROUPS, taskCount } from "../model/task-state";
+import { taskById } from "../model/task-state";
 import { useTaskManagement } from "../model/use-task-management";
 import { TaskFailureNotice } from "./TaskFailureNotice";
 import { TaskEvidenceHistory } from "./TaskEvidenceHistory";
@@ -18,8 +19,11 @@ import styles from "./TaskManagement.module.css";
 
 export function TaskManagementPanel() {
   const management = useTaskManagement();
+  const loadState = management.loadState;
+  const loadTaskDetail = management.detail;
   const [detail, setDetail] = useState<TaskDetail>();
   const [detailError, setDetailError] = useState<unknown>();
+  const focused = useRef<number | undefined>(undefined);
   async function openDetail(taskId: number) {
     setDetailError(undefined);
     try {
@@ -28,6 +32,15 @@ export function TaskManagementPanel() {
       setDetailError(error);
     }
   }
+  useEffect(() => {
+    if (loadState.kind !== "ready" || typeof window === "undefined") return;
+    const raw = new URLSearchParams(window.location.search).get("focus");
+    const taskId = raw && /^\d+$/.test(raw) ? Number(raw) : undefined;
+    if (!taskId || focused.current === taskId || !taskById(loadState.data, taskId)) return;
+    focused.current = taskId;
+    setDetailError(undefined);
+    void loadTaskDetail(taskId).then(setDetail).catch(setDetailError);
+  }, [loadState, loadTaskDetail]);
   if (management.loadState.kind === "loading") return <LoadingState />;
   if (management.loadState.kind === "failed") {
     return <LoadFailure error={management.loadState.error} onRetry={management.refresh} />;
@@ -35,7 +48,11 @@ export function TaskManagementPanel() {
   const data = management.loadState.data;
   return (
     <section className={styles.panel}>
-      <PageIntro eyebrow="Feature 007" title={UI_MESSAGES.tasks.title} description="Theo dõi tiến độ, cập nhật trạng thái và nộp minh chứng hoàn thành tại hiện trường." />
+      <PageIntro
+        eyebrow="Feature 007"
+        title={UI_MESSAGES.tasks.title}
+        description="Theo dõi tiến độ, cập nhật trạng thái và nộp minh chứng hoàn thành tại hiện trường."
+      />
       <CreateTask management={management} />
       <TaskFailureNotice
         error={management.mutation.kind === "failed" ? management.mutation.error : undefined}

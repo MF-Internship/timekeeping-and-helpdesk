@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+import binascii
 from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import StrEnum
@@ -33,6 +35,12 @@ class RuntimeSettings:
     bucket: str
     origin_credential_header: str
     origin_credential: str
+    web_push_vapid_public_key: str
+    web_push_vapid_private_key: str
+    web_push_vapid_subject: str
+    push_subscription_encryption_keys: tuple[str, ...]
+    web_push_enabled: bool
+    web_push_allowed_origins: tuple[str, ...]
 
 
 def load_runtime_settings(values: Mapping[str, str]) -> RuntimeSettings:
@@ -42,6 +50,7 @@ def load_runtime_settings(values: Mapping[str, str]) -> RuntimeSettings:
     secret_key = _required(values, "DJANGO_SECRET_KEY")
     origin_credential = _origin_credential(values)
     redis_url, redis_key_prefix, bucket = _resource_values(values, environment)
+    web_push = _web_push_values(values, environment)
     return RuntimeSettings(
         environment=environment,
         database_url=database_url,
@@ -54,6 +63,115 @@ def load_runtime_settings(values: Mapping[str, str]) -> RuntimeSettings:
         bucket=bucket,
         origin_credential_header=_required(values, "ORIGIN_CREDENTIAL_HEADER"),
         origin_credential=origin_credential,
+        web_push_vapid_public_key=web_push[0],
+        web_push_vapid_private_key=web_push[1],
+        web_push_vapid_subject=web_push[2],
+        push_subscription_encryption_keys=web_push[3],
+        web_push_enabled=web_push[4],
+        web_push_allowed_origins=web_push[5],
+    )
+
+
+def _web_push_values(
+    values: Mapping[str, str], environment: EnvironmentName
+) -> tuple[str, str, str, tuple[str, ...], bool, tuple[str, ...]]:
+    defaults = (
+        "development-vapid-public-key",
+        "development-vapid-private-key",
+        "mailto:development@example.invalid",
+        "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=",
+    )
+    keys = (
+        "WEB_PUSH_VAPID_PUBLIC_KEY",
+        "WEB_PUSH_VAPID_PRIVATE_KEY",
+        "WEB_PUSH_VAPID_SUBJECT",
+        "PUSH_SUBSCRIPTION_ENCRYPTION_KEY",
+    )
+    resolved, enabled, origins_raw = _resolve_web_push_strings(values, environment, keys, defaults)
+    if not enabled:
+        return resolved[0], resolved[1], resolved[2], (), False, ()
+    encryption_keys, origins = _validate_enabled_web_push(resolved, origins_raw)
+    return resolved[0], resolved[1], resolved[2], encryption_keys, enabled, origins
+
+
+def _validate_enabled_web_push(
+    resolved: tuple[str, ...], origins_raw: str
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    subject = resolved[2]
+    if not subject.startswith(("mailto:", "https://")):
+        raise ConfigurationError("WEB_PUSH_VAPID_SUBJECT")
+    _validate_vapid_pair(resolved[0], resolved[1])
+    encryption_keys = tuple(item.strip() for item in resolved[3].split(",") if item.strip())
+    if not encryption_keys:
+        raise ConfigurationError("PUSH_SUBSCRIPTION_ENCRYPTION_KEY")
+    for encryption_key in encryption_keys:
+        _validate_encryption_key(encryption_key)
+    origins = tuple(part.strip() for part in origins_raw.split(",") if part.strip())
+    if not origins or any(not _is_exact_https_origin(origin) for origin in origins):
+        raise ConfigurationError("WEB_PUSH_ALLOWED_ORIGINS")
+    return encryption_keys, origins
+
+
+def _validate_encryption_key(value: str) -> None:
+    try:
+        decoded = base64.urlsafe_b64decode(value.encode("ascii"))
+    except (ValueError, UnicodeEncodeError, binascii.Error) as error:
+        raise ConfigurationError("PUSH_SUBSCRIPTION_ENCRYPTION_KEY") from error
+    if len(decoded) != 32:
+        raise ConfigurationError("PUSH_SUBSCRIPTION_ENCRYPTION_KEY")
+
+
+def _validate_vapid_pair(public_value: str, private_value: str) -> None:
+    try:
+        from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+        from py_vapid import Vapid02  # type: ignore[import-untyped]
+
+        vapid = Vapid02.from_string(private_value)
+        derived = vapid.public_key.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
+        encoded = base64.urlsafe_b64encode(derived).rstrip(b"=").decode("ascii")
+    except (ValueError, TypeError, UnicodeError) as error:
+        raise ConfigurationError(
+            "WEB_PUSH_VAPID_PUBLIC_KEY", "WEB_PUSH_VAPID_PRIVATE_KEY"
+        ) from error
+    if encoded != public_value.rstrip("="):
+        raise ConfigurationError("WEB_PUSH_VAPID_PUBLIC_KEY", "WEB_PUSH_VAPID_PRIVATE_KEY")
+
+
+def _resolve_web_push_strings(
+    values: Mapping[str, str],
+    environment: EnvironmentName,
+    keys: tuple[str, ...],
+    defaults: tuple[str, ...],
+) -> tuple[tuple[str, ...], bool, str]:
+    if environment is EnvironmentName.DEVELOPMENT:
+        resolved = tuple(
+            values.get(key, default) for key, default in zip(keys, defaults, strict=True)
+        )
+        enabled_raw = values.get("WEB_PUSH_ENABLED", "false").casefold()
+        if enabled_raw not in {"true", "false"}:
+            raise ConfigurationError("WEB_PUSH_ENABLED")
+        return (
+            resolved,
+            enabled_raw == "true",
+            values.get("WEB_PUSH_ALLOWED_ORIGINS", "https://push.example.invalid"),
+        )
+    enabled = _boolean(values, "WEB_PUSH_ENABLED")
+    if not enabled:
+        return tuple(values.get(key, "") for key in keys), False, ""
+    resolved = tuple(_required(values, key) for key in keys)
+    return resolved, enabled, _required(values, "WEB_PUSH_ALLOWED_ORIGINS")
+
+
+def _is_exact_https_origin(value: str) -> bool:
+    parsed = urlsplit(value)
+    return (
+        parsed.scheme == "https"
+        and bool(parsed.hostname)
+        and parsed.username is None
+        and parsed.password is None
+        and parsed.path in ("", "/")
+        and not parsed.query
+        and not parsed.fragment
     )
 
 

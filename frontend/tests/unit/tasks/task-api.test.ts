@@ -59,12 +59,22 @@ describe("Task generated-client wrappers", () => {
   });
 
   it("uses evidence intent and an explicit idempotency header for field completion", async () => {
-    await createEvidenceUpload(7, { mime: "image/jpeg", size_bytes: 3, checksum_sha256: "a".repeat(64) });
-    await completeTaskField(7, {
-      upload_ids: ["00000000-0000-4000-8000-000000000001"],
-      latitude: "10", longitude: "106", accuracy_m: "12",
-      captured_at: "2026-08-20T10:00:00Z",
-    }, "submission-1");
+    await createEvidenceUpload(7, {
+      mime: "image/jpeg",
+      size_bytes: 3,
+      checksum_sha256: "a".repeat(64),
+    });
+    await completeTaskField(
+      7,
+      {
+        upload_ids: ["00000000-0000-4000-8000-000000000001"],
+        latitude: "10",
+        longitude: "106",
+        accuracy_m: "12",
+        captured_at: "2026-08-20T10:00:00Z",
+      },
+      "submission-1",
+    );
     expect(client.POST.mock.calls.at(-2)?.[0]).toBe("/api/v1/tasks/{task_id}/evidence-uploads");
     expect(client.POST.mock.calls.at(-1)).toEqual([
       "/api/v1/tasks/{task_id}/complete-field",
@@ -72,7 +82,9 @@ describe("Task generated-client wrappers", () => {
         params: { path: { task_id: "7" }, header: { "Idempotency-Key": "submission-1" } },
         body: {
           upload_ids: ["00000000-0000-4000-8000-000000000001"],
-          latitude: "10", longitude: "106", accuracy_m: "12",
+          latitude: "10",
+          longitude: "106",
+          accuracy_m: "12",
           captured_at: "2026-08-20T10:00:00Z",
         },
       },

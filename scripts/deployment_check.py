@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 import yaml
 
@@ -28,6 +29,11 @@ IDENTITY_FIELDS = (
     "signing_key_identity",
     "credential_identity",
 )
+WEB_PUSH_IDENTITY_FIELDS = (
+    "web_push_vapid_key_identity",
+    "push_subscription_encryption_key_identity",
+    "web_push_public_key_identity",
+)
 PRODUCTION_FIELDS = (
     *IDENTITY_FIELDS,
     "backup.plan",
@@ -38,15 +44,35 @@ PRODUCTION_FIELDS = (
     "backup.restore_project_ref",
     "backup.alert_owner",
 )
-RECONCILIATION_JOB = {
-    "name": "missing-check-out-reconciliation",
-    "working_directory": "backend",
-    "command": "python manage.py reconcile_missing_checkouts",
-    "cron": "15 0 * * *",
-    "timezone": "Asia/Ho_Chi_Minh",
-    "calendar": "every_day",
-    "singleton_per_environment": True,
-}
+SCHEDULED_JOBS = (
+    {
+        "name": "missing-check-out-reconciliation",
+        "working_directory": "backend",
+        "command": "python manage.py reconcile_missing_checkouts",
+        "cron": "15 0 * * *",
+        "timezone": "Asia/Ho_Chi_Minh",
+        "calendar": "every_day",
+        "singleton_per_environment": True,
+    },
+    {
+        "name": "notification-occurrence-dispatch",
+        "working_directory": "backend",
+        "command": "python manage.py dispatch_notification_occurrences",
+        "cron": "* * * * *",
+        "timezone": "Asia/Ho_Chi_Minh",
+        "calendar": "every_day",
+        "singleton_per_environment": True,
+    },
+    {
+        "name": "web-push-delivery",
+        "working_directory": "backend",
+        "command": "python manage.py deliver_web_push",
+        "cron": "* * * * *",
+        "timezone": "Asia/Ho_Chi_Minh",
+        "calendar": "every_day",
+        "singleton_per_environment": True,
+    },
+)
 
 
 def validate_cache_inventory(document: object) -> list[str]:
@@ -70,7 +96,47 @@ def validate_inventory(document: object) -> list[tuple[str, str]]:
     if set(environments) != set(ENVIRONMENT_NAMES):
         findings.append(("DEPLOY-ENVIRONMENTS", "environments"))
     findings.extend(_identity_findings(environments))
+    findings.extend(_web_push_findings(environments))
     return findings
+
+
+def _web_push_findings(environments: Mapping[Any, Any]) -> list[tuple[str, str]]:
+    if not any(
+        "web_push_allowed_origins" in _mapping(environments.get(name))
+        for name in ("staging", "production")
+    ):
+        return []
+    findings: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for environment_name in ("staging", "production"):
+        environment = _mapping(environments.get(environment_name))
+        for field in WEB_PUSH_IDENTITY_FIELDS:
+            findings.extend(
+                _identity_value_findings(environment_name, field, environment, seen)
+            )
+        origins = environment.get("web_push_allowed_origins")
+        path = f"environments.{environment_name}.web_push_allowed_origins"
+        if not isinstance(origins, list) or not origins:
+            findings.append(("DEPLOY-WEB-PUSH-EGRESS", path))
+            continue
+        for origin in origins:
+            if not isinstance(origin, str) or not _exact_https_origin(origin):
+                findings.append(("DEPLOY-WEB-PUSH-EGRESS", path))
+                break
+    return findings
+
+
+def _exact_https_origin(value: str) -> bool:
+    parsed = urlsplit(value)
+    return (
+        parsed.scheme == "https"
+        and bool(parsed.hostname)
+        and parsed.username is None
+        and parsed.password is None
+        and parsed.path in ("", "/")
+        and not parsed.query
+        and not parsed.fragment
+    )
 
 
 def _identity_findings(environments: Mapping[Any, Any]) -> list[tuple[str, str]]:
@@ -153,36 +219,47 @@ def scheduled_jobs_readiness(
     jobs_document: object, inventory_document: object
 ) -> list[str]:
     findings: list[str] = []
-    matching = _matching_entries(_mapping(jobs_document).get("jobs"), "name")
-    if len(matching) != 1:
-        findings.append("jobs.missing-check-out-reconciliation")
-    elif any(
-        matching[0].get(key) != value for key, value in RECONCILIATION_JOB.items()
-    ):
-        findings.append("jobs.missing-check-out-reconciliation.contract")
+    jobs = _mapping(jobs_document).get("jobs")
+    for contract in SCHEDULED_JOBS:
+        job_name = str(contract["name"])
+        matching = _matching_entries(jobs, "name", job_name)
+        if len(matching) != 1:
+            findings.append(f"jobs.{job_name}")
+        elif any(matching[0].get(key) != value for key, value in contract.items()):
+            findings.append(f"jobs.{job_name}.contract")
     environments = _environments(inventory_document)
     identities: set[str] = set()
     for environment_name in ("staging", "production"):
-        findings.extend(_binding_findings(environments, environment_name, identities))
+        for contract in SCHEDULED_JOBS:
+            findings.extend(
+                _binding_findings(
+                    environments, environment_name, identities, str(contract["name"])
+                )
+            )
     return findings
 
 
-def _matching_entries(value: object, field: str) -> list[Mapping[Any, Any]]:
+def _matching_entries(
+    value: object, field: str, expected: str
+) -> list[Mapping[Any, Any]]:
     if not isinstance(value, list):
         return []
     return [
         item
         for item in value
-        if isinstance(item, Mapping) and item.get(field) == RECONCILIATION_JOB["name"]
+        if isinstance(item, Mapping) and item.get(field) == expected
     ]
 
 
 def _binding_findings(
-    environments: Mapping[Any, Any], environment_name: str, identities: set[str]
+    environments: Mapping[Any, Any],
+    environment_name: str,
+    identities: set[str],
+    job_name: str,
 ) -> list[str]:
     bindings = _mapping(environments.get(environment_name)).get("scheduled_jobs")
-    selected = _matching_entries(bindings, "job")
-    path = f"environments.{environment_name}.scheduled_jobs"
+    selected = _matching_entries(bindings, "job", job_name)
+    path = f"environments.{environment_name}.scheduled_jobs.{job_name}"
     if len(selected) != 1 or selected[0].get("enabled") is not True:
         return [path]
     identity = selected[0].get("scheduler_identity")

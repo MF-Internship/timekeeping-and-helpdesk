@@ -76,9 +76,11 @@ export function TaskForm(props: TaskFormProps) {
         <AssignmentFields {...props} />
       ) : null}
       {clientError ? <p role="alert">{clientError}</p> : null}
-      <ActionGroup><Button type="submit" variant="primary" loading={props.busy}>
-        {props.mode === "edit" ? UI_MESSAGES.tasks.save : UI_MESSAGES.tasks.create}
-      </Button></ActionGroup>
+      <ActionGroup>
+        <Button type="submit" variant="primary" loading={props.busy}>
+          {props.mode === "edit" ? UI_MESSAGES.tasks.save : UI_MESSAGES.tasks.create}
+        </Button>
+      </ActionGroup>
     </form>
   );
 }
@@ -182,7 +184,12 @@ function RetainedAssignees({ task }: { task: TaskItem }) {
       <legend>{UI_MESSAGES.tasks.retainedAssignees}</legend>
       {task.assignees.map(({ user }) => (
         <label className="checkbox" key={user.id}>
-          <Input className="mt-0 min-h-5 w-5 shadow-none" type="checkbox" name="remove_assignee_id" value={user.id} />
+          <Input
+            className="mt-0 min-h-5 w-5 shadow-none"
+            type="checkbox"
+            name="remove_assignee_id"
+            value={user.id}
+          />
           Bỏ {user.full_name}
         </label>
       ))}

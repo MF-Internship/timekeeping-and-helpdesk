@@ -4,7 +4,10 @@ import { PageIntro } from "@/shared/ui/typography";
 export default function Page() {
   return (
     <section>
-      <PageIntro title="Tổng quan hệ thống" description="Ứng dụng đã sẵn sàng để tích hợp các mô-đun được phê duyệt." />
+      <PageIntro
+        title="Tổng quan hệ thống"
+        description="Ứng dụng đã sẵn sàng để tích hợp các mô-đun được phê duyệt."
+      />
       <AsyncState state={{ kind: "loading" }} />
       <AsyncState state={{ kind: "empty" }} />
       <AsyncState

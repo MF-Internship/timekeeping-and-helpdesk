@@ -2,6 +2,7 @@ import pytest
 
 from core.errors import IdentityAPIError
 from identity.application.authentication import AuthenticationService
+from identity.ports.push_subscriptions import PushSubscriptionRevocationReason
 from identity.ports.sessions import IssuedSession, RevocationReason
 from tests.unit.identity.helpers import account, dependency_mocks
 
@@ -39,6 +40,9 @@ def test_refresh_rechecks_state_before_rotation_and_logout_revokes_globally() ->
     sessions.revoke_all.return_value = 2
     AuthenticationService(dependencies).logout(7)
     sessions.revoke_all.assert_called_once_with(7, RevocationReason.LOGOUT)
+    dependencies.push_subscriptions.revoke_all.assert_called_once_with(
+        7, PushSubscriptionRevocationReason.LOGOUT
+    )
     assert audit.append_audit_entry.called and audit.append_outbox_event.called
     entry = audit.append_audit_entry.call_args.args[0]
     event = audit.append_outbox_event.call_args.args[0]
@@ -64,5 +68,8 @@ def test_logout_zero_session_revocation_has_no_evidence() -> None:
 
     sessions.refresh_owner.assert_not_called()
     sessions.revoke_all.assert_called_once_with(7, RevocationReason.LOGOUT)
+    dependencies.push_subscriptions.revoke_all.assert_called_once_with(
+        7, PushSubscriptionRevocationReason.LOGOUT
+    )
     audit.append_audit_entry.assert_not_called()
     audit.append_outbox_event.assert_not_called()

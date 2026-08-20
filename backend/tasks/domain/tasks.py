@@ -64,6 +64,7 @@ class TaskSnapshot:
     block_reason: str | None
     expected_location_text: str = ""
     deleted_at: datetime | None = None
+    assignment_version: int = 1
 
 
 @dataclass(frozen=True, slots=True)

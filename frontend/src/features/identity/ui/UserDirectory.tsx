@@ -104,7 +104,9 @@ function DirectoryFilters(props: FiltersProps) {
           <option value="false">Đã khóa</option>
         </Select>
       </label>
-      <ActionGroup><Button variant="primary">Tìm</Button></ActionGroup>
+      <ActionGroup>
+        <Button variant="primary">Tìm</Button>
+      </ActionGroup>
     </form>
   );
 }
@@ -125,8 +127,7 @@ function UserList(props: UserListProps) {
       {props.users.map((user) => (
         <li key={user.id}>
           <span>
-            {user.full_name} ({user.username}){" "}
-            <Badge tone="neutral">{user.role}</Badge>{" "}
+            {user.full_name} ({user.username}) <Badge tone="neutral">{user.role}</Badge>{" "}
             <StatusBadge tone={user.is_active ? "ready" : "critical"}>
               {user.is_active ? "Đang hoạt động" : "Đã khóa"}
             </StatusBadge>

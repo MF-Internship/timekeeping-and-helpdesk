@@ -194,7 +194,9 @@ function LocationEditForm({ draft, busy, onChange, onCancel, onSubmit }: EditPro
         />
       </label>
       <div className="actions">
-        <Button variant="primary" disabled={busy}>Lưu địa điểm</Button>
+        <Button variant="primary" disabled={busy}>
+          Lưu địa điểm
+        </Button>
         <Button type="button" disabled={busy} onClick={onCancel}>
           Hủy
         </Button>

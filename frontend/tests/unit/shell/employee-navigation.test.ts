@@ -17,6 +17,7 @@ describe("employee navigation registry", () => {
 
   it("lists every implemented role destination without placeholder routes", () => {
     expect(employeeNavigation(() => true).map((item) => item.href)).toEqual([
+      "/notifications",
       "/tasks",
       "/attendance",
       "/users",

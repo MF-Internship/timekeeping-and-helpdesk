@@ -38,8 +38,7 @@ def test_address_is_null_without_a_resolved_location() -> None:
 def test_maps_url_preserves_exact_stored_capture_coordinates() -> None:
     payload = _update_evidence_payload(update())
     assert payload["maps_url"] == (
-        "https://www.google.com/maps?q="
-        "10.123456789012345%2C106.987654321098765"
+        "https://www.google.com/maps?q=10.123456789012345%2C106.987654321098765"
     )
 
 

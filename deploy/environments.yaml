@@ -8,6 +8,10 @@ environments:
     cache_queue_namespace: UNRESOLVED
     signing_key_identity: UNRESOLVED
     credential_identity: UNRESOLVED
+    web_push_vapid_key_identity: UNRESOLVED
+    push_subscription_encryption_key_identity: UNRESOLVED
+    web_push_public_key_identity: UNRESOLVED
+    web_push_allowed_origins: []
     cache:
       backend: locmem
     backup:
@@ -23,12 +27,25 @@ environments:
       - job: missing-check-out-reconciliation
         scheduler_identity: staging-missing-check-out-reconciliation
         enabled: true
+      - job: notification-occurrence-dispatch
+        scheduler_identity: staging-notification-occurrence-dispatch
+        enabled: true
+      - job: web-push-delivery
+        scheduler_identity: staging-web-push-delivery
+        enabled: true
     database_identity: UNRESOLVED
     migration_identity: UNRESOLVED
     bucket_identity: UNRESOLVED
     cache_queue_namespace: UNRESOLVED
     signing_key_identity: UNRESOLVED
     credential_identity: UNRESOLVED
+    web_push_vapid_key_identity: staging-web-push-vapid-key
+    push_subscription_encryption_key_identity: staging-push-subscription-encryption-key
+    web_push_public_key_identity: staging-web-push-public-key
+    web_push_allowed_origins:
+      - https://fcm.googleapis.com
+      - https://updates.push.services.mozilla.com
+      - https://web.push.apple.com
     cache:
       backend: database
     backup:
@@ -44,12 +61,25 @@ environments:
       - job: missing-check-out-reconciliation
         scheduler_identity: production-missing-check-out-reconciliation
         enabled: true
+      - job: notification-occurrence-dispatch
+        scheduler_identity: production-notification-occurrence-dispatch
+        enabled: true
+      - job: web-push-delivery
+        scheduler_identity: production-web-push-delivery
+        enabled: true
     database_identity: UNRESOLVED
     migration_identity: UNRESOLVED
     bucket_identity: UNRESOLVED
     cache_queue_namespace: UNRESOLVED
     signing_key_identity: UNRESOLVED
     credential_identity: UNRESOLVED
+    web_push_vapid_key_identity: production-web-push-vapid-key
+    push_subscription_encryption_key_identity: production-push-subscription-encryption-key
+    web_push_public_key_identity: production-web-push-public-key
+    web_push_allowed_origins:
+      - https://fcm.googleapis.com
+      - https://updates.push.services.mozilla.com
+      - https://web.push.apple.com
     cache:
       backend: database
     backup:

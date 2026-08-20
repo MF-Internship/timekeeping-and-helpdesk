@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     "locations",
     "attendance",
     "tasks",
+    "notifications",
 ]
 
 MIDDLEWARE = [
@@ -82,6 +83,17 @@ CACHES = _cache_configuration(RUNTIME)
 API_DOCS_ENABLED = RUNTIME.api_docs_enabled
 ORIGIN_CREDENTIAL_HEADER = RUNTIME.origin_credential_header
 ORIGIN_CREDENTIAL = RUNTIME.origin_credential
+WEB_PUSH_VAPID_PUBLIC_KEY = RUNTIME.web_push_vapid_public_key
+WEB_PUSH_VAPID_PRIVATE_KEY = RUNTIME.web_push_vapid_private_key
+WEB_PUSH_VAPID_SUBJECT = RUNTIME.web_push_vapid_subject
+PUSH_SUBSCRIPTION_ENCRYPTION_KEYS = RUNTIME.push_subscription_encryption_keys
+PUSH_SUBSCRIPTION_ENCRYPTION_KEY = (
+    RUNTIME.push_subscription_encryption_keys[0]
+    if RUNTIME.push_subscription_encryption_keys
+    else ""
+)
+WEB_PUSH_ENABLED = RUNTIME.web_push_enabled
+WEB_PUSH_ALLOWED_ORIGINS = RUNTIME.web_push_allowed_origins
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "identity.adapters.security.authentication.DatabaseBackedJWTAuthentication"
@@ -114,9 +126,7 @@ SPECTACULAR_SETTINGS = {
     "ENUM_GENERATE_CHOICE_DESCRIPTION": False,
     "ENUM_NAME_OVERRIDES": {
         "TaskStatusEnum": "tasks.domain.tasks.TaskStatus",
-        "OrdinaryTaskStatusEnum": (
-            "tasks.adapters.api.serializers.ORDINARY_TASK_STATUS_CHOICES"
-        ),
+        "OrdinaryTaskStatusEnum": ("tasks.adapters.api.serializers.ORDINARY_TASK_STATUS_CHOICES"),
     },
     "APPEND_COMPONENTS": {
         "schemas": {

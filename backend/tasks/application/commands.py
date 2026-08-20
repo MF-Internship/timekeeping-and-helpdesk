@@ -63,12 +63,17 @@ class TaskCommandService:
                     _optional_text(command.expected_location),
                 )
             )
-            self._dependencies.repository.add_assignees(
-                task.id,
-                assignee_ids,
-                self._dependencies.clock.now(),
-            )
+            self._record_initial_assignments(task, assignee_ids)
             return task
+
+    def _record_initial_assignments(
+        self, task: TaskSnapshot, assignee_ids: tuple[int, ...]
+    ) -> None:
+        assigned_at = self._dependencies.clock.now()
+        self._dependencies.repository.add_assignees(task.id, assignee_ids, assigned_at)
+        self._dependencies.notifications.record_assignments(
+            task.id, assignee_ids, task.assignment_version
+        )
 
     def update(self, command: UpdateTaskCommand) -> TaskSnapshot:
         scope = self._dependencies.authorization.authorize_update(command.actor_id)
@@ -145,6 +150,7 @@ class TaskCommandService:
             except ValueError as error:
                 raise IdentityAPIError(VALIDATION_FAILED, status_code=400) from error
             result = self._persist_completion(task, command, completion)
+            self._dependencies.notifications.suppress_task_reminders(task.id)
             self._append_override_audit(task, command, completion)
             return result
 
@@ -239,14 +245,20 @@ class TaskCommandService:
         current_ids = self._dependencies.repository.assignee_ids(task.id)
         additions = tuple(sorted(set(desired_ids) - set(current_ids)))
         self._validate_assignees(additions)
-        self._dependencies.repository.replace_assignees(
+        removals = tuple(sorted(set(current_ids) - set(desired_ids)))
+        if not additions and not removals:
+            return
+        changed_at = self._dependencies.clock.now()
+        assignment_version = self._dependencies.repository.replace_assignees(
             AssigneeDelta(
                 task.id,
-                tuple(sorted(set(current_ids) - set(desired_ids))),
+                removals,
                 additions,
-                self._dependencies.clock.now(),
+                changed_at,
             )
         )
+        self._dependencies.notifications.suppress_removed_assignments(task.id, removals)
+        self._dependencies.notifications.record_assignments(task.id, additions, assignment_version)
 
     def _updated_content(
         self, task: TaskSnapshot, command: UpdateTaskCommand

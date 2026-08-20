@@ -26,12 +26,22 @@ function Probe() {
 
 function LogoutProbe() {
   const auth = useAuth();
-  return <><output>{auth.state.kind}</output><button onClick={() => void auth.logout()}>logout</button></>;
+  return (
+    <>
+      <output>{auth.state.kind}</output>
+      <button onClick={() => void auth.logout()}>logout</button>
+    </>
+  );
 }
 
 function LoginProbe() {
   const auth = useAuth();
-  return <><output>{auth.state.kind}</output><button onClick={() => void auth.login("next", "secret")}>login</button></>;
+  return (
+    <>
+      <output>{auth.state.kind}</output>
+      <button onClick={() => void auth.login("next", "secret")}>login</button>
+    </>
+  );
 }
 
 const account = {
@@ -115,7 +125,11 @@ describe("AuthProvider bootstrap", () => {
     api.refresh.mockResolvedValue({ access: "memory-access" });
     api.getMe.mockResolvedValue(account);
     api.logout.mockResolvedValue(undefined);
-    render(<AuthProvider><LogoutProbe /></AuthProvider>);
+    render(
+      <AuthProvider>
+        <LogoutProbe />
+      </AuthProvider>,
+    );
     await screen.findByText("authenticated");
     fireEvent.click(screen.getByRole("button", { name: "logout" }));
     await waitFor(() => expect(screen.getByText("anonymous")).toBeInTheDocument());
@@ -127,7 +141,11 @@ describe("AuthProvider bootstrap", () => {
     api.refresh.mockRejectedValue(new Error("no session"));
     api.login.mockResolvedValue({ access: "next-access", must_change_password: false });
     api.getMe.mockResolvedValue({ ...account, id: 2, username: "next" });
-    render(<AuthProvider><LoginProbe /></AuthProvider>);
+    render(
+      <AuthProvider>
+        <LoginProbe />
+      </AuthProvider>,
+    );
     await screen.findByText("anonymous");
     fireEvent.click(screen.getByRole("button", { name: "login" }));
     await screen.findByText("authenticated");

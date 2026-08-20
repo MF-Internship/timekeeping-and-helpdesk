@@ -11,6 +11,7 @@ from core.errors import IdentityAPIError
 from identity.application.dependencies import IdentityDependencies
 from identity.domain.accounts import AccountSnapshot
 from identity.domain.authorization import effective_capabilities
+from identity.ports.push_subscriptions import PushSubscriptionRevocationReason
 from identity.ports.sessions import IssuedSession, RevocationReason
 
 
@@ -21,6 +22,7 @@ class AuthenticationService:
         self.sessions = dependencies.sessions
         self.unit_of_work_factory = dependencies.unit_of_work_factory
         self.audit = dependencies.audit
+        self.push_subscriptions = dependencies.push_subscriptions
 
     def login(
         self, username: str, password: str
@@ -65,6 +67,7 @@ class AuthenticationService:
             if account.must_change_password:
                 raise IdentityAPIError(PASSWORD_CHANGE_REQUIRED, status_code=403)
             count = self.sessions.revoke_all(actor_id, RevocationReason.LOGOUT)
+            self.push_subscriptions.revoke_all(actor_id, PushSubscriptionRevocationReason.LOGOUT)
             if count > 0:
                 self._record_revocation(actor_id, count, RevocationReason.LOGOUT)
 

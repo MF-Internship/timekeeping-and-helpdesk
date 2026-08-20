@@ -11,14 +11,22 @@ import { PageIntro } from "@/shared/ui/typography";
 
 describe("shared design system", () => {
   it("exposes semantic typography, fields, badges and named actions", () => {
-    render(<>
-      <PageIntro eyebrow="Quản trị" title="Người dùng" description="Quản lý tài khoản theo vai trò." />
-      <Field label="Tên đăng nhập" htmlFor="username" description="Dùng để đăng nhập.">
-        <Input id="username" />
-      </Field>
-      <Badge tone="ready">Đang hoạt động</Badge>
-      <ActionGroup><Button aria-label="Lưu người dùng">Lưu</Button></ActionGroup>
-    </>);
+    render(
+      <>
+        <PageIntro
+          eyebrow="Quản trị"
+          title="Người dùng"
+          description="Quản lý tài khoản theo vai trò."
+        />
+        <Field label="Tên đăng nhập" htmlFor="username" description="Dùng để đăng nhập.">
+          <Input id="username" />
+        </Field>
+        <Badge tone="ready">Đang hoạt động</Badge>
+        <ActionGroup>
+          <Button aria-label="Lưu người dùng">Lưu</Button>
+        </ActionGroup>
+      </>,
+    );
     expect(screen.getByRole("heading", { name: "Người dùng" })).toBeInTheDocument();
     expect(screen.getByLabelText("Tên đăng nhập")).toBeInTheDocument();
     expect(screen.getByText("Dùng để đăng nhập.")).toBeInTheDocument();

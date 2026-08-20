@@ -21,7 +21,7 @@ const FOUNDATION_KEYS = [
 ];
 
 /** Feature-scoped vocabularies live in their own nested group, never inline. */
-const GROUP_KEYS = ["guidance", "tasks"];
+const GROUP_KEYS = ["guidance", "notifications", "tasks"];
 
 const entries = Object.entries(UI_MESSAGES);
 const flat = entries.filter(([, value]) => typeof value === "string") as [string, string][];

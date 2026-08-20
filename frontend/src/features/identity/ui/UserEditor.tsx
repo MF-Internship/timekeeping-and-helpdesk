@@ -103,7 +103,11 @@ function CreateUserEditor(props: UserEditorProps) {
         <FieldError failure={failure} field="role" />
       </label>
       <IdentityFailureNotice failure={failure} />
-      <ActionGroup><Button type="submit" variant="primary">Tạo</Button></ActionGroup>
+      <ActionGroup>
+        <Button type="submit" variant="primary">
+          Tạo
+        </Button>
+      </ActionGroup>
     </form>
   );
 }
@@ -125,10 +129,14 @@ function EditUserEditor(props: UserEditorProps & { user: EditableUser }) {
       <h2>Sửa hồ sơ</h2>
       <ProfileFields user={props.user} failure={failure} />
       <IdentityFailureNotice failure={failure} />
-      <ActionGroup><Button type="submit" variant="primary">Lưu hồ sơ</Button>
-      <Button type="button" onClick={props.onCancel}>
-        Hủy
-      </Button></ActionGroup>
+      <ActionGroup>
+        <Button type="submit" variant="primary">
+          Lưu hồ sơ
+        </Button>
+        <Button type="button" onClick={props.onCancel}>
+          Hủy
+        </Button>
+      </ActionGroup>
     </form>
   );
 }

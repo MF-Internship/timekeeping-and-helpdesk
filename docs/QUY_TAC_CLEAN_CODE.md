@@ -22,6 +22,7 @@ trong PR; **CÂN NHẮC** phụ thuộc bối cảnh.
 | Kết quả lần bấm | `AttendanceAttemptOutcome` | `error_code`, chuỗi tự do |
 | Upload ảnh staging chưa bind | `EvidenceUpload` | `temp_photo`, presigned URL, multipart blob |
 | Thông báo trong app | `Notification` | push payload làm nguồn sự thật |
+| Lần giao web push bền | `PushDelivery` | `push job`, payload push lưu trong DB |
 | Lần chạy job vận hành | `JobRun` | suy health từ việc không có anomaly |
 | Trạng thái Task | `TaskStatus` | `NOT_COMPLETED`, chuỗi tự do |
 | Cách hoàn thành task | `CompletionMethod` | chuỗi tự do |
@@ -497,8 +498,15 @@ def require_permission(user: User, action: PermissionAction) -> None:
 - `PERMISSION_IMPLIES` có đúng **5** cặp; chỉ dùng implication trong map này,
   không suy diễn kế thừa action khác. `view.all`/`update.any` không thay thế
   business validation.
-- `LEADER` chỉ đọc: role map của Leader không được chứa bất kỳ action mutation
-  nào, kể cả `task.create.assign` và `task.update.any`.
+- `LEADER` chỉ đọc state nghiệp vụ: role map không được chứa action mutation lên
+  Task, Attendance, Location, Config, User, báo cáo hay vận hành, kể cả
+  `task.create.assign` và `task.update.any`. Ngoại lệ self-service hẹp của R-144
+  chỉ gồm `notification.update.self` và `push_subscription.manage.self`; cả hai
+  vẫn khóa vào `request.user` và không mở object scope khác.
+- Notification dùng đúng ba action canonical R-144:
+  `notification.view.self`, `notification.update.self` và
+  `push_subscription.manage.self`, cấp trực tiếp cho cả ba vai trò, không thêm
+  implication và không kiểm role rải rác trong adapter/service.
 - Mọi service/API public kiểm quyền trước khi đọc/ghi dữ liệu.
 - `GET /api/v1/operations/job-health` dùng action tập trung
   `operations.job_health.view`: LEADER/MANAGER allow, HELPDESK deny. Đây là read
@@ -722,6 +730,10 @@ lời “anh được làm gì”; giữ hai tầng tách bạch.
 - Push subscription là secret vận hành: mã hóa khi lưu, endpoint không vào log;
   vô hiệu hóa khi logout/account switch/account inactive. Push payload lock-screen
   không chứa tên Task/người, tọa độ, note hay ảnh; deep-link luôn kiểm lại RBAC.
+- `PushDelivery` chỉ giữ FK, state/schedule/lease/attempt/collapse metadata và mã
+  lỗi đóng; không lưu payload, endpoint hay subscription plaintext. Unique theo
+  Notification + PushSubscription; worker claim/lease trong transaction ngắn,
+  gọi provider ngoài transaction rồi finalize riêng (R-146).
 
 **Địa chỉ và link bản đồ (CHOT §6.2.1).**
 
