@@ -4,6 +4,310 @@
  */
 
 export interface paths {
+  "/api/v1/attendance/check-in": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["attendance_check_in"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/attendance/check-out": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["attendance_check_out"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/attendance/today": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["attendance_today_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/login": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["auth_login_create"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/logout": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["auth_logout_create"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/refresh": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["auth_refresh_create"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/change-password": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["identity_change_password_create"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/config/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["config_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations["config_partial_update"];
+    trace?: never;
+  };
+  "/api/v1/holidays/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["holidays_list"];
+    put?: never;
+    post: operations["holidays_create"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/holidays/{holiday_id}/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: operations["holidays_destroy"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/locations/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["locations_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/locations/{location_id}/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations["locations_partial_update"];
+    trace?: never;
+  };
+  "/api/v1/me/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["identity_me_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations["identity_me_partial_update"];
+    trace?: never;
+  };
+  "/api/v1/notifications/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["notifications_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/notifications/{public_id}/read": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations["notifications_mark_read"];
+    trace?: never;
+  };
+  "/api/v1/notifications/{public_id}/target": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["notifications_resolve_target"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/operations/job-health": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["operations_job_health_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/push-subscriptions/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["push_subscriptions_upsert"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/push-subscriptions/{public_id}/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: operations["push_subscriptions_revoke"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/schema/": {
     parameters: {
       query?: never;
@@ -21,10 +325,379 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/tasks/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["tasks_list"];
+    put?: never;
+    post: operations["tasks_create"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/tasks/{task_id}/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["tasks_retrieve"];
+    put?: never;
+    post?: never;
+    delete: operations["tasks_destroy"];
+    options?: never;
+    head?: never;
+    patch: operations["tasks_partial_update"];
+    trace?: never;
+  };
+  "/api/v1/tasks/{task_id}/complete-field": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["tasks_complete_field_create"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/tasks/{task_id}/complete-override": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["tasks_complete_override_create"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/tasks/{task_id}/evidence-uploads": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["tasks_evidence_uploads_create"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/tasks/{task_id}/photos/{photo_id}/access": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["tasks_photos_access_create"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/tasks/{task_id}/status": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["tasks_status_create"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/users/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["users_list"];
+    put?: never;
+    post: operations["users_create"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/users/{user_id}/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["users_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations["users_partial_update"];
+    trace?: never;
+  };
+  "/api/v1/users/{user_id}/reset-password": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["users_reset_password_create"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/users/{user_id}/role": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations["users_role_partial_update"];
+    trace?: never;
+  };
+  "/api/v1/users/{user_id}/status": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations["users_status_partial_update"];
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    AccessResponse: {
+      readonly access: string;
+    };
+    /** @enum {string} */
+    AccountsEnum: "/api/v1/users/";
+    AdminUser: {
+      /** Format: date-time */
+      readonly created_at: string;
+      /** Format: email */
+      readonly email: string | null;
+      readonly full_name: string;
+      readonly id: number;
+      readonly is_active: boolean;
+      /** Format: date-time */
+      readonly last_login: string | null;
+      readonly must_change_password: boolean;
+      readonly phone: string | null;
+      readonly role: string;
+      readonly username: string;
+    };
+    AttendanceCommand: {
+      /** Format: decimal */
+      accuracy_m: string;
+      /** Format: date-time */
+      captured_at?: string | null;
+      /** Format: decimal */
+      latitude: string;
+      /** Format: decimal */
+      longitude: string;
+      selected_location_id?: number | null;
+    };
+    AttendanceCommandResult: {
+      readonly attendance: components["schemas"]["AttendancePunch"];
+      readonly punch_index: number;
+      readonly session: components["schemas"]["AttendanceSession"];
+    };
+    AttendanceError: {
+      readonly details: {
+        [key: string]: unknown;
+      };
+      readonly error: string;
+      readonly error_code: string;
+      readonly message: string;
+      /** Format: uuid */
+      readonly request_id: string;
+    };
+    AttendanceLocation: {
+      readonly address: string;
+      readonly code: string;
+      readonly id: number;
+      readonly name: string;
+    };
+    AttendancePunch: {
+      /** Format: decimal */
+      readonly accuracy_m: string;
+      /** Format: date-time */
+      readonly captured_at: string | null;
+      /** Format: decimal */
+      readonly captured_latitude: string;
+      /** Format: decimal */
+      readonly captured_longitude: string;
+      /** Format: decimal */
+      readonly distance_m: string;
+      readonly id: number;
+      readonly kind: string;
+      readonly location: components["schemas"]["AttendanceLocation"];
+      readonly maps_url: string;
+      /** Format: date-time */
+      readonly recorded_at: string;
+      readonly resolution_method: string;
+      readonly resolved_address: string;
+      readonly validation_result: string;
+      /** Format: date */
+      readonly work_date: string;
+    };
+    AttendanceSession: {
+      /** Format: date-time */
+      readonly check_in_at: string;
+      readonly check_in_location_id: number;
+      /** Format: date-time */
+      readonly check_out_at: string | null;
+      readonly check_out_location_id: number | null;
+      readonly closed_by_job: boolean;
+      /** Format: decimal */
+      readonly duration_minutes: string | null;
+      readonly id: number;
+      /** Format: date */
+      readonly work_date: string;
+    };
+    AttendanceUnprocessableError:
+      | components["schemas"]["GpsBoundaryError"]
+      | components["schemas"]["InvalidLocationChoiceError"];
+    CheckInConflictError:
+      | components["schemas"]["SessionAlreadyOpenError"]
+      | components["schemas"]["LocationChoiceRequiredError"];
+    CheckOutConflictError:
+      | components["schemas"]["NoOpenSessionError"]
+      | components["schemas"]["LocationChoiceRequiredError"];
+    /** @enum {string} */
+    CodeEnum: "GEOFENCE_OVERLAP" | "RADIUS_BELOW_ATTENDANCE_ACCURACY";
+    Config: {
+      /** Format: decimal */
+      readonly default_radius_m: string;
+      readonly early_checkout_grace_minutes: number;
+      readonly id: number;
+      readonly late_checkout_grace_minutes: number;
+      readonly late_grace_minutes: number;
+      /** Format: decimal */
+      readonly max_attendance_accuracy_m: string;
+      /** Format: decimal */
+      readonly max_radius_m: string;
+      /** Format: time */
+      readonly shift_end: string;
+      /** Format: time */
+      readonly shift_start: string;
+      /** Format: decimal */
+      readonly task_gps_good_accuracy_m: string;
+      /** Format: decimal */
+      readonly task_gps_low_accuracy_m: string;
+      readonly timezone: string;
+      readonly working_weekdays: number[];
+    };
+    ConfigUpdate: {
+      /** Format: decimal */
+      default_radius_m?: string;
+      early_checkout_grace_minutes?: number;
+      late_checkout_grace_minutes?: number;
+      late_grace_minutes?: number;
+      /** Format: decimal */
+      max_attendance_accuracy_m?: string;
+      /** Format: decimal */
+      max_radius_m?: string;
+      /** Format: time */
+      shift_end?: string;
+      /** Format: time */
+      shift_start?: string;
+      /** Format: decimal */
+      task_gps_good_accuracy_m?: string;
+      /** Format: decimal */
+      task_gps_low_accuracy_m?: string;
+      working_weekdays?: number[];
+    };
+    ConfigUpdateResult: {
+      readonly config: components["schemas"]["Config"];
+      readonly warnings: components["schemas"]["Warning"][];
+    };
+    /** @enum {string} */
+    DestinationEnum: "TASK" | "ATTENDANCE";
+    /** @enum {string} */
+    EventTypeEnum:
+      | "TASK_ASSIGNED"
+      | "TASK_UPCOMING"
+      | "TASK_OVERDUE"
+      | "ATTENDANCE_SESSION_OPEN_NEAR_SHIFT_END"
+      | "MULTI_ASSIGNEE_TASK_COMPLETED";
+    Evidence: {
+      anomaly_without_job_closed_count: number;
+      job_closed_session_count: number;
+      job_closed_without_anomaly_count: number;
+      missing_checkout_anomaly_count: number;
+    };
+    EvidenceUpload: {
+      checksum_sha256: string;
+      mime: components["schemas"]["MimeEnum"];
+      size_bytes: number;
+    };
+    EvidenceUploadIntent: {
+      /** Format: date-time */
+      expires_at: string;
+      headers: {
+        [key: string]: string;
+      };
+      /** Format: uuid */
+      upload_id: string;
+      /** Format: uri */
+      upload_url: string;
+    };
     FoundationError: {
       details: {
         [key: string]: string[];
@@ -37,6 +710,498 @@ export interface components {
       /** Format: uuid */
       request_id: string;
     };
+    GeneratedUserResult: {
+      readonly generated_password: string;
+      readonly user: components["schemas"]["AdminUser"];
+    };
+    GpsBoundaryError: {
+      readonly details: {
+        [key: string]: unknown;
+      };
+      readonly error: string;
+      readonly error_code: components["schemas"]["GpsBoundaryErrorErrorCodeEnum"];
+      readonly message: string;
+      /** Format: uuid */
+      readonly request_id: string;
+    };
+    /** @enum {string} */
+    GpsBoundaryErrorErrorCodeEnum: "WEAK_GPS" | "OUTSIDE_RADIUS";
+    GroupedTaskList: {
+      /** Format: date */
+      business_date: string;
+      completed: components["schemas"]["TaskItem"][];
+      overdue: components["schemas"]["TaskItem"][];
+      today: components["schemas"]["TaskItem"][];
+      upcoming: components["schemas"]["TaskItem"][];
+    };
+    Holiday: {
+      /** Format: date */
+      readonly date: string;
+      readonly id: number;
+      readonly name: string;
+    };
+    HolidayCreate: {
+      /** Format: date */
+      date: string;
+      name: string;
+    };
+    IdentityError: {
+      readonly details: {
+        [key: string]: unknown;
+      };
+      readonly error: string;
+      readonly error_code: string;
+      readonly message: string;
+      /** Format: uuid */
+      readonly request_id: string;
+    };
+    InactiveAssigneeDetails: {
+      assignee_ids: number[];
+    };
+    InactiveAssigneeError: {
+      details: components["schemas"]["InactiveAssigneeDetails"];
+      error: string;
+      error_code: components["schemas"]["InactiveAssigneeErrorErrorCodeEnum"];
+      message: string;
+      /** Format: uuid */
+      request_id: string;
+    };
+    /** @enum {string} */
+    InactiveAssigneeErrorErrorCodeEnum: "INACTIVE_ASSIGNEE";
+    Inbox: {
+      items: components["schemas"]["NotificationItem"][];
+      unread_count: number;
+    };
+    IndexedAttendancePunch: {
+      /** Format: decimal */
+      readonly accuracy_m: string;
+      /** Format: date-time */
+      readonly captured_at: string | null;
+      /** Format: decimal */
+      readonly captured_latitude: string;
+      /** Format: decimal */
+      readonly captured_longitude: string;
+      /** Format: decimal */
+      readonly distance_m: string;
+      readonly id: number;
+      readonly kind: string;
+      readonly location: components["schemas"]["AttendanceLocation"];
+      readonly maps_url: string;
+      readonly punch_index: number;
+      /** Format: date-time */
+      readonly recorded_at: string;
+      readonly resolution_method: string;
+      readonly resolved_address: string;
+      readonly validation_result: string;
+      /** Format: date */
+      readonly work_date: string;
+    };
+    InvalidLocationChoiceError: {
+      readonly details: {
+        [key: string]: unknown;
+      };
+      readonly error: string;
+      readonly error_code: components["schemas"]["InvalidLocationChoiceErrorErrorCodeEnum"];
+      readonly location_candidates: components["schemas"]["LocationCandidate"][];
+      readonly message: string;
+      /** Format: uuid */
+      readonly request_id: string;
+    };
+    /** @enum {string} */
+    InvalidLocationChoiceErrorErrorCodeEnum: "INVALID_LOCATION_CHOICE";
+    JobHealth: {
+      /** Format: date-time */
+      cutoff_at: string;
+      escalation_guidance: string | null;
+      evidence_counts: components["schemas"]["Evidence"];
+      invariant_valid: boolean;
+      investigation_links: components["schemas"]["Links"] | null;
+      latest_run: components["schemas"]["JobRun"] | null;
+      latest_successful_run: components["schemas"]["JobRun"] | null;
+      overdue_open_session_count: number;
+      reason_flags: components["schemas"]["Reasons"];
+      /** Format: date-time */
+      refreshed_at: string;
+      state: components["schemas"]["StateEnum"];
+      timezone: components["schemas"]["TimezoneEnum"];
+    };
+    /** @enum {string} */
+    JobNameEnum: "MISSING_CHECK_OUT";
+    JobRun: {
+      anomaly_count: number;
+      changed_count: number;
+      error_code:
+        | (components["schemas"]["JobRunErrorCodeEnum"] | components["schemas"]["NullEnum"])
+        | null;
+      /** Format: date-time */
+      finished_at: string | null;
+      id: number;
+      job_name: components["schemas"]["JobNameEnum"];
+      scanned_count: number;
+      /** Format: date-time */
+      started_at: string;
+      status: components["schemas"]["JobRunStatusEnum"];
+    };
+    /** @enum {string} */
+    JobRunErrorCodeEnum: "SESSION_PROCESSING_FAILED" | "RUN_ABORTED";
+    /** @enum {string} */
+    JobRunStatusEnum: "RUNNING" | "SUCCEEDED" | "PARTIAL_FAILED" | "FAILED";
+    Links: {
+      accounts: components["schemas"]["AccountsEnum"];
+    };
+    Location: {
+      readonly address: string;
+      readonly code: string;
+      readonly id: number;
+      readonly is_active: boolean;
+      readonly kind: string;
+      /** Format: decimal */
+      readonly latitude: string;
+      /** Format: decimal */
+      readonly longitude: string;
+      readonly name: string;
+      readonly parent_code: string | null;
+      readonly parent_id: number | null;
+      /** Format: decimal */
+      readonly radius_m: string;
+      readonly version: number;
+    };
+    LocationCandidate: {
+      readonly code: string;
+      /** Format: decimal */
+      readonly distance_m: string;
+      readonly id: number;
+      readonly name: string;
+    };
+    LocationChoiceRequiredError: {
+      readonly details: {
+        [key: string]: unknown;
+      };
+      readonly error: string;
+      readonly error_code: components["schemas"]["LocationChoiceRequiredErrorErrorCodeEnum"];
+      readonly location_candidates: components["schemas"]["LocationCandidate"][];
+      readonly message: string;
+      /** Format: uuid */
+      readonly request_id: string;
+    };
+    /** @enum {string} */
+    LocationChoiceRequiredErrorErrorCodeEnum: "LOCATION_CHOICE_REQUIRED";
+    LocationUpdate: {
+      address?: string;
+      is_active?: boolean;
+      /** Format: decimal */
+      latitude?: string;
+      /** Format: decimal */
+      longitude?: string;
+      name?: string;
+      /** Format: decimal */
+      radius_m?: string;
+      reason?: string;
+      version: number;
+    };
+    LocationUpdateResult: {
+      readonly location: components["schemas"]["Location"];
+      readonly warnings: components["schemas"]["Warning"][];
+    };
+    Login: {
+      password: string;
+      username: string;
+    };
+    LoginResponse: {
+      readonly access: string;
+      readonly capabilities: string[];
+      readonly is_active: boolean;
+      readonly must_change_password: boolean;
+      readonly role: string;
+    };
+    /** @enum {string} */
+    MimeEnum: "image/jpeg" | "image/png" | "image/webp";
+    NoOpenSessionError: {
+      readonly details: {
+        [key: string]: unknown;
+      };
+      readonly error: string;
+      readonly error_code: components["schemas"]["NoOpenSessionErrorErrorCodeEnum"];
+      readonly message: string;
+      /** Format: uuid */
+      readonly request_id: string;
+    };
+    /** @enum {string} */
+    NoOpenSessionErrorErrorCodeEnum: "NO_OPEN_SESSION";
+    NotificationItem: {
+      /** Format: date-time */
+      created_at: string;
+      event_type: components["schemas"]["EventTypeEnum"];
+      is_unread: boolean;
+      /** Format: uuid */
+      public_id: string;
+      /** Format: date-time */
+      read_at: string | null;
+      title: string;
+    };
+    /** @enum {unknown} */
+    NullEnum: null;
+    /** @enum {string} */
+    OrdinaryTaskStatusEnum: "TODO" | "IN_PROGRESS" | "BLOCKED";
+    PasswordChange: {
+      current_password: string;
+      new_password: string;
+    };
+    PhotoAccess: {
+      /** Format: date-time */
+      expires_at: string;
+      /** Format: uri */
+      url: string;
+    };
+    Profile: {
+      /** Format: email */
+      email?: string | null;
+      full_name?: string;
+      phone?: string | null;
+    };
+    PushSubscriptionInput: {
+      auth: string;
+      /** Format: uri */
+      endpoint: string;
+      p256dh: string;
+    };
+    PushSubscriptionResult: {
+      /** Format: date-time */
+      created_at: string;
+      /** Format: uuid */
+      id: string;
+      is_active: boolean;
+    };
+    Reasons: {
+      latest_terminal_failed: boolean;
+      missing_timely_success: boolean;
+      no_run_history: boolean;
+      overdue_open_sessions: boolean;
+      persisted_evidence_mismatch: boolean;
+      run_count_mismatch: boolean;
+      stale_running: boolean;
+      unfinished_run: boolean;
+    };
+    ResetPasswordResult: {
+      readonly generated_password: string;
+      readonly must_change_password: boolean;
+      readonly user_id: number;
+    };
+    Role: {
+      role: string;
+    };
+    SelfUser: {
+      readonly capabilities: string[];
+      /** Format: date-time */
+      readonly created_at: string;
+      /** Format: email */
+      readonly email: string | null;
+      readonly full_name: string;
+      readonly id: number;
+      readonly is_active: boolean;
+      /** Format: date-time */
+      readonly last_login: string | null;
+      readonly must_change_password: boolean;
+      readonly phone: string | null;
+      readonly role: string;
+      readonly username: string;
+    };
+    SessionAlreadyOpenError: {
+      readonly details: {
+        [key: string]: unknown;
+      };
+      readonly error: string;
+      readonly error_code: components["schemas"]["SessionAlreadyOpenErrorErrorCodeEnum"];
+      readonly message: string;
+      /** Format: uuid */
+      readonly request_id: string;
+    };
+    /** @enum {string} */
+    SessionAlreadyOpenErrorErrorCodeEnum: "SESSION_ALREADY_OPEN";
+    /** @enum {string} */
+    StateEnum: "ok" | "alert" | "unknown";
+    Status: {
+      is_active: boolean;
+    };
+    Target: {
+      destination: components["schemas"]["DestinationEnum"];
+      target_id: number | null;
+    };
+    TaskAlreadyCompletedError: {
+      details: {
+        [key: string]: unknown;
+      };
+      error: string;
+      error_code: components["schemas"]["TaskAlreadyCompletedErrorErrorCodeEnum"];
+      message: string;
+      /** Format: uuid */
+      request_id: string;
+    };
+    /** @enum {string} */
+    TaskAlreadyCompletedErrorErrorCodeEnum: "TASK_ALREADY_COMPLETED";
+    TaskAssignee: {
+      /** Format: date-time */
+      assigned_at: string;
+      user: components["schemas"]["TaskUser"];
+    };
+    TaskDetail: {
+      /** Format: date */
+      assigned_date: string;
+      assignees: components["schemas"]["TaskAssignee"][];
+      block_reason: string | null;
+      /** Format: date-time */
+      completed_at: string | null;
+      completed_by: components["schemas"]["TaskUser"] | null;
+      completion_method: string | null;
+      completion_note: string | null;
+      created_by: components["schemas"]["TaskUser"];
+      description: string;
+      expected_location: string;
+      group: string;
+      id: number;
+      location: components["schemas"]["TaskLocation"] | null;
+      overdue_days: number | null;
+      status: components["schemas"]["TaskStatusEnum"];
+      title: string;
+      updates: components["schemas"]["TaskLifecycleUpdate"][];
+    };
+    TaskError: {
+      details: {
+        [key: string]: unknown;
+      };
+      error: string;
+      error_code: string;
+      message: string;
+      /** Format: uuid */
+      request_id: string;
+    };
+    TaskFieldCompletion: {
+      /** Format: decimal */
+      accuracy_m: string;
+      /** Format: date-time */
+      captured_at: string;
+      completion_note?: string | null;
+      /** Format: decimal */
+      latitude: string;
+      /** Format: decimal */
+      longitude: string;
+      selected_location_id?: number | null;
+      upload_ids: string[];
+    };
+    TaskItem: {
+      /** Format: date */
+      assigned_date: string;
+      assignees: components["schemas"]["TaskAssignee"][];
+      block_reason: string | null;
+      /** Format: date-time */
+      completed_at: string | null;
+      completed_by: components["schemas"]["TaskUser"] | null;
+      completion_method: string | null;
+      completion_note: string | null;
+      created_by: components["schemas"]["TaskUser"];
+      description: string;
+      expected_location: string;
+      group: string;
+      id: number;
+      location: components["schemas"]["TaskLocation"] | null;
+      overdue_days: number | null;
+      status: components["schemas"]["TaskStatusEnum"];
+      title: string;
+    };
+    TaskLifecycleUpdate: {
+      accuracy_m: string | null;
+      actor: components["schemas"]["TaskUser"];
+      actual_location: components["schemas"]["TaskLocation"] | null;
+      actual_location_id: number | null;
+      block_reason: string | null;
+      /** Format: date-time */
+      captured_at: string | null;
+      captured_latitude: string | null;
+      captured_longitude: string | null;
+      completion_method: string | null;
+      completion_note: string | null;
+      distance_m: string | null;
+      gps_quality: string | null;
+      id: number;
+      location_candidates: number[];
+      /** Format: uri */
+      maps_url: string | null;
+      note: string | null;
+      photos: components["schemas"]["TaskPhoto"][];
+      /** Format: date-time */
+      recorded_at: string;
+      resolution_method: string | null;
+      resolved_address: string | null;
+      status: components["schemas"]["TaskStatusEnum"];
+      validation_result: string | null;
+    };
+    TaskLocation: {
+      address: string;
+      code: string;
+      id: number;
+      is_active: boolean;
+      name: string;
+    };
+    TaskOverride: {
+      completion_note: string;
+    };
+    TaskPhoto: {
+      id: number;
+      mime: components["schemas"]["MimeEnum"];
+      size_bytes: number;
+    };
+    TaskStatus: {
+      block_reason?: string | null;
+      note?: string | null;
+      status: components["schemas"]["OrdinaryTaskStatusEnum"];
+    };
+    /** @enum {string} */
+    TaskStatusEnum: "TODO" | "IN_PROGRESS" | "BLOCKED" | "COMPLETED";
+    TaskUpdate: {
+      assignee_ids?: number[];
+      description?: string;
+      expected_location?: string;
+      location_id?: number | null;
+      title?: string;
+    };
+    TaskUser: {
+      full_name: string;
+      id: number;
+    };
+    /** @enum {string} */
+    TimezoneEnum: "Asia/Ho_Chi_Minh";
+    TodayAttendance: {
+      readonly has_open_session: boolean;
+      readonly punches: components["schemas"]["IndexedAttendancePunch"][];
+      readonly sessions: components["schemas"]["AttendanceSession"][];
+      /** Format: decimal */
+      readonly total_duration_minutes: string;
+      /** Format: date */
+      readonly work_date: string;
+    };
+    UserCreate: {
+      /** Format: email */
+      email?: string | null;
+      full_name: string;
+      phone?: string | null;
+      role: string;
+      username: string;
+    };
+    UserPage: {
+      readonly count: number;
+      readonly next: string | null;
+      readonly previous: string | null;
+      readonly results: components["schemas"]["AdminUser"][];
+    };
+    Warning: {
+      readonly code: components["schemas"]["CodeEnum"];
+      /** Format: decimal */
+      radius_m?: string;
+      related_location_codes?: string[];
+      related_location_ids?: number[];
+      /** Format: decimal */
+      threshold_m?: string;
+    };
   };
   responses: never;
   parameters: never;
@@ -46,6 +1211,929 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  attendance_check_in: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AttendanceCommand"];
+        "application/x-www-form-urlencoded": components["schemas"]["AttendanceCommand"];
+        "multipart/form-data": components["schemas"]["AttendanceCommand"];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceCommandResult"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceError"];
+        };
+      };
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CheckInConflictError"];
+        };
+      };
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceUnprocessableError"];
+        };
+      };
+    };
+  };
+  attendance_check_out: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AttendanceCommand"];
+        "application/x-www-form-urlencoded": components["schemas"]["AttendanceCommand"];
+        "multipart/form-data": components["schemas"]["AttendanceCommand"];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceCommandResult"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceError"];
+        };
+      };
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CheckOutConflictError"];
+        };
+      };
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceUnprocessableError"];
+        };
+      };
+    };
+  };
+  attendance_today_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TodayAttendance"];
+        };
+      };
+    };
+  };
+  auth_login_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Login"];
+        "application/x-www-form-urlencoded": components["schemas"]["Login"];
+        "multipart/form-data": components["schemas"]["Login"];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LoginResponse"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+    };
+  };
+  auth_logout_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No response body */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+    };
+  };
+  auth_refresh_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AccessResponse"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+    };
+  };
+  identity_change_password_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PasswordChange"];
+        "application/x-www-form-urlencoded": components["schemas"]["PasswordChange"];
+        "multipart/form-data": components["schemas"]["PasswordChange"];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AccessResponse"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+    };
+  };
+  config_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Config"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+    };
+  };
+  config_partial_update: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["ConfigUpdate"];
+        "application/x-www-form-urlencoded": components["schemas"]["ConfigUpdate"];
+        "multipart/form-data": components["schemas"]["ConfigUpdate"];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ConfigUpdateResult"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+    };
+  };
+  holidays_list: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Holiday"][];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+    };
+  };
+  holidays_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["HolidayCreate"];
+        "application/x-www-form-urlencoded": components["schemas"]["HolidayCreate"];
+        "multipart/form-data": components["schemas"]["HolidayCreate"];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Holiday"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+    };
+  };
+  holidays_destroy: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        holiday_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No response body */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+    };
+  };
+  locations_list: {
+    parameters: {
+      query?: {
+        is_active?: boolean;
+        kind?: "BUSINESS_CENTER" | "SHOP";
+        parent?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Location"][];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+    };
+  };
+  locations_partial_update: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        location_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LocationUpdate"];
+        "application/x-www-form-urlencoded": components["schemas"]["LocationUpdate"];
+        "multipart/form-data": components["schemas"]["LocationUpdate"];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LocationUpdateResult"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FoundationError"];
+        };
+      };
+    };
+  };
+  identity_me_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SelfUser"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+    };
+  };
+  identity_me_partial_update: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["Profile"];
+        "application/x-www-form-urlencoded": components["schemas"]["Profile"];
+        "multipart/form-data": components["schemas"]["Profile"];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SelfUser"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+    };
+  };
+  notifications_list: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Inbox"];
+        };
+      };
+    };
+  };
+  notifications_mark_read: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        public_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NotificationItem"];
+        };
+      };
+    };
+  };
+  notifications_resolve_target: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        public_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Target"];
+        };
+      };
+    };
+  };
+  operations_job_health_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["JobHealth"];
+        };
+      };
+    };
+  };
+  push_subscriptions_upsert: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PushSubscriptionInput"];
+        "application/x-www-form-urlencoded": components["schemas"]["PushSubscriptionInput"];
+        "multipart/form-data": components["schemas"]["PushSubscriptionInput"];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PushSubscriptionResult"];
+        };
+      };
+    };
+  };
+  push_subscriptions_revoke: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        public_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No response body */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   api_schema_retrieve: {
     parameters: {
       query?: {
@@ -174,6 +2262,996 @@ export interface operations {
           "application/yaml": {
             [key: string]: unknown;
           };
+        };
+      };
+    };
+  };
+  tasks_list: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GroupedTaskList"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+    };
+  };
+  tasks_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": {
+          /** Format: date */
+          assigned_date: string;
+          assignee_ids?: number[];
+          /** @default  */
+          description?: string;
+          /** @default  */
+          expected_location?: string;
+          location_id?: number | null;
+          title: string;
+        };
+        "application/x-www-form-urlencoded": {
+          /** Format: date */
+          assigned_date: string;
+          assignee_ids?: number[];
+          /** @default  */
+          description?: string;
+          /** @default  */
+          expected_location?: string;
+          location_id?: number | null;
+          title: string;
+        };
+        "multipart/form-data": {
+          /** Format: date */
+          assigned_date: string;
+          assignee_ids?: number[];
+          /** @default  */
+          description?: string;
+          /** @default  */
+          expected_location?: string;
+          location_id?: number | null;
+          title: string;
+        };
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskDetail"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["InactiveAssigneeError"];
+        };
+      };
+    };
+  };
+  tasks_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        task_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskDetail"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+    };
+  };
+  tasks_destroy: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        task_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No response body */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+    };
+  };
+  tasks_partial_update: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        task_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["TaskUpdate"];
+        "application/x-www-form-urlencoded": components["schemas"]["TaskUpdate"];
+        "multipart/form-data": components["schemas"]["TaskUpdate"];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskDetail"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["InactiveAssigneeError"];
+        };
+      };
+    };
+  };
+  tasks_complete_field_create: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path: {
+        task_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TaskFieldCompletion"];
+        "application/x-www-form-urlencoded": components["schemas"]["TaskFieldCompletion"];
+        "multipart/form-data": components["schemas"]["TaskFieldCompletion"];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskDetail"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+    };
+  };
+  tasks_complete_override_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        task_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TaskOverride"];
+        "application/x-www-form-urlencoded": components["schemas"]["TaskOverride"];
+        "multipart/form-data": components["schemas"]["TaskOverride"];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskDetail"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskAlreadyCompletedError"];
+        };
+      };
+    };
+  };
+  tasks_evidence_uploads_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        task_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["EvidenceUpload"];
+        "application/x-www-form-urlencoded": components["schemas"]["EvidenceUpload"];
+        "multipart/form-data": components["schemas"]["EvidenceUpload"];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EvidenceUploadIntent"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+    };
+  };
+  tasks_photos_access_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        photo_id: string;
+        task_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PhotoAccess"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+    };
+  };
+  tasks_status_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        task_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TaskStatus"];
+        "application/x-www-form-urlencoded": components["schemas"]["TaskStatus"];
+        "multipart/form-data": components["schemas"]["TaskStatus"];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskDetail"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskError"];
+        };
+      };
+    };
+  };
+  users_list: {
+    parameters: {
+      query?: {
+        is_active?: boolean;
+        page?: number;
+        q?: string;
+        role?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UserPage"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+    };
+  };
+  users_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UserCreate"];
+        "application/x-www-form-urlencoded": components["schemas"]["UserCreate"];
+        "multipart/form-data": components["schemas"]["UserCreate"];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GeneratedUserResult"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+    };
+  };
+  users_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AdminUser"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+    };
+  };
+  users_partial_update: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["Profile"];
+        "application/x-www-form-urlencoded": components["schemas"]["Profile"];
+        "multipart/form-data": components["schemas"]["Profile"];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AdminUser"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+    };
+  };
+  users_reset_password_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResetPasswordResult"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+    };
+  };
+  users_role_partial_update: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Role"];
+        "application/x-www-form-urlencoded": components["schemas"]["Role"];
+        "multipart/form-data": components["schemas"]["Role"];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AdminUser"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+    };
+  };
+  users_status_partial_update: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Status"];
+        "application/x-www-form-urlencoded": components["schemas"]["Status"];
+        "multipart/form-data": components["schemas"]["Status"];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AdminUser"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdentityError"];
         };
       };
     };

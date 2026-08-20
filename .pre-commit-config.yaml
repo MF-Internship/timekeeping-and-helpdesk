@@ -13,12 +13,22 @@ repos:
         pass_filenames: false
       - id: maintainability
         name: Maintainability boundaries
-        entry: uv run --project backend python scripts/check_function_length.py backend/core backend/config backend/operations scripts frontend/src/shared/api/client.ts
+        entry: uv run --project backend python scripts/check_function_length.py backend/core backend/config backend/operations backend/identity backend/audit backend/locations backend/attendance backend/tasks backend/notifications scripts frontend/src/shared/api/client.ts
+        language: system
+        pass_filenames: false
+      - id: backend-types
+        name: Backend strict types
+        entry: uv run --project backend mypy backend/core backend/config backend/operations backend/identity backend/audit backend/locations backend/attendance backend/tasks backend/notifications scripts
         language: system
         pass_filenames: false
       - id: architecture
         name: Architecture boundaries
         entry: uv run --project backend pytest -q backend/tests/architecture
+        language: system
+        pass_filenames: false
+      - id: feature-002-convergence
+        name: Feature 002 convergence regression checks
+        entry: scripts/check_feature_002_convergence.sh --fast
         language: system
         pass_filenames: false
       - id: migration-safety
@@ -34,5 +44,10 @@ repos:
       - id: frontend-static
         name: Frontend static checks
         entry: npm --prefix frontend run typecheck
+        language: system
+        pass_filenames: false
+      - id: frontend-contract-drift
+        name: Frontend generated contract drift
+        entry: npm --prefix frontend run api:check
         language: system
         pass_filenames: false

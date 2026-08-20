@@ -25,6 +25,25 @@ describe("API failure parsing", () => {
     expect(failure.requestId).toBe(requestId);
   });
 
+  it.each(["NOT_FOUND", "LOCATION_VERSION_CONFLICT"])(
+    "preserves the Feature 003 canonical code %s",
+    async (errorCode) => {
+      const failure = await parseApiFailure(
+        new Response(
+          JSON.stringify({
+            error_code: errorCode,
+            error: errorCode,
+            message: "Yêu cầu không thể xử lý.",
+            details: {},
+            request_id: requestId,
+          }),
+          { status: 409, headers: { "X-Request-Id": requestId } },
+        ),
+      );
+      expect(failure).toMatchObject({ kind: "canonical", errorCode });
+    },
+  );
+
   it("treats a mirror mismatch as unexpected", async () => {
     const failure = await parseApiFailure(
       new Response(
@@ -54,5 +73,29 @@ describe("API failure parsing", () => {
 
   it("represents network failure without fabricating a request ID", () => {
     expect(networkFailure()).toEqual({ kind: "network" });
+  });
+
+  it("preserves canonical throttle wait metadata", async () => {
+    const failure = await parseApiFailure(
+      new Response(
+        JSON.stringify({
+          error_code: "THROTTLED",
+          error: "THROTTLED",
+          message: "Quá nhiều yêu cầu.",
+          details: {},
+          request_id: requestId,
+        }),
+        {
+          status: 429,
+          headers: { "X-Request-Id": requestId, "Retry-After": "37" },
+        },
+      ),
+    );
+    expect(failure).toMatchObject({
+      kind: "canonical",
+      errorCode: "THROTTLED",
+      retryAfterSeconds: 37,
+      requestId,
+    });
   });
 });

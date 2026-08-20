@@ -1,0 +1,1 @@
+export { MobiFoneLogo } from "./MobiFoneLogo";

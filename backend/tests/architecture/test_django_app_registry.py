@@ -6,7 +6,9 @@ from pathlib import Path
 import pytest
 
 BACKEND_ROOT = Path(__file__).parents[2]
-APPROVED_LOCAL_APPS = frozenset({"operations"})
+APPROVED_LOCAL_APPS = frozenset(
+    {"operations", "identity", "audit", "locations", "attendance", "tasks", "notifications"}
+)
 
 
 @pytest.mark.architecture
@@ -24,7 +26,7 @@ def test_config_and_core_are_not_django_apps() -> None:
 
 
 @pytest.mark.architecture
-def test_only_operations_is_registered_as_a_local_app() -> None:
+def test_only_approved_local_apps_are_registered() -> None:
     settings_path = BACKEND_ROOT / "config" / "settings.py"
     assert settings_path.exists(), "config/settings.py"
     tree = ast.parse(settings_path.read_text(encoding="utf-8"))

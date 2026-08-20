@@ -3,6 +3,893 @@ info:
   title: Timekeeping and Helpdesk API
   version: 1.0.0
 paths:
+  /api/v1/attendance/check-in:
+    post:
+      operationId: attendance_check_in
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttendanceCommand'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AttendanceCommand'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AttendanceCommand'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceCommandResult'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              examples:
+                LocationChoiceRequired:
+                  summary: Location choice required
+                  value:
+                    details: {}
+                    error: LOCATION_CHOICE_REQUIRED
+                    error_code: LOCATION_CHOICE_REQUIRED
+                    location_candidates:
+                    - code: LOCATION_A
+                      distance_m: '10.000'
+                      id: 1
+                      name: Location A
+                    - code: LOCATION_B
+                      distance_m: '20.000'
+                      id: 2
+                      name: Location B
+                    message: Yêu cầu chấm công không được chấp nhận.
+                    request_id: 00000000-0000-4000-8000-000000000000
+                SessionAlreadyOpen:
+                  summary: Session already open
+                  value:
+                    details: {}
+                    error: SESSION_ALREADY_OPEN
+                    error_code: SESSION_ALREADY_OPEN
+                    message: Yêu cầu chấm công không được chấp nhận.
+                    request_id: 00000000-0000-4000-8000-000000000000
+              schema:
+                $ref: '#/components/schemas/CheckInConflictError'
+          description: ''
+        '422':
+          content:
+            application/json:
+              examples:
+                InvalidChoice:
+                  summary: Invalid choice
+                  value:
+                    details: {}
+                    error: INVALID_LOCATION_CHOICE
+                    error_code: INVALID_LOCATION_CHOICE
+                    location_candidates:
+                    - code: LOCATION_A
+                      distance_m: '10.000'
+                      id: 1
+                      name: Location A
+                    message: Yêu cầu chấm công không được chấp nhận.
+                    request_id: 00000000-0000-4000-8000-000000000000
+                OutsideRadius:
+                  summary: Outside radius
+                  value:
+                    details: {}
+                    error: OUTSIDE_RADIUS
+                    error_code: OUTSIDE_RADIUS
+                    message: Yêu cầu chấm công không được chấp nhận.
+                    request_id: 00000000-0000-4000-8000-000000000000
+                WeakGPS:
+                  summary: Weak GPS
+                  value:
+                    details: {}
+                    error: WEAK_GPS
+                    error_code: WEAK_GPS
+                    message: Yêu cầu chấm công không được chấp nhận.
+                    request_id: 00000000-0000-4000-8000-000000000000
+              schema:
+                $ref: '#/components/schemas/AttendanceUnprocessableError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/attendance/check-out:
+    post:
+      operationId: attendance_check_out
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttendanceCommand'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AttendanceCommand'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AttendanceCommand'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceCommandResult'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              examples:
+                LocationChoiceRequired:
+                  summary: Location choice required
+                  value:
+                    details: {}
+                    error: LOCATION_CHOICE_REQUIRED
+                    error_code: LOCATION_CHOICE_REQUIRED
+                    location_candidates:
+                    - code: LOCATION_A
+                      distance_m: '10.000'
+                      id: 1
+                      name: Location A
+                    - code: LOCATION_B
+                      distance_m: '20.000'
+                      id: 2
+                      name: Location B
+                    message: Yêu cầu chấm công không được chấp nhận.
+                    request_id: 00000000-0000-4000-8000-000000000000
+                NoOpenSession:
+                  summary: No open session
+                  value:
+                    details: {}
+                    error: NO_OPEN_SESSION
+                    error_code: NO_OPEN_SESSION
+                    message: Yêu cầu chấm công không được chấp nhận.
+                    request_id: 00000000-0000-4000-8000-000000000000
+              schema:
+                $ref: '#/components/schemas/CheckOutConflictError'
+          description: ''
+        '422':
+          content:
+            application/json:
+              examples:
+                InvalidChoice:
+                  summary: Invalid choice
+                  value:
+                    details: {}
+                    error: INVALID_LOCATION_CHOICE
+                    error_code: INVALID_LOCATION_CHOICE
+                    location_candidates:
+                    - code: LOCATION_A
+                      distance_m: '10.000'
+                      id: 1
+                      name: Location A
+                    message: Yêu cầu chấm công không được chấp nhận.
+                    request_id: 00000000-0000-4000-8000-000000000000
+                OutsideRadius:
+                  summary: Outside radius
+                  value:
+                    details: {}
+                    error: OUTSIDE_RADIUS
+                    error_code: OUTSIDE_RADIUS
+                    message: Yêu cầu chấm công không được chấp nhận.
+                    request_id: 00000000-0000-4000-8000-000000000000
+                WeakGPS:
+                  summary: Weak GPS
+                  value:
+                    details: {}
+                    error: WEAK_GPS
+                    error_code: WEAK_GPS
+                    message: Yêu cầu chấm công không được chấp nhận.
+                    request_id: 00000000-0000-4000-8000-000000000000
+              schema:
+                $ref: '#/components/schemas/AttendanceUnprocessableError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/attendance/today:
+    get:
+      operationId: attendance_today_retrieve
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodayAttendance'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/auth/login:
+    post:
+      operationId: auth_login_create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Login'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Login'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      tags:
+      - api
+  /api/v1/auth/logout:
+    post:
+      operationId: auth_logout_create
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/auth/refresh:
+    post:
+      operationId: auth_refresh_create
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      tags:
+      - api
+  /api/v1/change-password:
+    post:
+      operationId: identity_change_password_create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/config/:
+    get:
+      operationId: config_retrieve
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+    patch:
+      operationId: config_partial_update
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfigUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConfigUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConfigUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigUpdateResult'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/holidays/:
+    get:
+      operationId: holidays_list
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Holiday'
+                type: array
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+    post:
+      operationId: holidays_create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HolidayCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HolidayCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HolidayCreate'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Holiday'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/holidays/{holiday_id}/:
+    delete:
+      operationId: holidays_destroy
+      parameters:
+      - in: path
+        name: holiday_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: No response body
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/locations/:
+    get:
+      operationId: locations_list
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: kind
+        schema:
+          enum:
+          - BUSINESS_CENTER
+          - SHOP
+          type: string
+      - in: query
+        name: parent
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Location'
+                type: array
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/locations/{location_id}/:
+    patch:
+      operationId: locations_partial_update
+      parameters:
+      - in: path
+        name: location_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LocationUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LocationUpdate'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationUpdateResult'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundationError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/me/:
+    get:
+      operationId: identity_me_retrieve
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SelfUser'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+    patch:
+      operationId: identity_me_partial_update
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Profile'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Profile'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Profile'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SelfUser'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/notifications/:
+    get:
+      operationId: notifications_list
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Inbox'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/notifications/{public_id}/read:
+    patch:
+      operationId: notifications_mark_read
+      parameters:
+      - in: path
+        name: public_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationItem'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/notifications/{public_id}/target:
+    get:
+      operationId: notifications_resolve_target
+      parameters:
+      - in: path
+        name: public_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Target'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/operations/job-health:
+    get:
+      operationId: operations_job_health_retrieve
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobHealth'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/push-subscriptions/:
+    post:
+      operationId: push_subscriptions_upsert
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PushSubscriptionInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PushSubscriptionInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PushSubscriptionInput'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushSubscriptionResult'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/push-subscriptions/{public_id}/:
+    delete:
+      operationId: push_subscriptions_revoke
+      parameters:
+      - in: path
+        name: public_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: No response body
+      security:
+      - bearerAuth: []
+      tags:
+      - api
   /api/v1/schema/:
     get:
       description: Machine-readable schema endpoint; no interactive UI is registered.
@@ -140,11 +1027,1443 @@ paths:
                 type: object
           description: ''
       security:
+      - bearerAuth: []
       - {}
+      tags:
+      - api
+  /api/v1/tasks/:
+    get:
+      operationId: tasks_list
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupedTaskList'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+    post:
+      operationId: tasks_create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                assigned_date:
+                  format: date
+                  type: string
+                assignee_ids:
+                  items:
+                    minimum: 1
+                    type: integer
+                  minItems: 1
+                  type: array
+                description:
+                  default: ''
+                  type: string
+                expected_location:
+                  default: ''
+                  maxLength: 500
+                  type: string
+                location_id:
+                  minimum: 1
+                  type:
+                  - integer
+                  - 'null'
+                title:
+                  minLength: 1
+                  type: string
+              required:
+              - title
+              - assigned_date
+              type: object
+          application/x-www-form-urlencoded:
+            schema:
+              additionalProperties: false
+              properties:
+                assigned_date:
+                  format: date
+                  type: string
+                assignee_ids:
+                  items:
+                    minimum: 1
+                    type: integer
+                  minItems: 1
+                  type: array
+                description:
+                  default: ''
+                  type: string
+                expected_location:
+                  default: ''
+                  maxLength: 500
+                  type: string
+                location_id:
+                  minimum: 1
+                  type:
+                  - integer
+                  - 'null'
+                title:
+                  minLength: 1
+                  type: string
+              required:
+              - title
+              - assigned_date
+              type: object
+          multipart/form-data:
+            schema:
+              additionalProperties: false
+              properties:
+                assigned_date:
+                  format: date
+                  type: string
+                assignee_ids:
+                  items:
+                    minimum: 1
+                    type: integer
+                  minItems: 1
+                  type: array
+                description:
+                  default: ''
+                  type: string
+                expected_location:
+                  default: ''
+                  maxLength: 500
+                  type: string
+                location_id:
+                  minimum: 1
+                  type:
+                  - integer
+                  - 'null'
+                title:
+                  minLength: 1
+                  type: string
+              required:
+              - title
+              - assigned_date
+              type: object
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InactiveAssigneeError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/tasks/{task_id}/:
+    delete:
+      operationId: tasks_destroy
+      parameters:
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+    get:
+      operationId: tasks_retrieve
+      parameters:
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDetail'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+    patch:
+      operationId: tasks_partial_update
+      parameters:
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InactiveAssigneeError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/tasks/{task_id}/complete-field:
+    post:
+      operationId: tasks_complete_field_create
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskFieldCompletion'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TaskFieldCompletion'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TaskFieldCompletion'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/tasks/{task_id}/complete-override:
+    post:
+      operationId: tasks_complete_override_create
+      parameters:
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskOverride'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TaskOverride'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TaskOverride'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskAlreadyCompletedError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/tasks/{task_id}/evidence-uploads:
+    post:
+      operationId: tasks_evidence_uploads_create
+      parameters:
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvidenceUpload'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EvidenceUpload'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EvidenceUpload'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvidenceUploadIntent'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/tasks/{task_id}/photos/{photo_id}/access:
+    post:
+      operationId: tasks_photos_access_create
+      parameters:
+      - in: path
+        name: photo_id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhotoAccess'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/tasks/{task_id}/status:
+    post:
+      operationId: tasks_status_create
+      parameters:
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskStatus'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TaskStatus'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TaskStatus'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/users/:
+    get:
+      operationId: users_list
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: role
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPage'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+    post:
+      operationId: users_create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneratedUserResult'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/users/{user_id}/:
+    get:
+      operationId: users_retrieve
+      parameters:
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+    patch:
+      operationId: users_partial_update
+      parameters:
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Profile'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Profile'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Profile'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/users/{user_id}/reset-password:
+    post:
+      operationId: users_reset_password_create
+      parameters:
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResetPasswordResult'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/users/{user_id}/role:
+    patch:
+      operationId: users_role_partial_update
+      parameters:
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Role'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Role'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Role'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      security:
+      - bearerAuth: []
+      tags:
+      - api
+  /api/v1/users/{user_id}/status:
+    patch:
+      operationId: users_status_partial_update
+      parameters:
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Status'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Status'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Status'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityError'
+          description: ''
+      security:
+      - bearerAuth: []
       tags:
       - api
 components:
   schemas:
+    AccessResponse:
+      properties:
+        access:
+          readOnly: true
+          type: string
+      required:
+      - access
+      type: object
+    AccountsEnum:
+      enum:
+      - /api/v1/users/
+      type: string
+    AdminUser:
+      properties:
+        created_at:
+          format: date-time
+          readOnly: true
+          type: string
+        email:
+          format: email
+          nullable: true
+          readOnly: true
+          type: string
+        full_name:
+          readOnly: true
+          type: string
+        id:
+          readOnly: true
+          type: integer
+        is_active:
+          readOnly: true
+          type: boolean
+        last_login:
+          format: date-time
+          nullable: true
+          readOnly: true
+          type: string
+        must_change_password:
+          readOnly: true
+          type: boolean
+        phone:
+          nullable: true
+          readOnly: true
+          type: string
+        role:
+          readOnly: true
+          type: string
+        username:
+          readOnly: true
+          type: string
+      required:
+      - created_at
+      - email
+      - full_name
+      - id
+      - is_active
+      - last_login
+      - must_change_password
+      - phone
+      - role
+      - username
+      type: object
+    AttendanceCommand:
+      properties:
+        accuracy_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          type: string
+        captured_at:
+          format: date-time
+          nullable: true
+          type: string
+        latitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          type: string
+        longitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          type: string
+        selected_location_id:
+          minimum: 1
+          nullable: true
+          type: integer
+      required:
+      - accuracy_m
+      - latitude
+      - longitude
+      type: object
+    AttendanceCommandResult:
+      properties:
+        attendance:
+          allOf:
+          - $ref: '#/components/schemas/AttendancePunch'
+          readOnly: true
+        punch_index:
+          minimum: 1
+          readOnly: true
+          type: integer
+        session:
+          allOf:
+          - $ref: '#/components/schemas/AttendanceSession'
+          readOnly: true
+      required:
+      - attendance
+      - punch_index
+      - session
+      type: object
+    AttendanceError:
+      properties:
+        details:
+          additionalProperties: {}
+          readOnly: true
+          type: object
+        error:
+          readOnly: true
+          type: string
+        error_code:
+          readOnly: true
+          type: string
+        message:
+          readOnly: true
+          type: string
+        request_id:
+          format: uuid
+          readOnly: true
+          type: string
+      required:
+      - details
+      - error
+      - error_code
+      - message
+      - request_id
+      type: object
+    AttendanceLocation:
+      properties:
+        address:
+          readOnly: true
+          type: string
+        code:
+          readOnly: true
+          type: string
+        id:
+          readOnly: true
+          type: integer
+        name:
+          readOnly: true
+          type: string
+      required:
+      - address
+      - code
+      - id
+      - name
+      type: object
+    AttendancePunch:
+      properties:
+        accuracy_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          readOnly: true
+          type: string
+        captured_at:
+          format: date-time
+          nullable: true
+          readOnly: true
+          type: string
+        captured_latitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          readOnly: true
+          type: string
+        captured_longitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          readOnly: true
+          type: string
+        distance_m:
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+          readOnly: true
+          type: string
+        id:
+          readOnly: true
+          type: integer
+        kind:
+          readOnly: true
+          type: string
+        location:
+          allOf:
+          - $ref: '#/components/schemas/AttendanceLocation'
+          readOnly: true
+        maps_url:
+          readOnly: true
+          type: string
+        recorded_at:
+          format: date-time
+          readOnly: true
+          type: string
+        resolution_method:
+          readOnly: true
+          type: string
+        resolved_address:
+          readOnly: true
+          type: string
+        validation_result:
+          readOnly: true
+          type: string
+        work_date:
+          format: date
+          readOnly: true
+          type: string
+      required:
+      - accuracy_m
+      - captured_at
+      - captured_latitude
+      - captured_longitude
+      - distance_m
+      - id
+      - kind
+      - location
+      - maps_url
+      - recorded_at
+      - resolution_method
+      - resolved_address
+      - validation_result
+      - work_date
+      type: object
+    AttendanceSession:
+      properties:
+        check_in_at:
+          format: date-time
+          readOnly: true
+          type: string
+        check_in_location_id:
+          readOnly: true
+          type: integer
+        check_out_at:
+          format: date-time
+          nullable: true
+          readOnly: true
+          type: string
+        check_out_location_id:
+          nullable: true
+          readOnly: true
+          type: integer
+        closed_by_job:
+          readOnly: true
+          type: boolean
+        duration_minutes:
+          format: decimal
+          nullable: true
+          pattern: ^-?\d{0,8}(?:\.\d{0,6})?$
+          readOnly: true
+          type: string
+        id:
+          readOnly: true
+          type: integer
+        work_date:
+          format: date
+          readOnly: true
+          type: string
+      required:
+      - check_in_at
+      - check_in_location_id
+      - check_out_at
+      - check_out_location_id
+      - closed_by_job
+      - duration_minutes
+      - id
+      - work_date
+      type: object
+    AttendanceUnprocessableError:
+      oneOf:
+      - $ref: '#/components/schemas/GpsBoundaryError'
+      - $ref: '#/components/schemas/InvalidLocationChoiceError'
+    CheckInConflictError:
+      oneOf:
+      - $ref: '#/components/schemas/SessionAlreadyOpenError'
+      - $ref: '#/components/schemas/LocationChoiceRequiredError'
+    CheckOutConflictError:
+      oneOf:
+      - $ref: '#/components/schemas/NoOpenSessionError'
+      - $ref: '#/components/schemas/LocationChoiceRequiredError'
+    CodeEnum:
+      enum:
+      - GEOFENCE_OVERLAP
+      - RADIUS_BELOW_ATTENDANCE_ACCURACY
+      type: string
+    Config:
+      properties:
+        default_radius_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          readOnly: true
+          type: string
+        early_checkout_grace_minutes:
+          readOnly: true
+          type: integer
+        id:
+          readOnly: true
+          type: integer
+        late_checkout_grace_minutes:
+          readOnly: true
+          type: integer
+        late_grace_minutes:
+          readOnly: true
+          type: integer
+        max_attendance_accuracy_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          readOnly: true
+          type: string
+        max_radius_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          readOnly: true
+          type: string
+        shift_end:
+          format: time
+          readOnly: true
+          type: string
+        shift_start:
+          format: time
+          readOnly: true
+          type: string
+        task_gps_good_accuracy_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          readOnly: true
+          type: string
+        task_gps_low_accuracy_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          readOnly: true
+          type: string
+        timezone:
+          readOnly: true
+          type: string
+        working_weekdays:
+          items:
+            type: integer
+          readOnly: true
+          type: array
+      required:
+      - default_radius_m
+      - early_checkout_grace_minutes
+      - id
+      - late_checkout_grace_minutes
+      - late_grace_minutes
+      - max_attendance_accuracy_m
+      - max_radius_m
+      - shift_end
+      - shift_start
+      - task_gps_good_accuracy_m
+      - task_gps_low_accuracy_m
+      - timezone
+      - working_weekdays
+      type: object
+    ConfigUpdate:
+      properties:
+        default_radius_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          type: string
+        early_checkout_grace_minutes:
+          minimum: 0
+          type: integer
+        late_checkout_grace_minutes:
+          minimum: 0
+          type: integer
+        late_grace_minutes:
+          minimum: 0
+          type: integer
+        max_attendance_accuracy_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          type: string
+        max_radius_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          type: string
+        shift_end:
+          format: time
+          type: string
+        shift_start:
+          format: time
+          type: string
+        task_gps_good_accuracy_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          type: string
+        task_gps_low_accuracy_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          type: string
+        working_weekdays:
+          items:
+            type: integer
+          type: array
+      type: object
+    ConfigUpdateResult:
+      properties:
+        config:
+          allOf:
+          - $ref: '#/components/schemas/Config'
+          readOnly: true
+        warnings:
+          items:
+            $ref: '#/components/schemas/Warning'
+          readOnly: true
+          type: array
+      required:
+      - config
+      - warnings
+      type: object
+    DestinationEnum:
+      enum:
+      - TASK
+      - ATTENDANCE
+      type: string
+    EventTypeEnum:
+      enum:
+      - TASK_ASSIGNED
+      - TASK_UPCOMING
+      - TASK_OVERDUE
+      - ATTENDANCE_SESSION_OPEN_NEAR_SHIFT_END
+      - MULTI_ASSIGNEE_TASK_COMPLETED
+      type: string
+    Evidence:
+      properties:
+        anomaly_without_job_closed_count:
+          minimum: 0
+          type: integer
+        job_closed_session_count:
+          minimum: 0
+          type: integer
+        job_closed_without_anomaly_count:
+          minimum: 0
+          type: integer
+        missing_checkout_anomaly_count:
+          minimum: 0
+          type: integer
+      required:
+      - anomaly_without_job_closed_count
+      - job_closed_session_count
+      - job_closed_without_anomaly_count
+      - missing_checkout_anomaly_count
+      type: object
+    EvidenceUpload:
+      properties:
+        checksum_sha256:
+          pattern: ^[0-9a-f]{64}$
+          type: string
+        mime:
+          $ref: '#/components/schemas/MimeEnum'
+        size_bytes:
+          maximum: 5242880
+          minimum: 1
+          type: integer
+      required:
+      - checksum_sha256
+      - mime
+      - size_bytes
+      type: object
+    EvidenceUploadIntent:
+      properties:
+        expires_at:
+          format: date-time
+          type: string
+        headers:
+          additionalProperties:
+            type: string
+          type: object
+        upload_id:
+          format: uuid
+          type: string
+        upload_url:
+          format: uri
+          type: string
+      required:
+      - expires_at
+      - headers
+      - upload_id
+      - upload_url
+      type: object
     FoundationError:
       properties:
         details:
@@ -171,3 +2490,1432 @@ components:
       - request_id
       - error
       type: object
+    GeneratedUserResult:
+      properties:
+        generated_password:
+          readOnly: true
+          type: string
+        user:
+          allOf:
+          - $ref: '#/components/schemas/AdminUser'
+          readOnly: true
+      required:
+      - generated_password
+      - user
+      type: object
+    GpsBoundaryError:
+      properties:
+        details:
+          additionalProperties: {}
+          readOnly: true
+          type: object
+        error:
+          readOnly: true
+          type: string
+        error_code:
+          allOf:
+          - $ref: '#/components/schemas/GpsBoundaryErrorErrorCodeEnum'
+          readOnly: true
+        message:
+          readOnly: true
+          type: string
+        request_id:
+          format: uuid
+          readOnly: true
+          type: string
+      required:
+      - details
+      - error
+      - error_code
+      - message
+      - request_id
+      type: object
+    GpsBoundaryErrorErrorCodeEnum:
+      enum:
+      - WEAK_GPS
+      - OUTSIDE_RADIUS
+      type: string
+    GroupedTaskList:
+      properties:
+        business_date:
+          format: date
+          type: string
+        completed:
+          items:
+            $ref: '#/components/schemas/TaskItem'
+          type: array
+        overdue:
+          items:
+            $ref: '#/components/schemas/TaskItem'
+          type: array
+        today:
+          items:
+            $ref: '#/components/schemas/TaskItem'
+          type: array
+        upcoming:
+          items:
+            $ref: '#/components/schemas/TaskItem'
+          type: array
+      required:
+      - business_date
+      - completed
+      - overdue
+      - today
+      - upcoming
+      type: object
+    Holiday:
+      properties:
+        date:
+          format: date
+          readOnly: true
+          type: string
+        id:
+          readOnly: true
+          type: integer
+        name:
+          readOnly: true
+          type: string
+      required:
+      - date
+      - id
+      - name
+      type: object
+    HolidayCreate:
+      properties:
+        date:
+          format: date
+          type: string
+        name:
+          maxLength: 255
+          type: string
+      required:
+      - date
+      - name
+      type: object
+    IdentityError:
+      properties:
+        details:
+          additionalProperties: {}
+          readOnly: true
+          type: object
+        error:
+          readOnly: true
+          type: string
+        error_code:
+          readOnly: true
+          type: string
+        message:
+          readOnly: true
+          type: string
+        request_id:
+          format: uuid
+          readOnly: true
+          type: string
+      required:
+      - details
+      - error
+      - error_code
+      - message
+      - request_id
+      type: object
+    InactiveAssigneeDetails:
+      properties:
+        assignee_ids:
+          items:
+            type: integer
+          type: array
+      required:
+      - assignee_ids
+      type: object
+    InactiveAssigneeError:
+      properties:
+        details:
+          $ref: '#/components/schemas/InactiveAssigneeDetails'
+        error:
+          type: string
+        error_code:
+          $ref: '#/components/schemas/InactiveAssigneeErrorErrorCodeEnum'
+        message:
+          type: string
+        request_id:
+          format: uuid
+          type: string
+      required:
+      - details
+      - error
+      - error_code
+      - message
+      - request_id
+      type: object
+    InactiveAssigneeErrorErrorCodeEnum:
+      enum:
+      - INACTIVE_ASSIGNEE
+      type: string
+    Inbox:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/NotificationItem'
+          type: array
+        unread_count:
+          minimum: 0
+          type: integer
+      required:
+      - items
+      - unread_count
+      type: object
+    IndexedAttendancePunch:
+      properties:
+        accuracy_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          readOnly: true
+          type: string
+        captured_at:
+          format: date-time
+          nullable: true
+          readOnly: true
+          type: string
+        captured_latitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          readOnly: true
+          type: string
+        captured_longitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          readOnly: true
+          type: string
+        distance_m:
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+          readOnly: true
+          type: string
+        id:
+          readOnly: true
+          type: integer
+        kind:
+          readOnly: true
+          type: string
+        location:
+          allOf:
+          - $ref: '#/components/schemas/AttendanceLocation'
+          readOnly: true
+        maps_url:
+          readOnly: true
+          type: string
+        punch_index:
+          minimum: 1
+          readOnly: true
+          type: integer
+        recorded_at:
+          format: date-time
+          readOnly: true
+          type: string
+        resolution_method:
+          readOnly: true
+          type: string
+        resolved_address:
+          readOnly: true
+          type: string
+        validation_result:
+          readOnly: true
+          type: string
+        work_date:
+          format: date
+          readOnly: true
+          type: string
+      required:
+      - accuracy_m
+      - captured_at
+      - captured_latitude
+      - captured_longitude
+      - distance_m
+      - id
+      - kind
+      - location
+      - maps_url
+      - punch_index
+      - recorded_at
+      - resolution_method
+      - resolved_address
+      - validation_result
+      - work_date
+      type: object
+    InvalidLocationChoiceError:
+      properties:
+        details:
+          additionalProperties: {}
+          readOnly: true
+          type: object
+        error:
+          readOnly: true
+          type: string
+        error_code:
+          allOf:
+          - $ref: '#/components/schemas/InvalidLocationChoiceErrorErrorCodeEnum'
+          readOnly: true
+        location_candidates:
+          items:
+            $ref: '#/components/schemas/LocationCandidate'
+          minItems: 1
+          readOnly: true
+          type: array
+        message:
+          readOnly: true
+          type: string
+        request_id:
+          format: uuid
+          readOnly: true
+          type: string
+      required:
+      - details
+      - error
+      - error_code
+      - location_candidates
+      - message
+      - request_id
+      type: object
+    InvalidLocationChoiceErrorErrorCodeEnum:
+      enum:
+      - INVALID_LOCATION_CHOICE
+      type: string
+    JobHealth:
+      properties:
+        cutoff_at:
+          format: date-time
+          type: string
+        escalation_guidance:
+          nullable: true
+          type: string
+        evidence_counts:
+          $ref: '#/components/schemas/Evidence'
+        invariant_valid:
+          type: boolean
+        investigation_links:
+          allOf:
+          - $ref: '#/components/schemas/Links'
+          nullable: true
+        latest_run:
+          allOf:
+          - $ref: '#/components/schemas/JobRun'
+          nullable: true
+        latest_successful_run:
+          allOf:
+          - $ref: '#/components/schemas/JobRun'
+          nullable: true
+        overdue_open_session_count:
+          minimum: 0
+          type: integer
+        reason_flags:
+          $ref: '#/components/schemas/Reasons'
+        refreshed_at:
+          format: date-time
+          type: string
+        state:
+          $ref: '#/components/schemas/StateEnum'
+        timezone:
+          $ref: '#/components/schemas/TimezoneEnum'
+      required:
+      - cutoff_at
+      - escalation_guidance
+      - evidence_counts
+      - invariant_valid
+      - investigation_links
+      - latest_run
+      - latest_successful_run
+      - overdue_open_session_count
+      - reason_flags
+      - refreshed_at
+      - state
+      - timezone
+      type: object
+    JobNameEnum:
+      enum:
+      - MISSING_CHECK_OUT
+      type: string
+    JobRun:
+      properties:
+        anomaly_count:
+          minimum: 0
+          type: integer
+        changed_count:
+          minimum: 0
+          type: integer
+        error_code:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/JobRunErrorCodeEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        finished_at:
+          format: date-time
+          nullable: true
+          type: string
+        id:
+          type: integer
+        job_name:
+          $ref: '#/components/schemas/JobNameEnum'
+        scanned_count:
+          minimum: 0
+          type: integer
+        started_at:
+          format: date-time
+          type: string
+        status:
+          $ref: '#/components/schemas/JobRunStatusEnum'
+      required:
+      - anomaly_count
+      - changed_count
+      - error_code
+      - finished_at
+      - id
+      - job_name
+      - scanned_count
+      - started_at
+      - status
+      type: object
+    JobRunErrorCodeEnum:
+      enum:
+      - SESSION_PROCESSING_FAILED
+      - RUN_ABORTED
+      type: string
+    JobRunStatusEnum:
+      enum:
+      - RUNNING
+      - SUCCEEDED
+      - PARTIAL_FAILED
+      - FAILED
+      type: string
+    Links:
+      properties:
+        accounts:
+          $ref: '#/components/schemas/AccountsEnum'
+      required:
+      - accounts
+      type: object
+    Location:
+      properties:
+        address:
+          readOnly: true
+          type: string
+        code:
+          readOnly: true
+          type: string
+        id:
+          readOnly: true
+          type: integer
+        is_active:
+          readOnly: true
+          type: boolean
+        kind:
+          readOnly: true
+          type: string
+        latitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          readOnly: true
+          type: string
+        longitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          readOnly: true
+          type: string
+        name:
+          readOnly: true
+          type: string
+        parent_code:
+          nullable: true
+          readOnly: true
+          type: string
+        parent_id:
+          nullable: true
+          readOnly: true
+          type: integer
+        radius_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          readOnly: true
+          type: string
+        version:
+          readOnly: true
+          type: integer
+      required:
+      - address
+      - code
+      - id
+      - is_active
+      - kind
+      - latitude
+      - longitude
+      - name
+      - parent_code
+      - parent_id
+      - radius_m
+      - version
+      type: object
+    LocationCandidate:
+      properties:
+        code:
+          readOnly: true
+          type: string
+        distance_m:
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+          readOnly: true
+          type: string
+        id:
+          readOnly: true
+          type: integer
+        name:
+          readOnly: true
+          type: string
+      required:
+      - code
+      - distance_m
+      - id
+      - name
+      type: object
+    LocationChoiceRequiredError:
+      properties:
+        details:
+          additionalProperties: {}
+          readOnly: true
+          type: object
+        error:
+          readOnly: true
+          type: string
+        error_code:
+          allOf:
+          - $ref: '#/components/schemas/LocationChoiceRequiredErrorErrorCodeEnum'
+          readOnly: true
+        location_candidates:
+          items:
+            $ref: '#/components/schemas/LocationCandidate'
+          minItems: 2
+          readOnly: true
+          type: array
+        message:
+          readOnly: true
+          type: string
+        request_id:
+          format: uuid
+          readOnly: true
+          type: string
+      required:
+      - details
+      - error
+      - error_code
+      - location_candidates
+      - message
+      - request_id
+      type: object
+    LocationChoiceRequiredErrorErrorCodeEnum:
+      enum:
+      - LOCATION_CHOICE_REQUIRED
+      type: string
+    LocationUpdate:
+      properties:
+        address:
+          type: string
+        is_active:
+          type: boolean
+        latitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          type: string
+        longitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          type: string
+        name:
+          type: string
+        radius_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          type: string
+        reason:
+          maxLength: 500
+          type: string
+        version:
+          minimum: 1
+          type: integer
+      required:
+      - version
+      type: object
+    LocationUpdateResult:
+      properties:
+        location:
+          allOf:
+          - $ref: '#/components/schemas/Location'
+          readOnly: true
+        warnings:
+          items:
+            $ref: '#/components/schemas/Warning'
+          readOnly: true
+          type: array
+      required:
+      - location
+      - warnings
+      type: object
+    Login:
+      properties:
+        password:
+          type: string
+          writeOnly: true
+        username:
+          type: string
+      required:
+      - password
+      - username
+      type: object
+    LoginResponse:
+      properties:
+        access:
+          readOnly: true
+          type: string
+        capabilities:
+          items:
+            type: string
+          readOnly: true
+          type: array
+        is_active:
+          readOnly: true
+          type: boolean
+        must_change_password:
+          readOnly: true
+          type: boolean
+        role:
+          readOnly: true
+          type: string
+      required:
+      - access
+      - capabilities
+      - is_active
+      - must_change_password
+      - role
+      type: object
+    MimeEnum:
+      enum:
+      - image/jpeg
+      - image/png
+      - image/webp
+      type: string
+    NoOpenSessionError:
+      properties:
+        details:
+          additionalProperties: {}
+          readOnly: true
+          type: object
+        error:
+          readOnly: true
+          type: string
+        error_code:
+          allOf:
+          - $ref: '#/components/schemas/NoOpenSessionErrorErrorCodeEnum'
+          readOnly: true
+        message:
+          readOnly: true
+          type: string
+        request_id:
+          format: uuid
+          readOnly: true
+          type: string
+      required:
+      - details
+      - error
+      - error_code
+      - message
+      - request_id
+      type: object
+    NoOpenSessionErrorErrorCodeEnum:
+      enum:
+      - NO_OPEN_SESSION
+      type: string
+    NotificationItem:
+      properties:
+        created_at:
+          format: date-time
+          type: string
+        event_type:
+          $ref: '#/components/schemas/EventTypeEnum'
+        is_unread:
+          type: boolean
+        public_id:
+          format: uuid
+          type: string
+        read_at:
+          format: date-time
+          nullable: true
+          type: string
+        title:
+          type: string
+      required:
+      - created_at
+      - event_type
+      - is_unread
+      - public_id
+      - read_at
+      - title
+      type: object
+    NullEnum:
+      enum:
+      - null
+    OrdinaryTaskStatusEnum:
+      enum:
+      - TODO
+      - IN_PROGRESS
+      - BLOCKED
+      type: string
+    PasswordChange:
+      properties:
+        current_password:
+          type: string
+          writeOnly: true
+        new_password:
+          type: string
+          writeOnly: true
+      required:
+      - current_password
+      - new_password
+      type: object
+    PhotoAccess:
+      properties:
+        expires_at:
+          format: date-time
+          type: string
+        url:
+          format: uri
+          type: string
+      required:
+      - expires_at
+      - url
+      type: object
+    Profile:
+      properties:
+        email:
+          format: email
+          nullable: true
+          type: string
+        full_name:
+          type: string
+        phone:
+          nullable: true
+          type: string
+      type: object
+    PushSubscriptionInput:
+      properties:
+        auth:
+          maxLength: 256
+          type: string
+        endpoint:
+          format: uri
+          maxLength: 2048
+          type: string
+        p256dh:
+          maxLength: 512
+          type: string
+      required:
+      - auth
+      - endpoint
+      - p256dh
+      type: object
+    PushSubscriptionResult:
+      properties:
+        created_at:
+          format: date-time
+          type: string
+        id:
+          format: uuid
+          type: string
+        is_active:
+          type: boolean
+      required:
+      - created_at
+      - id
+      - is_active
+      type: object
+    Reasons:
+      properties:
+        latest_terminal_failed:
+          type: boolean
+        missing_timely_success:
+          type: boolean
+        no_run_history:
+          type: boolean
+        overdue_open_sessions:
+          type: boolean
+        persisted_evidence_mismatch:
+          type: boolean
+        run_count_mismatch:
+          type: boolean
+        stale_running:
+          type: boolean
+        unfinished_run:
+          type: boolean
+      required:
+      - latest_terminal_failed
+      - missing_timely_success
+      - no_run_history
+      - overdue_open_sessions
+      - persisted_evidence_mismatch
+      - run_count_mismatch
+      - stale_running
+      - unfinished_run
+      type: object
+    ResetPasswordResult:
+      properties:
+        generated_password:
+          readOnly: true
+          type: string
+        must_change_password:
+          readOnly: true
+          type: boolean
+        user_id:
+          readOnly: true
+          type: integer
+      required:
+      - generated_password
+      - must_change_password
+      - user_id
+      type: object
+    Role:
+      properties:
+        role:
+          type: string
+      required:
+      - role
+      type: object
+    SelfUser:
+      properties:
+        capabilities:
+          items:
+            type: string
+          readOnly: true
+          type: array
+        created_at:
+          format: date-time
+          readOnly: true
+          type: string
+        email:
+          format: email
+          nullable: true
+          readOnly: true
+          type: string
+        full_name:
+          readOnly: true
+          type: string
+        id:
+          readOnly: true
+          type: integer
+        is_active:
+          readOnly: true
+          type: boolean
+        last_login:
+          format: date-time
+          nullable: true
+          readOnly: true
+          type: string
+        must_change_password:
+          readOnly: true
+          type: boolean
+        phone:
+          nullable: true
+          readOnly: true
+          type: string
+        role:
+          readOnly: true
+          type: string
+        username:
+          readOnly: true
+          type: string
+      required:
+      - capabilities
+      - created_at
+      - email
+      - full_name
+      - id
+      - is_active
+      - last_login
+      - must_change_password
+      - phone
+      - role
+      - username
+      type: object
+    SessionAlreadyOpenError:
+      properties:
+        details:
+          additionalProperties: {}
+          readOnly: true
+          type: object
+        error:
+          readOnly: true
+          type: string
+        error_code:
+          allOf:
+          - $ref: '#/components/schemas/SessionAlreadyOpenErrorErrorCodeEnum'
+          readOnly: true
+        message:
+          readOnly: true
+          type: string
+        request_id:
+          format: uuid
+          readOnly: true
+          type: string
+      required:
+      - details
+      - error
+      - error_code
+      - message
+      - request_id
+      type: object
+    SessionAlreadyOpenErrorErrorCodeEnum:
+      enum:
+      - SESSION_ALREADY_OPEN
+      type: string
+    StateEnum:
+      enum:
+      - ok
+      - alert
+      - unknown
+      type: string
+    Status:
+      properties:
+        is_active:
+          type: boolean
+      required:
+      - is_active
+      type: object
+    Target:
+      properties:
+        destination:
+          $ref: '#/components/schemas/DestinationEnum'
+        target_id:
+          minimum: 1
+          nullable: true
+          type: integer
+      required:
+      - destination
+      - target_id
+      type: object
+    TaskAlreadyCompletedError:
+      properties:
+        details:
+          additionalProperties: {}
+          type: object
+        error:
+          type: string
+        error_code:
+          $ref: '#/components/schemas/TaskAlreadyCompletedErrorErrorCodeEnum'
+        message:
+          type: string
+        request_id:
+          format: uuid
+          type: string
+      required:
+      - details
+      - error
+      - error_code
+      - message
+      - request_id
+      type: object
+    TaskAlreadyCompletedErrorErrorCodeEnum:
+      enum:
+      - TASK_ALREADY_COMPLETED
+      type: string
+    TaskAssignee:
+      properties:
+        assigned_at:
+          format: date-time
+          type: string
+        user:
+          $ref: '#/components/schemas/TaskUser'
+      required:
+      - assigned_at
+      - user
+      type: object
+    TaskDetail:
+      properties:
+        assigned_date:
+          format: date
+          type: string
+        assignees:
+          items:
+            $ref: '#/components/schemas/TaskAssignee'
+          type: array
+        block_reason:
+          nullable: true
+          type: string
+        completed_at:
+          format: date-time
+          nullable: true
+          type: string
+        completed_by:
+          allOf:
+          - $ref: '#/components/schemas/TaskUser'
+          nullable: true
+        completion_method:
+          nullable: true
+          type: string
+        completion_note:
+          nullable: true
+          type: string
+        created_by:
+          $ref: '#/components/schemas/TaskUser'
+        description:
+          type: string
+        expected_location:
+          type: string
+        group:
+          type: string
+        id:
+          type: integer
+        location:
+          allOf:
+          - $ref: '#/components/schemas/TaskLocation'
+          nullable: true
+        overdue_days:
+          nullable: true
+          type: integer
+        status:
+          $ref: '#/components/schemas/TaskStatusEnum'
+        title:
+          type: string
+        updates:
+          items:
+            $ref: '#/components/schemas/TaskLifecycleUpdate'
+          type: array
+      required:
+      - assigned_date
+      - assignees
+      - block_reason
+      - completed_at
+      - completed_by
+      - completion_method
+      - completion_note
+      - created_by
+      - description
+      - expected_location
+      - group
+      - id
+      - location
+      - overdue_days
+      - status
+      - title
+      - updates
+      type: object
+    TaskError:
+      properties:
+        details:
+          additionalProperties: {}
+          type: object
+        error:
+          type: string
+        error_code:
+          type: string
+        message:
+          type: string
+        request_id:
+          format: uuid
+          type: string
+      required:
+      - details
+      - error
+      - error_code
+      - message
+      - request_id
+      type: object
+    TaskFieldCompletion:
+      properties:
+        accuracy_m:
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+          type: string
+        captured_at:
+          format: date-time
+          type: string
+        completion_note:
+          nullable: true
+          type: string
+        latitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          type: string
+        longitude:
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,15})?$
+          type: string
+        selected_location_id:
+          minimum: 1
+          nullable: true
+          type: integer
+        upload_ids:
+          items:
+            format: uuid
+            type: string
+          maxItems: 5
+          minItems: 1
+          type: array
+      required:
+      - accuracy_m
+      - captured_at
+      - latitude
+      - longitude
+      - upload_ids
+      type: object
+    TaskItem:
+      properties:
+        assigned_date:
+          format: date
+          type: string
+        assignees:
+          items:
+            $ref: '#/components/schemas/TaskAssignee'
+          type: array
+        block_reason:
+          nullable: true
+          type: string
+        completed_at:
+          format: date-time
+          nullable: true
+          type: string
+        completed_by:
+          allOf:
+          - $ref: '#/components/schemas/TaskUser'
+          nullable: true
+        completion_method:
+          nullable: true
+          type: string
+        completion_note:
+          nullable: true
+          type: string
+        created_by:
+          $ref: '#/components/schemas/TaskUser'
+        description:
+          type: string
+        expected_location:
+          type: string
+        group:
+          type: string
+        id:
+          type: integer
+        location:
+          allOf:
+          - $ref: '#/components/schemas/TaskLocation'
+          nullable: true
+        overdue_days:
+          nullable: true
+          type: integer
+        status:
+          $ref: '#/components/schemas/TaskStatusEnum'
+        title:
+          type: string
+      required:
+      - assigned_date
+      - assignees
+      - block_reason
+      - completed_at
+      - completed_by
+      - completion_method
+      - completion_note
+      - created_by
+      - description
+      - expected_location
+      - group
+      - id
+      - location
+      - overdue_days
+      - status
+      - title
+      type: object
+    TaskLifecycleUpdate:
+      properties:
+        accuracy_m:
+          nullable: true
+          type: string
+        actor:
+          $ref: '#/components/schemas/TaskUser'
+        actual_location:
+          allOf:
+          - $ref: '#/components/schemas/TaskLocation'
+          nullable: true
+        actual_location_id:
+          nullable: true
+          type: integer
+        block_reason:
+          nullable: true
+          type: string
+        captured_at:
+          format: date-time
+          nullable: true
+          type: string
+        captured_latitude:
+          nullable: true
+          type: string
+        captured_longitude:
+          nullable: true
+          type: string
+        completion_method:
+          nullable: true
+          type: string
+        completion_note:
+          nullable: true
+          type: string
+        distance_m:
+          nullable: true
+          type: string
+        gps_quality:
+          nullable: true
+          type: string
+        id:
+          type: integer
+        location_candidates:
+          items:
+            type: integer
+          type: array
+        maps_url:
+          format: uri
+          nullable: true
+          type: string
+        note:
+          nullable: true
+          type: string
+        photos:
+          items:
+            $ref: '#/components/schemas/TaskPhoto'
+          type: array
+        recorded_at:
+          format: date-time
+          type: string
+        resolution_method:
+          nullable: true
+          type: string
+        resolved_address:
+          nullable: true
+          type: string
+        status:
+          $ref: '#/components/schemas/TaskStatusEnum'
+        validation_result:
+          nullable: true
+          type: string
+      required:
+      - accuracy_m
+      - actor
+      - actual_location
+      - actual_location_id
+      - block_reason
+      - captured_at
+      - captured_latitude
+      - captured_longitude
+      - completion_method
+      - completion_note
+      - distance_m
+      - gps_quality
+      - id
+      - location_candidates
+      - maps_url
+      - note
+      - photos
+      - recorded_at
+      - resolution_method
+      - resolved_address
+      - status
+      - validation_result
+      type: object
+    TaskLocation:
+      properties:
+        address:
+          type: string
+        code:
+          type: string
+        id:
+          type: integer
+        is_active:
+          type: boolean
+        name:
+          type: string
+      required:
+      - address
+      - code
+      - id
+      - is_active
+      - name
+      type: object
+    TaskOverride:
+      properties:
+        completion_note:
+          type: string
+      required:
+      - completion_note
+      type: object
+    TaskPhoto:
+      properties:
+        id:
+          type: integer
+        mime:
+          $ref: '#/components/schemas/MimeEnum'
+        size_bytes:
+          minimum: 1
+          type: integer
+      required:
+      - id
+      - mime
+      - size_bytes
+      type: object
+    TaskStatus:
+      properties:
+        block_reason:
+          nullable: true
+          type: string
+        note:
+          nullable: true
+          type: string
+        status:
+          $ref: '#/components/schemas/OrdinaryTaskStatusEnum'
+      required:
+      - status
+      type: object
+    TaskStatusEnum:
+      enum:
+      - TODO
+      - IN_PROGRESS
+      - BLOCKED
+      - COMPLETED
+      type: string
+    TaskUpdate:
+      properties:
+        assignee_ids:
+          items:
+            minimum: 1
+            type: integer
+          type: array
+        description:
+          type: string
+        expected_location:
+          maxLength: 500
+          type: string
+        location_id:
+          minimum: 1
+          nullable: true
+          type: integer
+        title:
+          type: string
+      type: object
+    TaskUser:
+      properties:
+        full_name:
+          type: string
+        id:
+          type: integer
+      required:
+      - full_name
+      - id
+      type: object
+    TimezoneEnum:
+      enum:
+      - Asia/Ho_Chi_Minh
+      type: string
+    TodayAttendance:
+      properties:
+        has_open_session:
+          readOnly: true
+          type: boolean
+        punches:
+          items:
+            $ref: '#/components/schemas/IndexedAttendancePunch'
+          readOnly: true
+          type: array
+        sessions:
+          items:
+            $ref: '#/components/schemas/AttendanceSession'
+          readOnly: true
+          type: array
+        total_duration_minutes:
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,6})?$
+          readOnly: true
+          type: string
+        work_date:
+          format: date
+          readOnly: true
+          type: string
+      required:
+      - has_open_session
+      - punches
+      - sessions
+      - total_duration_minutes
+      - work_date
+      type: object
+    UserCreate:
+      properties:
+        email:
+          format: email
+          nullable: true
+          type: string
+        full_name:
+          type: string
+        phone:
+          nullable: true
+          type: string
+        role:
+          type: string
+        username:
+          type: string
+      required:
+      - full_name
+      - role
+      - username
+      type: object
+    UserPage:
+      properties:
+        count:
+          readOnly: true
+          type: integer
+        next:
+          nullable: true
+          readOnly: true
+          type: string
+        previous:
+          nullable: true
+          readOnly: true
+          type: string
+        results:
+          items:
+            $ref: '#/components/schemas/AdminUser'
+          readOnly: true
+          type: array
+      required:
+      - count
+      - next
+      - previous
+      - results
+      type: object
+    Warning:
+      properties:
+        code:
+          allOf:
+          - $ref: '#/components/schemas/CodeEnum'
+          readOnly: true
+        radius_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          type: string
+        related_location_codes:
+          items:
+            type: string
+          type: array
+        related_location_ids:
+          items:
+            type: integer
+          type: array
+        threshold_m:
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          type: string
+      required:
+      - code
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http

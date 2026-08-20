@@ -13,6 +13,9 @@ from core.event_payload import sanitize_failure_reason  # noqa: E402
 
 FRAMEWORK_PREFIXES = ("django", "rest_framework", "psycopg", "boto3")
 INTERNAL_MODULE_NAMES = frozenset({"models", "domain", "adapters"})
+BUSINESS_MODULE_NAMES = frozenset(
+    {"identity", "audit", "operations", "locations", "attendance", "tasks", "notifications"}
+)
 BUSINESS_CORE_NAMES = ("Attendance", "Task", "Location", "Report", "Notification")
 
 
@@ -23,28 +26,61 @@ class Finding:
     line: int
 
 
+@dataclass(frozen=True, slots=True)
+class FileContext:
+    path: Path
+    is_domain: bool
+    is_adapter: bool
+    owner: str | None
+    is_controlled_fixture: bool
+    is_exempt: bool
+
+
 def check_file(path: Path) -> list[Finding]:
     tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-    findings: list[Finding] = []
-    is_domain = "domain" in path.parts or path.name == "domain_framework.py"
-    is_adapter = "adapters" in path.parts
+    context = _file_context(path)
+    findings = [
+        finding for node in ast.walk(tree) for finding in _node_findings(node, context)
+    ]
+    return _deduplicate(findings)
+
+
+def _file_context(path: Path) -> FileContext:
     is_controlled_fixture = "fixtures" in path.parts
     is_exempt = (
         ("tests" in path.parts and not is_controlled_fixture)
         or "migrations" in path.parts
         or "config" in path.parts
     )
-    for node in ast.walk(tree):
-        module = _imported_module(node)
-        if module is not None and is_domain and module.startswith(FRAMEWORK_PREFIXES):
-            findings.append(Finding("ARCH-DOMAIN-FRAMEWORK", path, _line(node)))
-        if module is not None and not is_adapter and ".adapters" in module:
-            findings.append(Finding("ARCH-INWARD", path, _line(node)))
-        if module is not None and not is_exempt and _imports_internal_module(module):
-            findings.append(Finding("ARCH-CROSS-MODULE", path, _line(node)))
-        if _is_business_class_in_core(node, path):
-            findings.append(Finding("ARCH-CORE-OWNERSHIP", path, _line(node)))
-    return _deduplicate(findings)
+    return FileContext(
+        path,
+        "domain" in path.parts or path.name == "domain_framework.py",
+        "adapters" in path.parts,
+        _business_owner(path),
+        is_controlled_fixture,
+        is_exempt,
+    )
+
+
+def _node_findings(node: ast.AST, context: FileContext) -> list[Finding]:
+    module = _imported_module(node)
+    rules = []
+    if (
+        module is not None
+        and context.is_domain
+        and module.startswith(FRAMEWORK_PREFIXES)
+    ):
+        rules.append("ARCH-DOMAIN-FRAMEWORK")
+    if module is not None and not context.is_adapter and not context.is_exempt:
+        if ".adapters" in module:
+            rules.append("ARCH-INWARD")
+        if _imports_cross_module_internal(
+            module, context.owner, context.is_controlled_fixture
+        ):
+            rules.append("ARCH-CROSS-MODULE")
+    if _is_business_class_in_core(node, context.path):
+        rules.append("ARCH-CORE-OWNERSHIP")
+    return [Finding(rule, context.path, _line(node)) for rule in rules]
 
 
 def check_path(path: Path) -> list[Finding]:
@@ -64,9 +100,20 @@ def _line(node: ast.AST) -> int:
     return getattr(node, "lineno", 1)
 
 
-def _imports_internal_module(module: str) -> bool:
+def _business_owner(path: Path) -> str | None:
+    return next((part for part in path.parts if part in BUSINESS_MODULE_NAMES), None)
+
+
+def _imports_cross_module_internal(
+    module: str, owner: str | None, is_controlled_fixture: bool
+) -> bool:
     parts = module.split(".")
-    return len(parts) > 1 and any(part in INTERNAL_MODULE_NAMES for part in parts[1:])
+    if len(parts) < 2 or not any(part in INTERNAL_MODULE_NAMES for part in parts[1:]):
+        return False
+    imported_owner = parts[0]
+    if owner is not None:
+        return imported_owner in BUSINESS_MODULE_NAMES and imported_owner != owner
+    return is_controlled_fixture
 
 
 def _is_business_class_in_core(node: ast.AST, path: Path) -> bool:

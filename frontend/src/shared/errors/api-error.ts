@@ -1,5 +1,29 @@
 const requestIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
-const authorizedCodes = new Set(["VALIDATION_FAILED", "PERMISSION_DENIED"]);
+const authorizedCodes = new Set([
+  "VALIDATION_FAILED",
+  "PERMISSION_DENIED",
+  "INVALID_CREDENTIALS",
+  "INVALID_TOKEN",
+  "ACCOUNT_INACTIVE",
+  "PASSWORD_CHANGE_REQUIRED",
+  "SERVER_OWNED_FIELD",
+  "NOT_FOUND",
+  "LOCATION_VERSION_CONFLICT",
+  "THROTTLED",
+  "SERVICE_UNAVAILABLE",
+  "WEAK_GPS",
+  "OUTSIDE_RADIUS",
+  "LOCATION_CHOICE_REQUIRED",
+  "INVALID_LOCATION_CHOICE",
+  "NO_OPEN_SESSION",
+  "SESSION_ALREADY_OPEN",
+  "INACTIVE_ASSIGNEE",
+  "BLOCK_REASON_REQUIRED",
+  "TASK_ALREADY_COMPLETED",
+  "EVIDENCE_UPLOAD_INVALID",
+  "EVIDENCE_UPLOAD_NOT_READY",
+  "IDEMPOTENCY_CONFLICT",
+]);
 
 export type ApiFailure =
   | {
@@ -8,6 +32,7 @@ export type ApiFailure =
       message: string;
       details: Record<string, unknown>;
       requestId: string;
+      retryAfterSeconds?: number;
     }
   | { kind: "unexpected_response"; status: number; requestId?: string }
   | { kind: "network" };
@@ -25,13 +50,34 @@ export async function parseApiFailure(response: Response): Promise<ApiFailure> {
     return unexpectedFailure(response.status, headerRequestId);
   }
   if (!mirrorsMatch(body, body.details)) return unexpectedFailure(response.status, headerRequestId);
+  const retryAfter = retryAfterSeconds(response.headers.get("Retry-After"));
   return {
     kind: "canonical",
     errorCode: body.error_code,
     message: body.message,
     details: body.details,
     requestId: bodyRequestId,
+    ...(retryAfter === undefined ? {} : { retryAfterSeconds: retryAfter }),
   };
+}
+
+function retryAfterSeconds(value: string | null): number | undefined {
+  if (value === null || !/^\d+$/.test(value)) return undefined;
+  const seconds = Number(value);
+  return Number.isSafeInteger(seconds) && seconds > 0 ? seconds : undefined;
+}
+
+export async function parseApiResultFailure(result: {
+  error?: unknown;
+  response: Response;
+}): Promise<ApiFailure> {
+  if (result.error === undefined) return await parseApiFailure(result.response);
+  const response = new Response(JSON.stringify(result.error), {
+    status: result.response.status,
+    statusText: result.response.statusText,
+    headers: result.response.headers,
+  });
+  return await parseApiFailure(response);
 }
 
 async function readJson(response: Response): Promise<unknown> {

@@ -133,13 +133,40 @@ người đó có bấm Check In thật, nên thiếu Check Out là dữ liệu 
 xử lý, không phải chuyện được im lặng bỏ qua. Nhờ vậy mọi phiên hệ thống tự đóng
 đều xuất hiện trong báo cáo, không có phiên nào bị đóng âm thầm.
 
+Việc tự đóng xử lý độc lập từng phiên: trạng thái tự đóng và dấu thiếu Check Out
+của một phiên luôn cùng thành công hoặc cùng thất bại. Nếu một phiên lỗi, các
+phiên đã xử lý không bị hoàn tác và hệ thống tiếp tục phiên khác khi có thể; lần
+chạy sau chỉ xử lý phần còn thiếu, không tạo dấu trùng. Lịch sử chạy phải cho
+người vận hành thấy đúng số phiên đã thực sự xử lý và việc lần chạy có lỗi.
+
+Mỗi lần chạy có một trạng thái rõ ràng: đang chạy, thành công, thành công một
+phần có lỗi, hoặc thất bại. Nếu tiến trình dừng đột ngột, lần chạy vẫn hiện là
+đang chạy quá hạn thay vì bị hiểu nhầm là thành công. Các số quét/đóng/anomaly
+chỉ phản ánh dữ liệu thực sự đã được xử lý; lần chạy không có phiên cần đóng vẫn
+là thành công.
+
 Mỗi lần bấm Check In/Check Out đều được ghi lại một dòng nhật ký riêng, kèm kết
 quả — đúng **bảy** giá trị: được chấp nhận; chờ chọn địa điểm; hoặc bị từ chối vì
 GPS yếu, ngoài mọi vùng cho phép, địa điểm chọn không hợp lệ, đang có phiên mở,
 không có phiên mở. Nhật ký này lưu cả tọa độ, sai số và địa điểm gần nhất để phục
 vụ báo cáo; nó **không phải** bản ghi chấm công và không được cộng vào bảng công.
+Dữ liệu “địa điểm gần nhất” xét toàn bộ đúng 76 địa điểm canonical, kể cả địa
+điểm đã ngừng hoạt động, để báo cáo lịch sử địa lý không mất nhóm chẩn đoán.
+Điều này không làm địa điểm inactive trở thành nơi chấm công hợp lệ: danh sách
+ứng viên, tự chọn và xác nhận lựa chọn vẫn chỉ xét địa điểm đang hoạt động.
+Nếu nhiều địa điểm có cùng khoảng cách gần nhất, nhật ký chọn địa điểm có mã
+`code` nhỏ nhất theo thứ tự từ điển để kết quả báo cáo ổn định. Luật này chỉ áp
+dụng cho metadata gần nhất; các ứng viên chấm công trùng khoảng cách vẫn là các
+địa điểm riêng và vẫn bắt người dùng chọn.
 Dòng nhật ký được ghi **độc lập** với việc ca công có được tạo hay không: một lượt
 bấm bị từ chối vẫn để lại nhật ký, không bị xóa theo.
+
+Mỗi Check In hoặc Check Out **thành công** đồng thời ghi một vết kiểm toán bất
+biến tương ứng (`attendance.check_in.created` hoặc
+`attendance.check_out.created`) trong cùng transaction với ca công; vết này chỉ
+giữ định danh/kind/ngày công/Location/phiên cần truy vết, không sao chép tọa độ,
+sai số, metadata thiết bị hay IP. Lượt bị từ chối chỉ có nhật ký attempt, không
+có AuditLog. Chấm công thường chưa phát outbox event.
 
 #### **Chấm công khác địa điểm được phân công**
 
@@ -162,10 +189,23 @@ Người quản lý tạo công việc và phân công trực tiếp cho một h
 Quản lý được phép giao việc cho ngày tương lai để lập kế hoạch trước. Công việc
 tương lai hiển thị trong nhóm **Sắp tới** và không tính vào KPI của ngày hiện tại
 trước khi tới ngày được giao.
+Quản lý không có nhánh tự tạo việc cho chính mình: mọi Task do Quản lý tạo phải
+có ít nhất một người nhận là Helpdesk đang hoạt động (R-140).
 
 **Helpdesk tự tạo việc**
 
 Trong quá trình làm việc, nhân viên có thể tự tạo công việc phát sinh mà không cần chờ quản lý giao.
+Task này luôn lấy người đang đăng nhập làm người tạo và tự gán đúng người đó làm
+người thực hiện ban đầu. Helpdesk không được chọn người khác khi tự tạo và không
+được thêm, gỡ hoặc thay người thực hiện sau đó, kể cả với Task do mình tạo hoặc
+được giao. Chỉ Quản lý được quản lý danh sách người thực hiện; mọi người mới
+được thêm vẫn phải là Helpdesk đang hoạt động và request có bất kỳ người không
+hợp lệ nào bị từ chối toàn bộ (R-135).
+Khi tự tạo, hệ thống khóa và kiểm lại chính tài khoản đang đăng nhập trong cùng
+giao dịch để thao tác đồng thời với khóa tài khoản/đổi vai trò không tạo assignee
+không hợp lệ (R-142).
+Task chỉ hiển thị `id` và họ tên của người tạo/người thực hiện/người cập nhật;
+không dùng response Task để lộ username hay trạng thái tài khoản (R-143).
 
 #### **Thông tin công việc**
 
@@ -203,6 +243,23 @@ Mỗi công việc có một trong bốn trạng thái:
 
 Task `BLOCKED` được tiếp tục ở ngày sau trên chính task đó, không tạo task mới.
 
+Với ba trạng thái chưa hoàn thành, gửi lại đúng trạng thái hiện tại là thao tác
+no-op thành công sau khi đã qua quyền, kiểm tra dữ liệu và object scope: không
+ghi Task, không thêm dòng lịch sử, không audit/outbox và không tăng version.
+Task đang `BLOCKED` không phải gửi lại lý do chỉ để thực hiện no-op (R-136).
+
+Hai request trạng thái cạnh tranh được xử lý tuần tự trên Task và request đến
+sau luôn kiểm lại trạng thái mới nhất: còn là transition hợp lệ thì ghi thêm một
+dòng lịch sử riêng; đã trùng state thì no-op; không còn hợp lệ hoặc Task đã hoàn
+thành thì từ chối không side effect. Không last-write-wins và không thêm version
+Task chỉ để từ chối request thứ hai (R-138).
+
+`COMPLETED` là hồ sơ chỉ đọc toàn bộ: mọi request sửa status (kể cả gửi lại
+`COMPLETED`), tên, mô tả, địa điểm dự kiến hoặc người thực hiện đều bị từ chối;
+đọc, danh sách và báo cáo vẫn hoạt động. Nếu phase sau cần sửa sai phải có luồng
+correction riêng với quyền, lý do và audit, không dùng quyền cập nhật thường để
+lách terminal rule (R-139).
+
 ### **3.3. Hoàn thành công việc**
 
 Khi đến hiện trường và hoàn thành công việc, nhân viên thực hiện:
@@ -225,8 +282,8 @@ Khi đến hiện trường và hoàn thành công việc, nhân viên thực hi
 
 Ràng buộc ảnh và GPS ở trên **chỉ áp dụng cho hoàn thành tại hiện trường**
 (`FIELD_EVIDENCE`): trong luồng này ảnh minh chứng luôn phải kèm tọa độ.
-**`MANAGER_OVERRIDE` là ngoại lệ** — 0 đến 5 ảnh và không bắt buộc GPS, bù lại
-bắt buộc ghi chú lý do (xem cuối §3.3). Ngoài tọa độ, nếu xác định được thì hệ
+**`MANAGER_OVERRIDE` là ngoại lệ** — không nhận ảnh hoặc GPS, bù lại bắt buộc
+ghi chú lý do (xem cuối §3.3). Ngoài tọa độ, nếu xác định được thì hệ
 thống hiển thị luôn **địa chỉ đã xác nhận** — xem §3.4.
 
 GPS của Task là bằng chứng hiện trường, khác với GPS xác thực chấm công. Nếu
@@ -253,9 +310,21 @@ Khi đó công việc vẫn được giữ lại để tiếp tục xử lý và
 
 Ngoài luồng hoàn thành tại hiện trường, Quản lý được phép đóng việc hộ trong
 trường hợp quản trị hoặc xác nhận ngoại lệ. Khi đó hệ thống ghi
-`completion_method = MANAGER_OVERRIDE`, bắt buộc có ghi chú lý do, cho phép 0 đến
-5 ảnh và không cần GPS, có ghi nhật ký thao tác, và báo cáo phải tách riêng với
+`completion_method = MANAGER_OVERRIDE`, bắt buộc có ghi chú lý do, không nhận
+ảnh/GPS, có ghi nhật ký thao tác, và báo cáo phải tách riêng với
 hoàn thành có bằng chứng hiện trường (`FIELD_EVIDENCE`).
+
+Trong Feature 007, cả hai đường hoàn thành được triển khai. HELPDESK hoặc người
+trong creator/assignee scope hoàn thành tại hiện trường bằng `FIELD_EVIDENCE`
+với 1-5 ảnh và GPS mới; completion này ghi AuditLog action
+`task.completion.field_evidence` cùng TaskUpdate/TaskPhoto/upload bindings/Task
+snapshot. Quản lý có đường ngoại lệ riêng: bắt buộc ghi chú, không nhận ảnh/GPS,
+và TaskUpdate/ảnh chụp completion/AuditLog cùng commit. Mọi completion AuditLog
+chỉ giữ ID, trạng thái,
+phương thức, actor và thời gian server, không sao chép hoặc sửa nội dung ghi chú
+(R-143). Endpoint cập nhật trạng thái thông thường không nhận target `COMPLETED`;
+ba cạnh đi vào `COMPLETED` của state machine chỉ được gọi qua một use case hoàn
+thành chuyên biệt (R-137).
 
 Luồng hoàn thành tại hiện trường vẫn giữ phạm vi "người tạo hoặc người được
 giao", kể cả với Quản lý: bằng chứng hiện trường khẳng định chính người bấm đã
@@ -264,7 +333,9 @@ tới nơi. Quản lý muốn đóng việc của người khác thì dùng đư
 ### **3.4. Xác định địa điểm thực hiện**
 
 Hệ thống có **76 địa điểm (`Location`)**, tương ứng trực tiếp 7 trung tâm kinh
-doanh và 69 cửa hàng trong dữ liệu nguồn. Mỗi địa điểm bao gồm:
+doanh và 69 cửa hàng trong dữ liệu nguồn. Đây là tập đóng: không tạo hoặc xóa
+địa điểm thủ công; Quản lý chỉ được sửa thông tin cho phép trên 76 địa điểm hiện
+có. Mỗi địa điểm bao gồm:
 
 - Tên địa điểm.
 - Địa chỉ.
@@ -276,6 +347,13 @@ hai hoặc nhiều trung tâm/cửa hàng, chúng vẫn là những `Location` r
 giao nhau là hợp lệ và hệ thống chỉ cảnh báo khi quản lý cấu hình. Dữ liệu hiện
 tại có một cặp cửa hàng trùng đúng tọa độ và hai cặp cách nhau dưới 50 m, nên
 màn hình chọn địa điểm luôn hiển thị **mã kèm tên** để nhân viên phân biệt được.
+
+Khi Quản lý sửa Location hoặc Config nhưng các giá trị thực tế không đổi, hệ
+thống trả thành công như một no-op và không tạo thêm lịch sử giả. Riêng Location
+vẫn kiểm version trước: màn hình cũ phải refresh khi conflict, không được coi là
+no-op. Nếu Quản lý hạ bán kính tối đa xuống thấp hơn bán kính của bất kỳ Location
+nào (kể cả đang tắt), toàn bộ thay đổi bị từ chối và giao diện liệt kê mã địa điểm
+cần xử lý; hệ thống không tự thu nhỏ bán kính hàng loạt.
 
 Task có thể hoàn thành tại bất kỳ tọa độ nào, kể cả công an phường, ủy ban,
 trường học hoặc nơi khác ngoài 76 Location. Không khớp địa điểm đã biết không
@@ -383,8 +461,16 @@ khóa. Dù chọn cách nào, giao việc cho tài khoản đã khóa vẫn bị
 ở phía máy chủ. Ngược lại, công việc đã giao trước đó vẫn
 giữ nguyên người phụ trách và trạng thái, vẫn nằm ở nhóm Quá hạn để quản lý nhìn
 thấy và tự xử — giao thêm người khác, hoặc tự xác nhận hoàn thành kèm ghi chú.
+Phép kiểm người nhận mới là nguyên tử: mọi ID không tồn tại, không phải Helpdesk
+hoặc đã khóa đều được trả cùng nhau trong `422 INACTIVE_ASSIGNEE`; không có phần
+giao việc hợp lệ nào được ghi dở dang (R-141).
 Báo cáo và lịch sử vẫn đếm đủ phần việc người đó đã làm; số liệu tháng trước
 không được tự đổi chỉ vì hôm nay có người nghỉ việc.
+
+Khóa một tài khoản đã khóa hoặc mở một tài khoản vốn đang mở vẫn trả về trạng
+thái hiện tại nhưng không tạo thêm một lần thay đổi giả trong lịch sử. Ngược lại,
+đặt lại mật khẩu lần nữa luôn là một yêu cầu mới: hệ thống sinh mật khẩu mới và
+hiển thị lại đúng một lần; mật khẩu của lần reset trước hết hiệu lực.
 - Cập nhật thông tin cá nhân:
   - **Họ và tên — bắt buộc, không được để trống.** Đây là tên hiển thị ở mọi danh
     sách, báo cáo và ô tìm kiếm, nên tên rỗng làm hỏng toàn bộ các màn đó.
@@ -409,7 +495,8 @@ nhiều lần trong ca**: đăng nhập một lần, ứng dụng tự duy trì 
 một tuần miễn là còn sử dụng. Đổi lại, quản lý phải cắt được truy cập khi cần:
 khi người dùng bấm đăng xuất, khi quản lý khóa tài khoản, khi quản lý đặt lại
 mật khẩu, hoặc khi chính người dùng đổi mật khẩu, hệ thống **thu hồi toàn bộ
-phiên trên mọi thiết bị** của người đó và ghi nhật ký.
+phiên trên mọi thiết bị** của người đó. Thao tác mutation và lần thu hồi thực sự
+có phiên bị cắt được ghi nhật ký; gọi lặp không đổi trạng thái không tạo lịch sử giả.
 
 Mức độ tức thời khác nhau theo tình huống, và tài liệu không được nói mạnh hơn
 thực tế — xem câu canonical ở [CHỐT §9.2.1](CHOT_YEU_CAU.md):
@@ -428,6 +515,12 @@ trong cùng một thao tác.
 
 Vì vậy, khi máy bị mất, thao tác đúng là **khóa tài khoản** — chỉ đặt lại mật
 khẩu thì vẫn còn cửa sổ tối đa 15 phút.
+
+Đăng xuất là thao tác idempotent: chỉ cần access token còn hợp lệ, hệ thống luôn
+trả thành công, xóa cookie và thử thu hồi toàn bộ phiên của đúng tài khoản đang
+đăng nhập, kể cả cookie refresh đã thiếu/hỏng/hết hạn. Bấm lại không tạo thêm một
+dòng lịch sử nếu không còn phiên nào để thu hồi. Cách này không biến cookie lỗi
+thành lý do giữ các phiên khác sống sót.
 
 Khi bị chặn, ứng dụng phải nói rõ **lý do** thay vì báo lỗi chung chung: phiên
 hết hạn thì tự làm mới hoặc yêu cầu đăng nhập lại, tài khoản bị khóa thì hiện
@@ -480,18 +573,41 @@ Ví dụ:
   điểm; hệ thống vẫn ghi nhật ký lượt bấm đó, nhưng nó bị **loại khỏi cả tử số
   lẫn mẫu số** của tỉ lệ thất bại — tính vào mẫu số sẽ làm tỉ lệ trông đẹp giả
   tạo ở đúng những cụm cửa hàng gần nhau nhất. Ngoài trường hợp này, hệ thống ghi
-  nhật ký **mọi** lần bấm chấm công kể cả lần thành công, nên mẫu số là tổng số
-  lần bấm chứ không phải số ca công. Hai báo cáo này không được cộng chung vì
+  nhật ký mọi lần bấm đã được phân loại thành một trong bảy outcome, kể cả lần
+  thành công, nên mẫu số là tổng số lần bấm đã phân loại chứ không phải số ca
+  công. Hai báo cáo này không được cộng chung vì
   nguồn dữ liệu khác nhau: một bên là ca công đã ghi, một bên là lần bấm không
-  tạo ra ca công.
+  tạo ra ca công. Nhật ký attempt được ghi sau transaction chấm công; nếu bước
+  ghi nhật ký này lỗi thì kết quả chấm công đã có vẫn được giữ nguyên, hệ thống
+  không tự retry attempt và chỉ ghi cảnh báo đã loại bỏ dữ liệu vị trí/thiết bị
+  nhạy cảm. Lỗi hạ tầng bất ngờ trả 5xx không phải outcome chấm công: không tạo
+  attempt và không được gán nhầm vào một trong bảy outcome đóng.
 - Báo cáo hoàn thành công việc theo phương thức: tổng đã hoàn thành, hoàn thành
   có ảnh/GPS hiện trường, hoàn thành do quản lý xác nhận ngoại lệ.
 - Mọi attempt đã vào luồng nghiệp vụ có địa điểm gần nhất để gom nhóm; nearest
-  của GPS yếu được ghi rõ là xấp xỉ để chẩn đoán, không phải bằng chứng hiện diện.
+  xét cả 76 Location canonical active và inactive, còn candidates vẫn active-only.
+  Khoảng cách hòa chọn `Location.code` nhỏ nhất chỉ cho nearest quan trắc, không
+  dùng để tự chọn candidate.
+  Nearest của GPS yếu được ghi rõ là xấp xỉ để chẩn đoán, không phải bằng chứng hiện diện.
   Tỉ lệ lỗi luôn hiện tử số/mẫu số, số lượt chọn Location bị loại, coverage và
   `N/A` khi không đủ mẫu; không biến “0 attempt” thành “không có vấn đề”.
 - Dashboard hiển thị health của job xử lý thiếu Check Out. Quản lý có đường điều
   tra tài khoản/audit phù hợp; Lãnh đạo chỉ đọc trạng thái và chuyển cho Quản lý.
+- Job phải hoàn tất thành công mỗi ngày trước **01:00 giờ Việt Nam**. Dashboard
+  phân biệt chưa từng chạy, cảnh báo và bình thường; hiển thị lần chạy mới nhất,
+  lần thành công mới nhất, cutoff, số quét/đóng/anomaly, phiên mở quá hạn và lỗi
+  bất biến. Trước 01:00, phiên chờ xử lý vẫn được hiển thị nhưng riêng việc đó
+  chưa tạo cảnh báo; lỗi hoặc dữ liệu không nhất quán cảnh báo ngay.
+- “Trước 01:00” là ranh giới nghiêm ngặt: `finished_at = 01:00:00` đã trễ. Trước
+  cutoff, RUNNING từ ngày local trước là stale và cảnh báo; từ đúng cutoff, mọi
+  RUNNING chưa terminal đều cảnh báo. Scheduler hiện hữu gọi job lúc **00:15
+  Asia/Ho_Chi_Minh mỗi ngày**, kể cả cuối tuần/ngày lễ; repository phải lưu
+  manifest và kiểm tra binding triển khai, không thêm scheduler runtime mới.
+- Việc phân nhánh nội dung MANAGER/LEADER của job-health do authorization Identity
+  trả access scope đóng; module operations không đọc role. Acceptance trước release
+  dùng ít nhất 10 MANAGER/LEADER đại diện và yêu cầu 100% xác định đúng health state
+  cùng một reason active khi có trong dưới 30 giây; với `ok` không có reason active
+  phải nhận biết đúng là không có cảnh báo. Chỉ lưu evidence tổng hợp.
 - Báo cáo theo trạng thái công việc và chất lượng GPS của bằng chứng hiện trường.
 
 ## **5. Phân quyền người dùng**
@@ -502,6 +618,9 @@ chỉ dựa vào mô tả vai trò bằng câu chữ. Ba vai trò hiện hành l
 `MANAGER` chỉ tạo qua seed hoặc superuser, không gán được qua giao diện.
 
 ### **5.1. Lãnh đạo**
+
+Lãnh đạo được xem health job ở dạng tổng hợp chỉ đọc nhưng không nhận đường dẫn
+tài khoản hoặc AuditLog; khi có cảnh báo, Lãnh đạo chuyển thông tin cho Quản lý.
 
 Có quyền theo dõi và xem báo cáo tổng quan.
 
@@ -534,7 +653,12 @@ này vẫn là quyền riêng của Quản lý.
 
 Có toàn bộ quyền của Lãnh đạo và bổ sung các chức năng quản trị hệ thống:
 
+- Xem health job tổng hợp và dùng đường điều tra tài khoản/AuditLog mà mình có
+  quyền; mỗi màn đích vẫn kiểm quyền độc lập.
+
 - Tạo và giao công việc cho nhân viên.
+- Thêm, gỡ hoặc thay người thực hiện trên Task chưa hoàn thành; đây là quyền chỉ
+  Quản lý có, Helpdesk không được quản lý assignee.
 - Theo dõi tiến độ thực hiện công việc.
 - Cập nhật trạng thái công việc.
 - Trực tiếp hoàn thành công việc tại hiện trường bằng ảnh/GPS.
@@ -545,6 +669,8 @@ Có toàn bộ quyền của Lãnh đạo và bổ sung các chức năng quản
   luồng nghiệp vụ nào của Lãnh đạo hay Helpdesk chạm tới.
 - Cấu hình thời gian Check In/Check Out.
 - Cấu hình bán kính GPS cho chấm công và xác định địa điểm.
+- Không thể hạ bán kính tối đa xuống dưới bán kính Location hiện hữu; thao tác bị
+  từ chối nguyên tử và không tự sửa Location.
 - Cấu hình trần sai số GPS chấp nhận được cho chấm công. Đây là cổng chất lượng
   độc lập với bán kính, không bị ràng buộc phải nhỏ hơn bán kính nhỏ nhất.
 - Quản lý người dùng — chỉ với tài khoản **Lãnh đạo** và **Helpdesk**:
@@ -595,6 +721,8 @@ Các chức năng gồm:
 Helpdesk không được quản trị người dùng, không quản trị địa điểm, không xem toàn
 bộ dữ liệu nếu không có action tương ứng, và không được đóng việc bằng
 `MANAGER_OVERRIDE`.
+Helpdesk cũng không được thêm, gỡ hoặc thay người thực hiện Task; tự tạo việc
+luôn tự gán chính mình, còn mọi thay đổi assignee thuộc quyền Quản lý (R-135).
 
 Với chức năng mang hậu tố “của bản thân”, Helpdesk chỉ xem/cập nhật/hoàn thành
 Task do mình tạo hoặc được giao. Hệ thống kiểm tra phạm vi Task ở backend, không
@@ -675,6 +803,18 @@ hay tạo thêm hành vi nghiệp vụ.
   vận hành thật; đầu ra của lệnh không tự động làm production-ready hoặc
   recovery-ready. Bằng chứng thật bị `failed` phải có người chịu trách nhiệm
   khắc phục. Các lựa chọn hoặc số đo chưa có vẫn là `UNRESOLVED`.
+- **NFR-30 — Hạn mức xác thực dùng chung.** Đăng nhập tối đa 10 request/phút
+  theo client IP, refresh tối đa 120 request/phút theo client IP, và đổi mật khẩu
+  tối đa 5 request/phút theo tài khoản đã xác thực. Vượt hạn mức trả `429` kèm
+  thời gian chờ; kho đếm dùng chung hỏng thì trả `503` và không cho request đi
+  tiếp. Các worker không có quota riêng và frontend không tự đoán thời gian chờ.
+- **NFR-31 — Acceptance tương tác Attendance.** Feature 004 đo 100 chu kỳ
+  command + today-read trên PostgreSQL với 50 user, đúng 76 Location và actor có
+  20 phiên cùng ngày; ít nhất 95 chu kỳ hoàn tất trong 2 giây. Kiểm tra usability
+  có tối thiểu 20 HELPDESK đại diện và đạt khi ít nhất 19 người tự hoàn thành cả
+  punch không mơ hồ lẫn bước chọn Location mơ hồ; evidence chỉ giữ số đếm và
+  blocker, không lưu GPS. Đây là acceptance của feature, không thay bằng chứng
+  capacity production ở NFR-29 và không chạy như wall-clock gate trong CI.
 - **AD-7 / AD-10 / AD-11.** Schema tiến hóa không gãy; ranh giới runtime/admin,
   môi trường và origin được kiểm bằng lệnh chạy được; contract, correlation,
   thông báo và dữ liệu chẩn đoán có một chủ sở hữu dùng chung. Những control nằm

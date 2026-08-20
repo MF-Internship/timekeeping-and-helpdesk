@@ -1,0 +1,39 @@
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+.top h2,
+.top p {
+  margin: 0;
+}
+.eyebrow {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+.top + p {
+  color: var(--color-text-secondary);
+}
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+.metrics div {
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+}
+.metrics dt {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+.metrics dd {
+  margin: var(--space-1) 0 0;
+  font-weight: 800;
+}
+.advisory {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}

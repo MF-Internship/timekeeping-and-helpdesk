@@ -22,6 +22,7 @@ trong PR; **CÂN NHẮC** phụ thuộc bối cảnh.
 | Kết quả lần bấm | `AttendanceAttemptOutcome` | `error_code`, chuỗi tự do |
 | Upload ảnh staging chưa bind | `EvidenceUpload` | `temp_photo`, presigned URL, multipart blob |
 | Thông báo trong app | `Notification` | push payload làm nguồn sự thật |
+| Lần giao web push bền | `PushDelivery` | `push job`, payload push lưu trong DB |
 | Lần chạy job vận hành | `JobRun` | suy health từ việc không có anomaly |
 | Trạng thái Task | `TaskStatus` | `NOT_COMPLETED`, chuỗi tự do |
 | Cách hoàn thành task | `CompletionMethod` | chuỗi tự do |
@@ -63,6 +64,9 @@ class LocationResolutionMethod(models.TextChoices):
 §4.2); cấm thêm lại giá trị thứ ba dưới bất kỳ tên nào.
 
 - Seed đúng 76 `Location` từ hai file CSV; không gộp, dẫn xuất hay thay tọa độ.
+- Tập `Location` là tập đóng đúng 76 dòng: không tạo endpoint/serializer/service
+  `POST /api/v1/locations/`; `location.manage` chỉ cho phép sửa qua `PATCH`
+  (R-113).
   `parent` suy từ tiền tố mã theo CHOT §2; tiền tố không khớp TTKD nào thì
   `parent = NULL`, không đoán theo tên hay khoảng cách.
 - Hai CSV **khác header** (`Mã TTKD`/`Tên` với `SHOP_CODE`/`NAME`). Khai báo hai
@@ -95,6 +99,14 @@ class LocationResolutionMethod(models.TextChoices):
   task_gps_low_accuracy_m`, `late_checkout_grace_minutes >= 0`,
   `shift_start < shift_end`. Ranh giới “dừng hay cảnh báo” theo đúng bảng §4.3;
   `radius_m < max_attendance_accuracy_m` **chỉ cảnh báo**, không chặn.
+- Khi PATCH Config hạ `max_radius_m`, service phải khóa Config rồi kiểm toàn bộ
+  Location (kể cả inactive). Có Location `radius_m > candidate.max_radius_m` thì
+  trả `400 VALIDATION_FAILED`, chỉ nêu id/code, không tự rewrite và không tạo
+  audit/outbox/version (R-114). Giá trị bằng maximum hiện hữu là hợp lệ.
+- Location/Config PATCH phải dựng complete candidate dưới lock và phát hiện
+  same-value no-op (R-115). No-op trả `200` nhưng không gọi save/append; Location
+  luôn so optimistic version **trước** khi xét no-op nên stale không được biến
+  thành thành công. `reason` riêng lẻ không phải mutation.
 - Hàm hình học thuần, không gọi DB/HTTP. Luật geofence là **hai cổng độc lập**:
   cổng chất lượng `accuracy_m <= threshold` và cổng vị trí `distance_m <=
   radius_m`. `accuracy_m` không bao giờ bị trừ vào `radius_m`.
@@ -130,7 +142,8 @@ def classify_geofence(distance_m: float,
   ở chính mẫu GPS đó. Lựa chọn nằm ngoài tập vừa tính lại bị từ chối
   `422 INVALID_LOCATION_CHOICE` ở cả hai luồng; cấm im lặng bỏ qua lựa chọn sai
   rồi rơi về `AUTO_SINGLE`/`GPS_ONLY`.
-- Mọi request chấm công **đã qua xác thực + phân quyền** ghi đúng một
+- Mọi request chấm công **đã qua xác thực + phân quyền và kết thúc bằng một trong
+  bảy outcome nghiệp vụ đóng** ghi đúng một
   `AttendanceAttempt` với `outcome` thuộc `AttendanceAttemptOutcome` (CHOT §5.2),
   kể cả request thành công (`outcome = ACCEPTED`). Đây là **nhật ký request chấm
   công của Helpdesk**, không phải bảng “lần bị từ chối” và cũng không phải access
@@ -143,12 +156,17 @@ def classify_geofence(distance_m: float,
   của một luồng đúng — hệ thống hỏi lại địa điểm, user chọn, lượt sau `ACCEPTED`
   — nên đếm nó ở bất kỳ vế nào cũng làm tỉ lệ sai lệch. Cấm chỉ log text.
 - Dòng `AttendanceAttempt` được ghi **ngoài transaction nghiệp vụ**, sau khi
-  transaction đó đã kết thúc, ở **cả nhánh commit lẫn nhánh `except`** (CHOT §5.2,
+  transaction đó đã kết thúc, ở nhánh commit và nhánh `except` nghiệp vụ đã phân
+  loại (CHOT §5.2,
   R-74). Lý do: `uniq_open_session_per_user` bắn `IntegrityError` làm abort
   transaction, nên attempt ghi bên trong sẽ bị rollback cùng — mất đúng dòng cần
   nhất cho `SESSION_ALREADY_OPEN`. Viết `attempt = ...create(...)` bên trong
   `with transaction.atomic():` của luồng chấm công là lỗi review, kể cả khi test
   đang xanh.
+- Audit punch thành công target đúng `Attendance` vừa tạo, `before = {}` và
+  `after` có đúng năm khóa `attendance_id`, `kind`, `work_date`, `location_id`,
+  `session_id`; thêm GPS/accuracy/device/IP/maps URL hoặc khóa tùy tiện là lỗi
+  review. Audit/Attendance/Session/anomaly cùng commit hoặc cùng rollback (R-121).
 - Ngược lại, request chết **trước** cổng nghiệp vụ (bước 1–2 của CHOT §5.1) thì
   **không** ghi attempt: `401`, `403 PERMISSION_DENIED` (`MANAGER` gọi check-in),
   `403 PASSWORD_CHANGE_REQUIRED`, `400 SERVER_OWNED_FIELD` do payload mang `kind`.
@@ -157,11 +175,28 @@ def classify_geofence(distance_m: float,
   sinh ra những dòng attempt không có `outcome` hợp lệ để điền. Ai thấy cần ghi
   các ca đó thì sửa enum ở CHOT §5.2 trước; cấm tự thêm giá trị `outcome` mới
   trong code, và càng cấm tái dùng một giá trị gần đúng cho có.
+- Lỗi database/network/process/framework bất ngờ sau boundary giữ canonical 5xx,
+  không ghi `AttendanceAttempt`, không retry và không được relabel thành một trong
+  bảy outcome nghiệp vụ. Chỉ các đường kết thúc bằng outcome đóng mới thuộc cam
+  kết đúng một attempt; telemetry lỗi hạ tầng phải lọc GPS/device/IP (R-125).
 - Với mọi request đã qua boundary bước 3, lớp quan trắc tính nearest metadata
   trước khi ghi attempt, kể cả outcome ở bước 3-5. Hàm này không được gọi
   `classify_geofence`, không tạo candidates và không thay thứ tự gate. Serializer
   gắn `nearest_is_approximate` cho `WEAK_GPS`; `candidate_count` của nhánh chưa
-  chạy candidate matching giữ `NULL`, không giả thành `0`.
+  chạy candidate matching giữ `NULL`, không giả thành `0`. Nearest phải đọc toàn
+  bộ đúng 76 Location canonical (`is_active` cả hai giá trị) và chọn khoảng cách
+  nhỏ nhất mà không xét radius; candidate matching phải dùng truy vấn riêng chỉ
+  lấy `is_active = True`. Cấm tái dùng danh sách active candidates làm tập nearest
+  hoặc cho nearest inactive đi vào auto-selection/revalidation (R-118). Khi có
+  nhiều khoảng cách nhỏ nhất bằng nhau, sort bằng `(distance_m, location.code)`
+  và lấy dòng đầu; cấm tie-break bằng database id/name/history/active. Sort này
+  chỉ dành cho FK nearest quan trắc, không được tái dùng để rút tập candidates
+  còn một phần tử (R-119).
+- Config phải được khóa trước khi tải reference data; nearest và candidates phải
+  dùng cùng một snapshot 76 Location, candidates chỉ là phép lọc active trên
+  snapshot đó. Cấm query nearest và candidates ở hai thời điểm khác nhau hoặc
+  reload giữa hai gate, vì admin edit đồng thời sẽ tạo quyết định lai phiên bản
+  (R-126).
 - Mã lỗi API khi không có ứng viên INSIDE là `OUTSIDE_RADIUS` — trùng tên với
   `AttendanceAttemptOutcome.OUTSIDE_RADIUS`. `OUTSIDE_GEOFENCE` chỉ là giá trị
   của `LocationValidationResult`; trả nó ra `error_code` là lỗi review.
@@ -227,6 +262,10 @@ Hai con số này khớp đúng cấu hình tooling ở §9 (`max-args = 4`, ESL
 - Hàm có tác dụng phụ có tên động từ: `check_in`, `complete_field_task`.
   Hàm hỏi có tên mệnh đề: `can_complete`, `find_inside_locations`.
 - Transaction bao trọn kiểm tra chống trùng và ghi Attendance/Task/AuditLog.
+  Check In thành công append `attendance.check_in.created`, Check Out thành công
+  append `attendance.check_out.created`; target là Attendance vừa tạo, payload
+  không chứa GPS/sai số/device/request IP. Nhánh từ chối không ghi AuditLog và
+  Check In/Out thường không tạo OutboxEvent.
 - Bất biến chấm công ở database là **partial unique index một phiên mở mỗi user**
   (`AttendanceSession`, CHOT §5.3), không phải `UNIQUE(user_id, work_date, kind)`.
   Một ngày được phép nhiều lượt Check In/Out; đừng khôi phục ràng buộc cũ dưới
@@ -238,10 +277,36 @@ Hai con số này khớp đúng cấu hình tooling ở §9 (`max-args = 4`, ESL
   review: job cuối ngày đóng phiên nhưng vẫn giữ `check_out = NULL`, nên bản ghi
   đó sẽ bị hiểu nhầm là còn mở và chặn Check In hôm sau. `closed_by_job` là
   `BooleanField(default=False)` không nullable vì nằm trong index.
-- Ghi `Attendance`, mở/đóng `AttendanceSession` và ghi/gỡ anomaly nằm trong **một**
+- Ghi `Attendance`, mở/đóng `AttendanceSession`, ghi/gỡ anomaly và AuditLog của
+  punch thành công nằm trong **một**
   transaction; đóng phiên phải `SELECT ... FOR UPDATE` phiên đang mở.
   `AttendanceAttempt` **nằm ngoài** transaction đó (§2, R-74) — nó là dữ liệu
   quan trắc, không phải bất biến nghiệp vụ.
+- `AttendanceSession.duration_minutes` lấy hiệu server timestamp rồi lượng tử hóa
+  đúng một lần tới 6 chữ số thập phân phút bằng `ROUND_HALF_UP`; mọi test duration
+  phải pin cả ca có số microsecond không chia hết cho 60 giây.
+- Job `MISSING_CHECK_OUT` xử lý **mỗi phiên trong một transaction riêng**
+  (R-127): khóa lại dòng và re-check đủ điều kiện trước khi ghi
+  `closed_by_job = True` cùng đúng một anomaly trong cùng transaction. Lỗi một
+  phiên rollback riêng phiên đó, không rollback phiên đã commit; tiếp tục phiên
+  khác khi có thể. Cấm bọc toàn run trong một transaction và cấm commit theo
+  batch. Retry chỉ quét điều kiện phiên mở canonical; `JobRun` đếm state đã
+  commit, không đếm thay đổi đã rollback.
+- `JobRun` commit `RUNNING` trước scan và dùng đúng bốn status của R-128.
+  Terminalization phải giữ các shape: chỉ RUNNING thiếu `finished_at`; success
+  không error code; hai trạng thái lỗi chỉ nhận
+  `SESSION_PROCESSING_FAILED`/`RUN_ABORTED`. `job_name` luôn
+  `MISSING_CHECK_OUT`. Count chỉ tăng cho state tương ứng đã commit, giữ
+  `changed = anomaly <= scanned`. Process death không được rewrite RUNNING thành
+  success. Model này là heartbeat của job, không tạo bảng heartbeat song song.
+  Migration tạo bảng theo expand, không bịa/backfill lịch sử.
+- Một success chỉ đúng hạn khi `finished_at < 01:00:00` Asia/Ho_Chi_Minh; equality
+  là late. Trước cutoff chỉ RUNNING bắt đầu trước ngày local hiện tại là stale;
+  từ đúng cutoff mọi RUNNING chưa terminal đều alert (R-131).
+- Lịch gọi job là contract triển khai tại `deploy/scheduled-jobs.yaml`: `00:15`
+  Asia/Ho_Chi_Minh mỗi ngày, đúng một scheduler binding cho mỗi môi trường. Script
+  deployment check phải kiểm command/timezone/cron/enabled/singleton identity;
+  không thêm timer trong web process hoặc dependency scheduler mới (R-133).
 - Complete Task dùng compare-and-set/row lock; chỉ request thắng được tạo
   `TaskUpdate COMPLETED`.
 - Upload object storage không nằm trong DB transaction. Backend HEAD/kiểm
@@ -259,6 +324,27 @@ Hai con số này khớp đúng cấu hình tooling ở §9 (`max-args = 4`, ESL
   `Task.status` mà không kèm `TaskUpdate` — `MANAGER_OVERRIDE` cũng phải tạo
   `TaskUpdate`. TaskUpdate chỉ `INSERT`; Location mơ hồ phải được chọn trước khi
   completion transaction tạo bản ghi.
+- Task status non-terminal đặt lại đúng state hiện hành là no-op `200` sau đủ permission, DTO
+  và object scope: không save `Task`, không `TaskUpdate`, không audit/outbox và
+  không tăng version. Không được chạy no-op check trước scope hoặc dùng request
+  lặp để tạo lịch sử giả (R-136). `COMPLETED` không đi nhánh no-op này.
+- Status use case thường không được nhận target `COMPLETED`. Ba cạnh completion
+  trong domain matrix chỉ được gọi từ completion use case chuyên biệt. Feature
+  007 bật cả hai đường: `MANAGER_OVERRIDE` dùng MANAGER + completion note, không
+  nhận ảnh/GPS; `FIELD_EVIDENCE` dùng creator-or-assignee scope + 1-5 ảnh + GPS
+  mới. Mỗi đường ghi `TaskUpdate`/Task snapshot/AuditLog trong cùng transaction;
+  FIELD_EVIDENCE dùng action `task.completion.field_evidence` với payload chỉ gồm
+  ID/status/method/actor/server time và không chứa note/GPS/candidates/photo,
+  object key hay URL (R-137).
+- Status Task cạnh tranh phải `select_for_update` Task, đọc lại state rồi mới
+  gọi domain transition. Request lấy lock sau: transition còn hợp lệ thì ghi
+  `TaskUpdate` riêng; target trùng state thì no-op R-136; invalid/terminal thì
+  reject. Không thêm version field, không reject stale vô điều kiện và không
+  last-write-wins (R-138). Race test phải dùng PostgreSQL transaction thật.
+- Task `COMPLETED` là read-only toàn bộ: chặn mọi status/content/expected
+  Location/assignee mutation trước write, kể cả request gửi lại `COMPLETED`;
+  `task.update.any` không bypass. Nhánh từ chối không sinh TaskUpdate/audit/outbox.
+  Correction nếu có là workflow phase sau, không PATCH lén (R-139).
 - Anomaly ca làm tính theo **ngày công**, không theo từng lượt bấm: hàm quyết định
   nhận danh sách lượt trong ngày, không nhận một `Attendance` đơn lẻ.
 - Không dùng boolean flag thay enum/trạng thái nghiệp vụ.
@@ -412,10 +498,26 @@ def require_permission(user: User, action: PermissionAction) -> None:
 - `PERMISSION_IMPLIES` có đúng **5** cặp; chỉ dùng implication trong map này,
   không suy diễn kế thừa action khác. `view.all`/`update.any` không thay thế
   business validation.
-- `LEADER` chỉ đọc: role map của Leader không được chứa bất kỳ action mutation
-  nào, kể cả `task.create.assign` và `task.update.any`.
+- `LEADER` chỉ đọc state nghiệp vụ: role map không được chứa action mutation lên
+  Task, Attendance, Location, Config, User, báo cáo hay vận hành, kể cả
+  `task.create.assign` và `task.update.any`. Ngoại lệ self-service hẹp của R-144
+  chỉ gồm `notification.update.self` và `push_subscription.manage.self`; cả hai
+  vẫn khóa vào `request.user` và không mở object scope khác.
+- Notification dùng đúng ba action canonical R-144:
+  `notification.view.self`, `notification.update.self` và
+  `push_subscription.manage.self`, cấp trực tiếp cho cả ba vai trò, không thêm
+  implication và không kiểm role rải rác trong adapter/service.
 - Mọi service/API public kiểm quyền trước khi đọc/ghi dữ liệu.
+- `GET /api/v1/operations/job-health` dùng action tập trung
+  `operations.job_health.view`: LEADER/MANAGER allow, HELPDESK deny. Đây là read
+  global aggregate không có object-scope user. Identity authorize trước rồi trả
+  enum đóng `JobHealthAccessScope.INVESTIGATE|ESCALATE_ONLY`; operations chỉ shape
+  từ scope và không import/so sánh `Role`; endpoint đích vẫn tự authorize. Response private/no-store,
+  không GPS/user list/raw exception/secret. Read và auto-close không tạo
+  AuditLog/OutboxEvent; JobRun/session/anomaly là bằng chứng canonical (R-130).
 - Không dùng `if user.role == Role.MANAGER` ngoài module phân quyền.
+- Architecture test phải chặn mọi import/so sánh `Role` phục vụ job-health ngoài
+  identity authorization; adapter composition chỉ chuyển typed scope (R-132).
 - Frontend chỉ dùng capability từ API để điều khiển UI; backend là nguồn thực thi.
 
 RBAC không phải ownership. `task.view.self`, `task.update.self` và
@@ -423,6 +525,25 @@ RBAC không phải ownership. `task.view.self`, `task.update.self` và
 tạo hoặc actor là assignee. Ưu tiên scope trong query/policy, ví dụ
 `Task.objects.filter(id=task_id).filter(Q(created_by=actor) | Q(assignees=actor))`.
 `task.update.any` không bỏ qua state transition; Leader luôn bị từ chối mutation.
+`task.create.self` luôn tạo đúng một `TaskAssignee` cho actor đã xác thực;
+HELPDESK không được gửi người nhận khác. `task.update.self` không có quyền thêm,
+gỡ hay thay assignee dù object scope đã qua; chỉ MANAGER có
+`task.create.assign`/`task.update.any` quản lý tập assignee (R-135). Test phải
+chặn cả create lẫn update của HELPDESK mang thay đổi assignee và khẳng định không
+có side effect.
+MANAGER không được cấp `task.create.self`: create của MANAGER luôn dùng
+`task.create.assign`, bắt buộc ít nhất một assignee HELPDESK active; quyền
+`task.complete.field` của MANAGER giữ nguyên (R-140).
+Các User mới được gán phải được khóa theo ID tăng dần và revalidate trong cùng
+transaction với Task; mọi ID thiếu/sai role/inactive được gom vào một
+`422 INACTIVE_ASSIGNEE`, rollback toàn bộ (R-141). Test PostgreSQL thật phải race
+create/update assignment với khóa tài khoản hoặc đổi role.
+SELF create phải khóa User actor trong transaction và re-authorize direct
+`task.create.self`: inactive trả `401 ACCOUNT_INACTIVE`, mất action sau đổi role
+trả `403 PERMISSION_DENIED`, không dùng `INACTIVE_ASSIGNEE` (R-142).
+Serializer Task chỉ trả `{id, full_name}` cho mọi identity projection; không trả
+`username`/`is_active`. Audit override không chứa `completion_note`, chỉ chứa
+ID/status/method/actor/time an toàn; note nguyên văn ở Task/TaskUpdate (R-143).
 
 `user.assign_role` chỉ gán được `LEADER` và `HELPDESK` (CHOT §8). Khai báo tập
 này thành một hằng số ở module phân quyền (`ASSIGNABLE_ROLES`), dùng nó cho cả
@@ -533,10 +654,21 @@ lời “anh được làm gì”; giữ hai tầng tách bạch.
   hình refresh stateless là lỗi review vì mất khả năng thu hồi.
 - Thu hồi đi qua **một** helper (ví dụ `revoke_all_refresh_tokens(user, reason)`),
   gọi ở đúng bốn chỗ: logout, Manager reset mật khẩu, user tự đổi mật khẩu, và
-  `is_active = False`. Helper tự ghi `AuditLog`; cấm mỗi view tự blacklist một
-  kiểu. **Logout không phải ngoại lệ**: nó cũng thu hồi toàn bộ refresh token của
+  `is_active = False`. Helper chỉ ghi evidence tổng hợp khi `revoked_count > 0`;
+  cấm mỗi view tự blacklist một kiểu. **Logout không phải ngoại lệ**: nó cũng thu hồi toàn bộ refresh token của
   user chứ không chỉ token gửi kèm request — view logout gọi đúng helper này,
   không tự `RefreshToken(token).blacklist()`.
+- Logout lấy actor **chỉ** từ access token đã xác thực. Refresh cookie thiếu,
+  sai/hết hạn/blacklist/khác owner không được chặn logout và không được chọn
+  actor: endpoint vẫn clear cookie, gọi helper theo actor và trả `204` (R-110).
+  Helper trả `revoked_count`; count > 0 mới append đúng một audit + một outbox
+  tổng hợp, count = 0 là no-op không evidence/version. Vì vậy logout lặp không
+  được tạo dòng attributable giả.
+- Helper thu hồi count = 0 là success no-op ở mọi caller. `PATCH .../status`
+  đặt lại đúng state hiện có trả `200` nhưng không save/audit/outbox/revoke;
+  transition thật mới ghi state evidence. Reset mật khẩu lặp vẫn là mutation mới,
+  luôn sinh hash/password display mới và reset evidence; chỉ revocation evidence
+  phụ thuộc count > 0 (R-111).
 - Mô tả hành vi thu hồi ở docstring/comment/tài liệu phải dùng đúng câu canonical
   ở CHOT §9.2.1: thu hồi toàn bộ refresh token, access token không blacklist
   riêng, trừ request bị chặn bởi `is_active`/`must_change_password`. Viết “mọi
@@ -561,6 +693,23 @@ lời “anh được làm gì”; giữ hai tầng tách bạch.
   Riêng `/api/v1/auth/login` giữ chung `401 INVALID_CREDENTIALS` cho cả sai mật khẩu
   lẫn tài khoản khóa, không tiết lộ tài khoản có tồn tại hay không.
 
+**Throttle xác thực (CHOT §9.7.1, R-112).**
+
+- Khai đúng ba DRF scope: `login = 10/min` theo canonical client IP,
+  `refresh = 120/min` theo canonical client IP, `password_change = 5/min` theo
+  authenticated `User.id`. Không đọc tùy ý `X-Forwarded-For`; chỉ dùng kết quả
+  trusted-proxy normalization do deployment sở hữu.
+- Mọi attempt tới scope đều tính. Login/refresh throttle trước DTO/nghiệp vụ;
+  password-change throttle sau authentication/permission gate và trước DTO.
+- Mọi throttle import `core.cache.THROTTLE_CACHE_ALIAS`; cấm string alias lặp,
+  cache alias thứ hai hoặc backend cục bộ ngoài development. Vượt quota trả
+  canonical `429 THROTTLED` + `Retry-After`. Cache exception được đổi thành
+  canonical `503 SERVICE_UNAVAILABLE` và dừng request; tuyệt đối không catch rồi
+  cho qua. Hai lỗi không tạo AuditLog/OutboxEvent.
+- Test dùng clock kiểm soát, kiểm key isolation/shared scope và backend cache
+  dùng chung qua hai worker. Cache unavailable phải fail-closed và số dòng
+  User/token/audit/outbox trước/sau bằng nhau.
+
 ## 6. Ảnh và dữ liệu nhạy cảm
 
 - Ảnh hoàn thành là bằng chứng hình ảnh, không phải nguồn GPS.
@@ -581,6 +730,10 @@ lời “anh được làm gì”; giữ hai tầng tách bạch.
 - Push subscription là secret vận hành: mã hóa khi lưu, endpoint không vào log;
   vô hiệu hóa khi logout/account switch/account inactive. Push payload lock-screen
   không chứa tên Task/người, tọa độ, note hay ảnh; deep-link luôn kiểm lại RBAC.
+- `PushDelivery` chỉ giữ FK, state/schedule/lease/attempt/collapse metadata và mã
+  lỗi đóng; không lưu payload, endpoint hay subscription plaintext. Unique theo
+  Notification + PushSubscription; worker claim/lease trong transaction ngắn,
+  gọi provider ngoài transaction rồi finalize riêng (R-146).
 
 **Địa chỉ và link bản đồ (CHOT §6.2.1).**
 
@@ -641,6 +794,7 @@ lời “anh được làm gì”; giữ hai tầng tách bạch.
 | Xoay vòng refresh | Refresh token đã dùng một lần bị blacklist; dùng lại trả `401`, không cấp token mới |
 | Thu hồi truy cập | Logout, Manager reset mật khẩu, user tự đổi mật khẩu, `is_active = False` — mỗi trường hợp blacklist toàn bộ refresh token của user và ghi `AuditLog`; refresh sau đó `401` |
 | Logout thu hồi toàn bộ | User đăng nhập trên hai thiết bị rồi logout ở thiết bị A: refresh token của **cả hai** thiết bị đều `401`, không chỉ token gửi kèm request logout |
+| Logout idempotent | Access hợp lệ với cookie thiếu/sai/hết hạn/đã blacklist/khác user đều `204`, clear cookie và revoke theo actor; có phiên active thì đúng một audit+outbox, không còn phiên thì không evidence/version mới; logout lặp vẫn `204` |
 | Access token sau khi thu hồi | Sau logout/đổi mật khẩu, access token cũ **vẫn** gọi được endpoint nghiệp vụ cho tới khi hết 15 phút (hành vi đã chốt, không phải bug); nhưng sau `is_active = False` thì request kế tiếp trả ngay `401 ACCOUNT_INACTIVE` |
 | Khóa tài khoản giữa chừng | Access token còn hạn nhưng `is_active = False`: request tiếp theo trả đúng `401 ACCOUNT_INACTIVE` (không phải `INVALID_TOKEN`, không phải `403`); server kiểm `is_active` sau khi giải mã |
 | Bắt đổi mật khẩu | `must_change_password = True` gọi endpoint nghiệp vụ trả `403 PASSWORD_CHANGE_REQUIRED`; endpoint đổi mật khẩu vẫn gọi được và sau khi đổi thì cờ tắt, refresh token cũ bị thu hồi |
@@ -656,14 +810,24 @@ lời “anh được làm gì”; giữ hai tầng tách bạch.
 | Anomaly theo ngày | `LATE_CHECK_IN` chỉ ở lượt IN đầu, `EARLY_CHECK_OUT`/`LATE_CHECK_OUT` chỉ ở lượt OUT cuối; lượt giữa ngày không sinh anomaly; bấm thêm cặp IN/OUT gỡ anomaly ra ca cũ |
 | Vị trí mọi lượt | Lượt Check In thứ hai ngoài mọi bán kính vẫn bị `OUTSIDE_RADIUS` |
 | Missing Check Out | Job cuối ngày đóng phiên mở: `MISSING_CHECK_OUT`, `check_out`/`duration_minutes` giữ `NULL`, `closed_by_job = True`, không cộng vào tổng giờ; hôm sau Check In được |
+| Job lỗi giữa chừng | Ít nhất ba phiên đủ điều kiện, ép phiên giữa lỗi: phiên lỗi không đổi và không có anomaly; các phiên khác vẫn commit khi có thể; `JobRun` chỉ đếm phần đã commit; retry đóng đúng phần còn lại, không tạo anomaly trùng (R-127) |
+| Vòng đời JobRun | Zero-work → `SUCCEEDED` với ba count 0; mixed commit/error → `PARTIAL_FAILED`; error không commit phiên nào → `FAILED`; process death để `RUNNING`/`finished_at=NULL`; shape/error/count constraints chạy PostgreSQL thật (R-128) |
+| Race reconciliation | Hai invocation cùng chọn một phiên: đúng một bên job-close/tạo anomaly; bên kia re-check rồi không đổi. Check Out đua job: đúng một transition thắng; nếu job thắng thì Check Out thấy không còn phiên mở. Mọi test dùng hai connection/barrier PostgreSQL thật (R-127/R-128) |
 | Định nghĩa phiên mở | Sau job, `GET` trạng thái trả `has_open_session = false` và Check In hôm sau trả `201`, không dính partial unique index; điều kiện index trong migration có đủ `check_out IS NULL` **và** `closed_by_job = False` |
 | Phiên không qua ngày | `AttendanceSession.work_date` luôn bằng `work_date` của Check In |
 | Link bản đồ | `maps_url` dựng từ tọa độ bản ghi (không phải tọa độ `Location`), đúng dạng `https://www.google.com/maps?q={lat},{lng}` |
 | Nearest cho early-gate attempt | `SESSION_ALREADY_OPEN`, `NO_OPEN_SESSION`, `WEAK_GPS` sau boundary có nearest; WEAK_GPS approximate; business gate không bị reorder |
 | GPS foreground | watch chỉ khi Attendance visible, dừng ở hidden/rời màn/timeout/submit, không lưu fix, không auto chấm công, sample quá 60 giây không submit |
 | Dashboard denominator | Trả numerator/eligible denominator/excluded choice/observed/nearest coverage; denominator 0 là `NULL`/`N/A` |
-| Job health | Có last run/scanned/closed/anomaly/overdue-open/invariant; LEADER read-only không có account/AuditLog deep-link |
+| Job health | Cutoff exclusive: success phải `< 01:00`, equality là late; trước cutoff prior-day RUNNING stale, từ cutoff mọi RUNNING chưa terminal alert; `unknown` khi chưa từng chạy; thiếu success, latest failure, overdue-open hoặc mismatch → `alert`; đủ success và invariant → `ok`. Identity trả access scope đóng; LEADER không có account/AuditLog deep-link (R-129–R-132) |
+| Job schedule | Manifest `deploy/scheduled-jobs.yaml` và deployment check chứng minh `15 0 * * *`, timezone Asia/Ho_Chi_Minh, đúng command, một binding/môi trường, enabled staging/production và không bỏ cuối tuần/ngày lễ (R-133) |
 | Location concurrent edit | PATCH version cũ trả `409`; overlap recompute cùng transaction; reason giữ qua conflict; AuditLog before/after |
+| Location/Config same-value PATCH | Current Location version trả `200` no-op; không save/audit/outbox/version. Location stale vẫn `409`; Config same-value cũng không evidence (R-115) |
+| Hạ Config max radius | Bằng radius lớn nhất thì pass; thấp hơn Location active hoặc inactive trả `400`, không rewrite/partial/evidence. Race với Location update và hai Location update khác nhau chạy PostgreSQL hai connection/barrier (R-114) |
+| Constraint Location | PostgreSQL chứng minh name/address nonblank, `is_active` NOT NULL/default và mọi check/unique/FK/trigger/index; không gom vào SQLite test |
+| Route id Feature 003 | String converter giữ RBAC trước parse; đủ quyền + malformed/nonexistent id đều `404 NOT_FOUND`, thiếu quyền vẫn `403`, không side effect (R-116) |
+| Reference readiness | Check read-only fail closed nếu thiếu Config hoặc không đúng 76/7/69/code/hierarchy/source coordinates; pass sau initialize+seed và không tự sửa state (R-117) |
+| Cache Feature 003 | Mọi success/error/conflict trả `Cache-Control: private, no-store`; `request_id` lỗi khớp `X-Request-Id` |
 | Notification | Đúng recipient, dedupe, quiet-hours/TTL/suppression; logout/khóa revoke push; deep-link kiểm RBAC; không email/SMS |
 | Export tọa độ | Mặc định loại tọa độ/Maps/photo/presigned URL; opt-in MANAGER/LEADER có audit metadata và `Cache-Control: no-store` |
 | Địa chỉ xác nhận | `resolved_address` = tên + địa chỉ Location khi có `location`, `null` khi không; không có HTTP call ra dịch vụ geocoding |
@@ -682,6 +846,8 @@ lời “anh được làm gì”; giữ hai tầng tách bạch.
 | Kiểm quyền chạy trước kiểm trường | `PATCH /api/users/{id}/` lên target `MANAGER` mà payload có kèm `role` trả `403 PERMISSION_DENIED`, **không** phải `400 SERVER_OWNED_FIELD` (thứ tự action → target → payload, CHOT §8) |
 | Luật target không đọc body | Cùng `PATCH` lên target `MANAGER` nhưng body **rỗng** cũng trả `403 PERMISSION_DENIED`: luật target nằm trong cổng phân quyền nên kết quả không phụ thuộc nội dung payload; guard đặt ở `permission_classes`/`has_object_permission`, không ở `serializer.validate()` (R-87) |
 | Reset mật khẩu | `POST /api/users/{id}/reset-password` bật `must_change_password`, thu hồi toàn bộ refresh token của target, ghi `AuditLog` **không** chứa mật khẩu; target đăng nhập lại thì mọi endpoint nghiệp vụ trả `403 PASSWORD_CHANGE_REQUIRED` |
+| Lặp trạng thái và revoke rỗng | `active→active`/`inactive→inactive` trả `200` no-op không write/evidence/version; revoke count 0 không evidence; reset lặp sinh password mới và reset evidence mới |
+| Throttle xác thực | Request thứ 11 login/IP, 121 refresh/IP và 6 password-change/User trong 60 giây trả `429 THROTTLED` + `Retry-After`; key khác còn quota; hai worker dùng chung counter; cache failure trả `503 SERVICE_UNAVAILABLE`; mọi nhánh không side effect |
 | Self tách khỏi quản trị | Manager đổi được mật khẩu và thông tin cá nhân của mình qua `/api/change-password/` và `/api/me/` dù mọi thao tác quản trị lên `MANAGER` bị chặn; hai endpoint self **từ chối** `user_id` gửi kèm payload bằng `400 SERVER_OWNED_FIELD` (không phải bỏ qua rồi trả `200`), luôn tác động đúng `request.user` (R-76) |
 | Tự đổi mật khẩu cấp token mới | Sau `POST /api/change-password/`: refresh token **cũ** trả `401`, cặp `access` + `refresh` **mới** trong response dùng được ngay ở request kế tiếp; cả hai khẳng định trong cùng một test (R-78) |
 | RBAC trước DTO | Actor thiếu quyền gửi body sai định dạng nhận `403 PERMISSION_DENIED`, **không** phải `400`: `HELPDESK` gọi `POST /api/users/` với body rỗng trả `403`, không trả lỗi `username field-required` (R-72) |
@@ -721,7 +887,7 @@ lời “anh được làm gì”; giữ hai tầng tách bạch.
 | Cảnh báo đã làm sạch | Text chẩn đoán chứa URL đã ký, `token=...` và tọa độ `10.785850` đi qua đường phát cảnh báo: bản ghi **không** còn URL, giá trị token hay tọa độ, nhưng **vẫn còn** phần chẩn đoán còn lại; kiểm cùng lúc trên `last_error`, bản ghi cảnh báo và `caplog.text` (R-106) |
 | Dọn dẹp không chạm dòng cấm | Test PostgreSQL thật: dòng trong hạn sống sót, dòng quá hạn bị xóa đúng số lượng theo từng bảng, dòng `PENDING` **mọi tuổi** còn nguyên, dòng `AuditLog` còn nguyên, và tập lớn hơn kích thước lô vẫn bị xóa hết qua nhiều lô (R-106) |
 | Thiếu quan trắc ra `unknown` | Chưa từng có dòng nhịp tim thì check là `unknown` **và** vẫn phát cảnh báo; nhịp tim cũ hơn ngưỡng là `alert`; nhịp tim mới là `ok`; trạng thái tổng hợp xếp `alert` > `unknown` > `ok`. Không trường hợp nào trong hai trường hợp đầu được báo `ok` (R-106) |
-| Ghi quan trắc sống qua rollback | Test PostgreSQL thật (`transaction=True`): quan trắc đăng ký trong `business_transaction()` được ghi **sau** khi khối kết thúc ở cả nhánh commit lẫn nhánh exception, sống qua rollback của thay đổi nghiệp vụ, chạy **đúng một lần**, không sinh `OutboxEvent` và không sinh `AuditLog`; quan trắc tự ném lỗi thì được log mà **không** che exception nghiệp vụ gốc (R-106) |
+| Ghi quan trắc sống qua rollback | Test PostgreSQL thật (`transaction=True`): quan trắc đã đăng ký trong `business_transaction()` được ghi **sau** khi khối kết thúc ở nhánh commit và nhánh exception nghiệp vụ đã phân loại, sống qua rollback, chạy **đúng một lần**, không sinh `OutboxEvent` và không sinh `AuditLog`; quan trắc tự ném lỗi thì được log đã lọc mà **không** che response/exception nghiệp vụ gốc, không tự retry và không rollback kết quả đã có. Với `AttendanceAttempt`, unexpected 5xx không đăng ký writer và mọi telemetry không chứa tọa độ, device metadata hay request IP (R-106, R-125) |
 
 ## 8. Checklist review PR
 
@@ -738,10 +904,11 @@ lời “anh được làm gì”; giữ hai tầng tách bạch.
   database/transaction; không tái lập `UNIQUE(user_id, work_date, kind)`.
 - [ ] Mọi chỗ hỏi “phiên đang mở” dùng đủ `check_out IS NULL AND
   closed_by_job = False`, kể cả điều kiện của partial unique index.
-- [ ] Mọi request chấm công **đã qua xác thực/phân quyền** ghi một
+- [ ] Mọi request chấm công **đã qua xác thực/phân quyền và có outcome nghiệp vụ** ghi một
   `AttendanceAttempt`, gồm cả `ACCEPTED`; `401`/`403`/payload sai **không** ghi
   attempt và chỗ gọi `create` nằm trong service, không ở middleware. Mã lỗi ngoài
-  bán kính là `OUTSIDE_RADIUS`, lựa chọn sai là `INVALID_LOCATION_CHOICE`.
+  bán kính là `OUTSIDE_RADIUS`, lựa chọn sai là `INVALID_LOCATION_CHOICE`; lỗi
+  hạ tầng 5xx không ghi attempt và không relabel outcome (R-125).
 - [ ] `AttendanceAttempt` được ghi **ngoài** `transaction.atomic()` của nghiệp vụ,
   trên cả nhánh thành công lẫn nhánh `except`, nên rollback nghiệp vụ không xóa
   attempt (R-74).

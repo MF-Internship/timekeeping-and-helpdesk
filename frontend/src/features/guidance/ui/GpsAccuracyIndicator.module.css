@@ -1,0 +1,37 @@
+.indicator {
+  width: 7.5rem;
+  aspect-ratio: 1;
+  border: 0.6rem solid var(--color-border);
+  border-radius: 50%;
+  display: grid;
+  place-content: center;
+  place-items: center;
+  text-align: center;
+  background: var(--color-surface);
+}
+.indicator span {
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+.indicator b {
+  font-size: 1.25rem;
+}
+.ready {
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+.weak,
+.stale {
+  border-style: dashed;
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+.unavailable {
+  border-color: var(--color-critical);
+  color: var(--color-critical);
+}
+.requesting,
+.refreshing {
+  border-style: dotted;
+  color: var(--color-brand-primary);
+}

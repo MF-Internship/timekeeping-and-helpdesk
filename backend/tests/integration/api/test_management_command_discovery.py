@@ -31,3 +31,13 @@ def test_command_handle_is_a_thin_delegate_without_query_or_policy_logic() -> No
     assert "SELECT" not in source
     assert "execute(" not in source
     assert (handle.end_lineno or handle.lineno) - handle.lineno + 1 <= 20
+
+
+def test_reconciliation_command_is_owned_by_attendance_and_has_no_repair_arguments() -> None:
+    from django.core.management import get_commands, load_command_class
+
+    assert get_commands()["reconcile_missing_checkouts"] == "attendance"
+    command = load_command_class("attendance", "reconcile_missing_checkouts")
+    parser = command.create_parser("manage.py", "reconcile_missing_checkouts")
+    destinations = {action.dest for action in parser._actions}
+    assert destinations.isdisjoint({"date", "work_date", "repair", "session_id", "user_id"})

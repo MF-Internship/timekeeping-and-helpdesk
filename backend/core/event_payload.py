@@ -13,14 +13,22 @@ _FORBIDDEN_KEYS = frozenset(
         "access_token",
         "authorization",
         "cookie",
+        "credential",
+        "generated_password",
         "image",
         "image_data",
+        "jti",
+        "jwt",
         "latitude",
         "longitude",
         "object_key",
         "password",
+        "password_hash",
         "presigned_url",
         "refresh_token",
+        "session",
+        "session_secret",
+        "signature",
         "set_cookie",
         "token",
         "url",
@@ -45,22 +53,35 @@ class ProtectedPayloadError(ValueError):
         return f"protected payload at {self.path}"
 
 
-def validate_event_payload(value: Any, *, path: str = "$") -> None:
+def validate_event_payload(
+    value: Any,
+    *,
+    path: str = "$",
+    allowed_paths: frozenset[str] = frozenset(),
+) -> None:
+    if isinstance(value, str) and "://" in value:
+        raise ProtectedPayloadError(path)
     if isinstance(value, Mapping):
-        _validate_mapping(value, path)
+        _validate_mapping(value, path, allowed_paths)
         return
     if isinstance(value, Sequence) and not isinstance(value, str | bytes | bytearray):
         for index, item in enumerate(value):
-            validate_event_payload(item, path=f"{path}[{index}]")
+            validate_event_payload(
+                item,
+                path=f"{path}[{index}]",
+                allowed_paths=allowed_paths,
+            )
 
 
-def _validate_mapping(value: Mapping[object, Any], path: str) -> None:
+def _validate_mapping(
+    value: Mapping[object, Any], path: str, allowed_paths: frozenset[str]
+) -> None:
     for raw_key, item in value.items():
         key = str(raw_key)
         item_path = f"{path}.{key}"
-        if key.casefold() in _FORBIDDEN_KEYS:
+        if key.casefold() in _FORBIDDEN_KEYS and item_path not in allowed_paths:
             raise ProtectedPayloadError(item_path)
-        validate_event_payload(item, path=item_path)
+        validate_event_payload(item, path=item_path, allowed_paths=allowed_paths)
 
 
 def sanitize_failure_reason(

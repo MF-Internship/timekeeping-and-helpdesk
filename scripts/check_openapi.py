@@ -19,6 +19,48 @@ from core.event_payload import (  # noqa: E402
 )
 
 _SNAKE_CASE = re.compile(r"^[a-z][a-z0-9_]*$")
+_NOTIFICATION_SCHEMA_FIELDS = {
+    "Inbox": frozenset({"items", "unread_count"}),
+    "NotificationItem": frozenset(
+        {"public_id", "event_type", "title", "created_at", "read_at", "is_unread"}
+    ),
+    "PushSubscriptionInput": frozenset({"endpoint", "p256dh", "auth"}),
+    "PushSubscriptionResult": frozenset({"id", "is_active", "created_at"}),
+    "Target": frozenset({"destination", "target_id"}),
+}
+_ALLOWED_PROTECTED_SCHEMA_PATHS = frozenset(
+    {
+        "$.components.schemas.Login.properties.password",
+        "$.components.schemas.GeneratedUserResult.properties.generated_password",
+        "$.components.schemas.ResetPasswordResult.properties.generated_password",
+        # Coordinates are approved Location API fields. The safety check still
+        # rejects coordinate values/examples anywhere in the schema.
+        "$.components.schemas.Location.properties.latitude",
+        "$.components.schemas.Location.properties.longitude",
+        "$.components.schemas.LocationUpdate.properties.latitude",
+        "$.components.schemas.LocationUpdate.properties.longitude",
+        "$.components.schemas.PatchedLocationUpdate.properties.latitude",
+        "$.components.schemas.PatchedLocationUpdate.properties.longitude",
+        # Attendance coordinates are approved request/response field names;
+        # values and examples remain forbidden by the recursive string check.
+        "$.components.schemas.AttendanceCommand.properties.latitude",
+        "$.components.schemas.AttendanceCommand.properties.longitude",
+        "$.components.schemas.AttendancePunch.properties.captured_latitude",
+        "$.components.schemas.AttendancePunch.properties.captured_longitude",
+        "$.components.schemas.IndexedAttendancePunch.properties.captured_latitude",
+        "$.components.schemas.IndexedAttendancePunch.properties.captured_longitude",
+        "$.components.schemas.AttendanceCommandResult.properties.session",
+        # Task evidence coordinates and short-lived access/upload URLs are
+        # approved only on their dedicated request/response schemas. Object
+        # keys, URL examples, and the same names elsewhere remain forbidden.
+        "$.components.schemas.TaskFieldCompletion.properties.latitude",
+        "$.components.schemas.TaskFieldCompletion.properties.longitude",
+        "$.components.schemas.TaskLifecycleUpdate.properties.captured_latitude",
+        "$.components.schemas.TaskLifecycleUpdate.properties.captured_longitude",
+        "$.components.schemas.EvidenceUploadIntent.properties.upload_url",
+        "$.components.schemas.PhotoAccess.properties.url",
+    }
+)
 
 
 class OpenAPISafetyError(ValueError):
@@ -28,9 +70,10 @@ class OpenAPISafetyError(ValueError):
 def check_openapi_text(text: str, artifact: str) -> None:
     try:
         document = yaml.safe_load(text)
-        validate_event_payload(document)
+        validate_event_payload(document, allowed_paths=_ALLOWED_PROTECTED_SCHEMA_PATHS)
         _check_strings(document, "$")
         _check_property_names(document, "$")
+        _check_notification_contracts(document)
     except (yaml.YAMLError, ProtectedPayloadError, ValueError) as error:
         path = error.path if isinstance(error, ProtectedPayloadError) else "$"
         raise OpenAPISafetyError(f"OPENAPI-SAFETY: {artifact}:{path}") from error
@@ -57,6 +100,25 @@ def _check_property_names(value: object, path: str) -> None:
                 raise ValueError(f"{path}.properties.{name}")
     for key, item in value.items():
         _check_property_names(item, f"{path}.{key}")
+
+
+def _check_notification_contracts(document: object) -> None:
+    if not isinstance(document, Mapping):
+        raise ValueError("$")
+    components = document.get("components")
+    schemas = components.get("schemas") if isinstance(components, Mapping) else None
+    if not isinstance(schemas, Mapping):
+        return
+    for schema_name, allowed_fields in _NOTIFICATION_SCHEMA_FIELDS.items():
+        schema = schemas.get(schema_name)
+        if schema is None:
+            continue
+        properties = schema.get("properties") if isinstance(schema, Mapping) else None
+        if (
+            not isinstance(properties, Mapping)
+            or frozenset(properties) != allowed_fields
+        ):
+            raise ValueError(f"$.components.schemas.{schema_name}.properties")
 
 
 def main() -> int:

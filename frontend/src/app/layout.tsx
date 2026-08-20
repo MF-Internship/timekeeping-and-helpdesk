@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { AuthProvider } from "@/features/identity/model/AuthProvider";
+import { ApplicationFrame } from "@/shared/ui/shell/ApplicationFrame";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -11,7 +14,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="vi">
-      <body>{children}</body>
+      <body>
+        <AuthProvider>
+          <ApplicationFrame>{children}</ApplicationFrame>
+        </AuthProvider>
+      </body>
     </html>
   );
 }

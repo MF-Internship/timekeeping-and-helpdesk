@@ -11,7 +11,9 @@ không được tự biến trạng thái đó thành bằng chứng production-
   Internet.
 - Mỗi AZ có **per-AZ egress** riêng. Chính sách chặn mặc định áp dụng cho
   **all outbound egress**; chỉ DNS, PostgreSQL, secret store, object storage và các
-  endpoint vận hành đã phê duyệt được mở.
+  endpoint vận hành đã phê duyệt được mở. Web Push chỉ được đi tới exact HTTPS
+  origins trong `web_push_allowed_origins`; endpoint khác origin này bị từ chối
+  trước khi lưu hoặc mở socket, không redirect tới origin tùy ý.
 - Chạy **exactly one scheduler** cho mọi công việc định kỳ có single-owner.
   Worker có thể scale ngang, scheduler không được nhân bản ngoài cơ chế leader
   election đã được phê duyệt.
@@ -32,14 +34,47 @@ không được tự biến trạng thái đó thành bằng chứng production-
 3. Xác nhận bảng cache `throttle_cache` đã được provision bởi migration của
    `operations`; staging/production dùng shared database cache, không dùng
    process-local cache.
-4. Rollout dần, giữ tương thích N-1, kiểm tra status-only smoke và rollback
+4. Trước khi enable route/UI của Feature 003, dùng Manager có attribution để chạy
+   `uv run --project backend python backend/manage.py initialize_location_config ...`,
+   sau đó chạy
+   `uv run --project backend python backend/manage.py seed_locations --actor-id <manager-id>`.
+   Không đảo thứ tự và không thay hai command này bằng data migration.
+5. Chạy gate read-only
+   `uv run --project backend python backend/manage.py verify_location_reference_ready`.
+   Chỉ exit code `0` mới cho phép enable route/UI Feature 003. Exit khác `0`, Config
+   chưa hoàn chỉnh, hoặc Location lệch canonical 76/7/69/code/hierarchy/source
+   coordinates đều phải dừng rollout; gate không tự sửa dữ liệu, không ghi AuditLog
+   hay OutboxEvent. Operator sửa bằng hai command attributable ở bước 4 rồi chạy lại gate.
+6. Chỉ sau khi gate trên trả `0` mới **enable route/UI Feature 004 Attendance**.
+   Gate là phép đọc thuần: khi thất bại không sửa Config, Location hoặc Attendance;
+   operator sửa dữ liệu tham chiếu bằng workflow ở bước 4 rồi chạy lại.
+7. Rollout dần, giữ tương thích N-1, kiểm tra status-only smoke và rollback
    application trước khi thực hiện bất kỳ contract migration phá hủy nào.
+8. Sau khi migration `attendance` và `operations` hoàn tất, chạy
+   `python scripts/deployment_check.py scheduled-jobs-ready`, rồi enable đúng một
+   scheduler binding cho mỗi môi trường staging/production. Scheduler chạy
+   `python manage.py reconcile_missing_checkouts` lúc 00:15 mỗi ngày theo
+   `Asia/Ho_Chi_Minh`, kể cả cuối tuần và ngày lễ. Exit khác 0 phải phát cảnh báo;
+   không tự động repair hoặc tạo Check Out thay người dùng.
+9. Theo dõi `/api/v1/operations/job-health`. Thành công đúng hạn phải hoàn tất
+   **trước** 01:00; đúng 01:00 được coi là trễ. Trước lần chạy thật đầu tiên,
+   trạng thái có thể là `unknown`. Khi rollback application, giữ nguyên migration
+   mở rộng và JobRun; command cũ/mới đều phải an toàn khi chạy lặp.
+10. Chạy singleton `dispatch_notification_occurrences` và `deliver_web_push` mỗi
+    phút theo `Asia/Ho_Chi_Minh`; không đặt timer trong web process và không tạo
+    scheduler thứ hai. Hai command idempotent, dùng PostgreSQL lease/dedupe.
 
 ## Credential rotation và sự cố
 
 - **Credential rotation**: tạo credential mới, cập nhật secret store, rollout
   consumer, xác nhận credential mới hoạt động rồi thu hồi credential cũ. Thực
   hiện riêng cho runtime DB, migration DB, origin credential và signing keys.
+- Rotate VAPID bằng public/private pair mới, rollout public key rồi re-opt-in các
+  subscription cũ; rotate subscription-encryption key theo key-ring đọc-cũ/ghi-mới,
+  re-encrypt theo batch, xác minh rồi thu hồi key cũ. Inventory chỉ giữ identity.
+- Khi push origin hoặc key bị nghi lộ, tắt `WEB_PUSH_ENABLED`, revoke subscription,
+  chặn egress origin, rotate key và chỉ bật lại sau kiểm tra scheduler, generic
+  payload cùng authorization-safe resolver.
 - Khi credential hoặc signing key bị lộ, thực hiện **session revocation**, rotate
   key, vô hiệu token liên quan và lưu bằng chứng operator bên ngoài log ứng dụng.
 - Sau worker crash, liệt kê và xử lý **stale lease** theo owner/expiry đã commit;

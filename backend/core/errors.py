@@ -14,6 +14,21 @@ from core.messages import ERROR_MESSAGES
 _CANONICAL_FIELDS = frozenset({"error_code", "message", "details", "request_id", "error"})
 
 
+class IdentityAPIError(Exception):
+    def __init__(
+        self,
+        error_code: str,
+        *,
+        status_code: int,
+        details: Mapping[str, object] | None = None,
+    ) -> None:
+        self.error_code = error_code
+        self.status_code = status_code
+        self.details = dict(details or {})
+        self.headers: dict[str, str] = {}
+        super().__init__(error_code)
+
+
 def build_error_envelope(
     error_code: str,
     request_id: str,
@@ -38,7 +53,14 @@ def build_error_envelope(
 
 def validation_details(detail: object) -> dict[str, object]:
     if isinstance(detail, Mapping):
-        return {str(key): _normalize_messages(value) for key, value in detail.items()}
+        normalized: dict[str, object] = {
+            str(key): _normalize_messages(value) for key, value in detail.items()
+        }
+        try:
+            validate_event_payload(normalized)
+        except ProtectedPayloadError:
+            return {"fields": ["Giá trị đầu vào được bảo vệ không hợp lệ."]}
+        return normalized
     return {}
 
 
@@ -47,6 +69,18 @@ def drf_exception_handler(exception: Exception, context: dict[str, object]) -> o
     from rest_framework.response import Response
     from rest_framework.views import exception_handler
 
+    if isinstance(exception, IdentityAPIError):
+        from core.correlation import get_request_id
+
+        return Response(
+            build_error_envelope(
+                exception.error_code,
+                get_request_id(),
+                exception.details,
+            ),
+            status=exception.status_code,
+            headers=exception.headers,
+        )
     if isinstance(exception, ValidationError):
         from core.correlation import get_request_id
 

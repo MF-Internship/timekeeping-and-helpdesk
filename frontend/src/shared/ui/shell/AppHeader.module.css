@@ -1,0 +1,74 @@
+.header {
+  min-height: 4rem;
+  padding: calc(var(--space-3) + env(safe-area-inset-top)) var(--space-4) var(--space-3);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.header h1 {
+  margin: 0;
+  font-size: var(--font-size-title);
+}
+.context {
+  min-width: 0;
+}
+.eyebrow {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.brand {
+  min-width: 0;
+  display: grid;
+  place-items: center;
+}
+.account {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.avatar {
+  display: grid;
+  place-items: center;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  border-radius: 50%;
+  background: var(--color-brand-primary);
+  color: var(--color-brand-on-primary);
+  font-weight: 800;
+}
+.name {
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 47.99rem) {
+  .name,
+  .changePassword {
+    display: none;
+  }
+  .account button {
+    padding-inline: var(--space-2);
+  }
+  .account {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-1);
+  }
+  .account > a:first-child {
+    display: none;
+  }
+  .brand {
+    display: none;
+  }
+  .header {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
