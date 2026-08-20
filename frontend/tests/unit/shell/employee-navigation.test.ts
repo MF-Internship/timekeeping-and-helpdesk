@@ -20,6 +20,7 @@ describe("employee navigation registry", () => {
       "/notifications",
       "/tasks",
       "/attendance",
+      "/reports",
       "/users",
       "/locations",
       "/holidays",
