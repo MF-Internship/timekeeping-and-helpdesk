@@ -164,7 +164,8 @@ LOGGING = {
             "format": (
                 "%(levelname)s %(name)s request_id=%(request_id)s "
                 "correlation_id=%(correlation_id)s %(message)s"
-            )
+            ),
+            "defaults": {"request_id": "", "correlation_id": ""},
         }
     },
     "handlers": {
@@ -175,6 +176,12 @@ LOGGING = {
         }
     },
     "root": {"handlers": ["console"], "level": "INFO"},
+    "loggers": {
+        "operations.outbox": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "operations.metrics": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "operations.alerts": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+        "django.request": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+    },
 }
 
 
@@ -199,6 +206,10 @@ OUTBOX_RELAY_BACKOFF_BASE_SECONDS = _positive_int_env(
     "OUTBOX_RELAY_BACKOFF_BASE_SECONDS", 30
 )
 OUTBOX_RELAY_BACKOFF_MAX_SECONDS = _positive_int_env("OUTBOX_RELAY_BACKOFF_MAX_SECONDS", 3600)
+RETENTION_PRUNE_BATCH_SIZE = _positive_int_env("RETENTION_PRUNE_BATCH_SIZE", 500)
+OPERATIONS_HEARTBEAT_STALE_SECONDS = _positive_int_env(
+    "OPERATIONS_HEARTBEAT_STALE_SECONDS", 900
+)
 
 LANGUAGE_CODE = "vi"
 TIME_ZONE = "Asia/Ho_Chi_Minh"

@@ -19,6 +19,21 @@ Expected:
 Related requirement/R-xx: R-97.
 Status: PENDING
 
+## DW-F013-01
+
+Feature: 013 Operational Telemetry, Health and Retention
+Reason: Real external alert/monitoring delivery requires approved observability infrastructure.
+Prerequisites: Staging deployment, configured monitoring sink, alert recipient/channel, operational runbook.
+Steps:
+1. Configure the approved external monitoring/alert sink.
+2. Trigger a controlled outbox dead-letter or stale heartbeat in staging.
+3. Confirm the external alert arrives once with sanitized fields.
+4. Confirm no URL, token, credential, GPS coordinate, raw request path, or payload data is present.
+Expected:
+- Application behavior is unaffected if the sink fails;
+- external alert content is sanitized and actionable.
+Status: PENDING
+
 ## DW-F012-01
 
 Feature: 012 Reliable Outbox Relay
