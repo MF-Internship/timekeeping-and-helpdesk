@@ -86,5 +86,15 @@ def test_django_logging_configuration_names_required_components(
     configuration = settings.LOGGING
     assert "correlation" in configuration["filters"]
     assert "correlated" in configuration["formatters"]
+    assert configuration["formatters"]["correlated"]["defaults"] == {
+        "request_id": "",
+        "correlation_id": "",
+    }
     assert "console" in configuration["handlers"]
     assert configuration["handlers"]["console"]["filters"] == ["correlation"]
+    assert set(configuration["loggers"]) >= {
+        "operations.outbox",
+        "operations.metrics",
+        "operations.alerts",
+        "django.request",
+    }
