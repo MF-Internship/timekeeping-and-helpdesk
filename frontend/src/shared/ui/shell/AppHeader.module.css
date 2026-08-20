@@ -12,6 +12,8 @@
   margin: 0;
   font-size: var(--font-size-title);
 }
+.context { min-width: 0; }
+.eyebrow { display: block; color: var(--color-text-secondary); font-size: .7rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .brand {
   min-width: 0;
   display: grid;
@@ -46,4 +48,12 @@
   .account button {
     padding-inline: var(--space-2);
   }
+  .account {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-1);
+  }
+  .account > a:first-child { display: none; }
+  .brand { display: none; }
+  .header { grid-template-columns: minmax(0, 1fr) auto; }
 }

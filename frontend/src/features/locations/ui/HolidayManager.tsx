@@ -4,6 +4,8 @@ import { type FormEvent, useCallback, useEffect, useState } from "react";
 
 import { createHoliday, deleteHoliday, listHolidays } from "@/features/locations/api/location-api";
 import { useAuth } from "@/features/identity/model/AuthProvider";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/form";
 
 type Holiday = Awaited<ReturnType<typeof listHolidays>>[number];
 
@@ -46,19 +48,19 @@ export function HolidayManager() {
     <section>
       <form onSubmit={(event) => void submit(event)}>
         <label>
-          Ngày <input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+          Ngày <Input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
         </label>
         <label>
-          Tên <input value={name} onChange={(event) => setName(event.target.value)} />
+          Tên <Input value={name} onChange={(event) => setName(event.target.value)} />
         </label>
-        <button>Thêm ngày nghỉ</button>
+        <Button variant="primary">Thêm ngày nghỉ</Button>
       </form>
       {error && <p role="alert">{error}</p>}
       <ul>
         {items.map((item) => (
           <li key={item.id}>
             {item.date} — {item.name}{" "}
-            <button
+            <Button
               onClick={() => {
                 if (!window.confirm("Xác nhận xóa ngày nghỉ?")) return;
                 void deleteHoliday(item.id)
@@ -70,7 +72,7 @@ export function HolidayManager() {
               }}
             >
               Xóa
-            </button>
+            </Button>
           </li>
         ))}
       </ul>

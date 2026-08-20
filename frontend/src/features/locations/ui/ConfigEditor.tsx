@@ -12,6 +12,8 @@ import {
   validationDetails,
 } from "@/features/locations/model/config-editor";
 import { warningText } from "@/features/locations/model/location-editor";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/form";
 
 const WEEKDAYS = ["Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật"];
 const METERS = [
@@ -71,7 +73,7 @@ function MeterFields({ draft, errors, onText }: FieldsProps) {
   return METERS.map(([field, label]) => (
     <label key={field}>
       {label}
-      <input
+      <Input
         required
         aria-label={label}
         type="number"
@@ -91,7 +93,7 @@ function ShiftFields({ draft, errors, onText }: FieldsProps) {
     return (
       <label key={field}>
         {label}
-        <input
+        <Input
           required
           aria-label={label}
           type="time"
@@ -109,7 +111,7 @@ function GraceFields({ draft, errors, onText }: FieldsProps) {
   return GRACES.map(([field, label]) => (
     <label key={field}>
       {label}
-      <input
+      <Input
         required
         aria-label={label}
         type="number"
@@ -140,7 +142,7 @@ function ConfigForm({ draft, errors, busy, onChange, onSubmit, onReset }: FormPr
         <div className="weekday-grid">
           {WEEKDAYS.map((label, day) => (
             <label className="checkbox" key={label}>
-              <input
+              <Input
                 type="checkbox"
                 checked={draft.working_weekdays.includes(day)}
                 onChange={() => toggleDay(day)}
@@ -158,10 +160,10 @@ function ConfigForm({ draft, errors, busy, onChange, onSubmit, onReset }: FormPr
       </div>
       {errors.non_field_errors && <p role="alert">{errors.non_field_errors}</p>}
       <div className="actions">
-        <button disabled={busy}>Lưu cấu hình</button>
-        <button type="button" disabled={busy} onClick={onReset}>
+        <Button variant="primary" disabled={busy}>Lưu cấu hình</Button>
+        <Button type="button" disabled={busy} onClick={onReset}>
           Hoàn tác
-        </button>
+        </Button>
       </div>
     </form>
   );

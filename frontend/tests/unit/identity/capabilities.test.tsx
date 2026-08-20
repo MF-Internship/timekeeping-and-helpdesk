@@ -54,4 +54,15 @@ describe("capability presentation", () => {
     expect(screen.getByText("Health content")).toBeInTheDocument();
     expect(controls.replace).not.toHaveBeenCalled();
   });
+
+  it("maps the Tasks route to task.view.self without inferring role", () => {
+    controls.state.account.capabilities = ["task.view.self"];
+    render(
+      <IdentityRouteBoundary route="tasks">
+        <p>Task content</p>
+      </IdentityRouteBoundary>,
+    );
+    expect(screen.getByText("Task content")).toBeInTheDocument();
+    expect(controls.replace).not.toHaveBeenCalled();
+  });
 });

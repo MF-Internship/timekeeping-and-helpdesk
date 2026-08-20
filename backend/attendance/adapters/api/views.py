@@ -72,7 +72,7 @@ class AttendanceCommandView(AttendanceView):
             device_metadata=_device_metadata(request),
             request_ip=request.META.get("REMOTE_ADDR"),
         )
-        actor_id = cast(int, request.user.pk)  # type: ignore[union-attr]
+        actor_id = cast(int, request.user.pk)
         service = self.container().commands
         result = (
             service.check_in(actor_id, command)
@@ -194,7 +194,7 @@ class TodayAttendanceView(AttendanceView):
     def get(self, request: Request) -> Response:
         if request.query_params or request.data:
             raise IdentityAPIError(VALIDATION_FAILED, status_code=400)
-        actor_id = cast(int, request.user.pk)  # type: ignore[union-attr]
+        actor_id = cast(int, request.user.pk)
         return Response(today_payload(self.container().queries.today(actor_id)))
 
 

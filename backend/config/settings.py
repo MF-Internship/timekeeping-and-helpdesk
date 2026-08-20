@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     "audit",
     "locations",
     "attendance",
+    "tasks",
 ]
 
 MIDDLEWARE = [
@@ -111,6 +112,12 @@ SPECTACULAR_SETTINGS = {
     "COMPONENT_SPLIT_PATCH": False,
     "SERVE_INCLUDE_SCHEMA": True,
     "ENUM_GENERATE_CHOICE_DESCRIPTION": False,
+    "ENUM_NAME_OVERRIDES": {
+        "TaskStatusEnum": "tasks.domain.tasks.TaskStatus",
+        "OrdinaryTaskStatusEnum": (
+            "tasks.adapters.api.serializers.ORDINARY_TASK_STATUS_CHOICES"
+        ),
+    },
     "APPEND_COMPONENTS": {
         "schemas": {
             "FoundationError": {
@@ -165,3 +172,13 @@ TIME_ZONE = "Asia/Ho_Chi_Minh"
 USE_I18N = True
 USE_TZ = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+S3_BUCKET = RUNTIME.bucket
+S3_ENDPOINT = os.environ.get("S3_ENDPOINT") or None
+S3_ACCESS_KEY_ID = os.environ.get("S3_ACCESS_KEY_ID") or None
+S3_SECRET_ACCESS_KEY = os.environ.get("S3_SECRET_ACCESS_KEY") or None
+S3_REGION = os.environ.get("S3_REGION", "auto")
+if RUNTIME.environment is not EnvironmentName.DEVELOPMENT and not all(
+    (S3_ENDPOINT, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY)
+):
+    raise ConfigurationError("S3_ENDPOINT", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY")

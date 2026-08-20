@@ -10,6 +10,9 @@ import {
   identityFailureView,
   type IdentityFailureView,
 } from "@/features/identity/ui/IdentityFailure";
+import { Button } from "@/shared/ui/button";
+import { ActionGroup } from "@/shared/ui/action-group";
+import { Input } from "@/shared/ui/form";
 
 export function LoginForm() {
   const auth = useAuth();
@@ -32,14 +35,14 @@ export function LoginForm() {
     <form onSubmit={submit}>
       <label>
         Tên đăng nhập
-        <input name="username" required autoComplete="username" />
+        <Input name="username" required autoComplete="username" />
       </label>
       <label>
         Mật khẩu
-        <input name="password" type="password" required autoComplete="current-password" />
+        <Input name="password" type="password" required autoComplete="current-password" />
       </label>
       <IdentityFailureNotice failure={error} />
-      <button type="submit">Đăng nhập</button>
+      <ActionGroup><Button type="submit" variant="primary">Đăng nhập</Button></ActionGroup>
     </form>
   );
 }

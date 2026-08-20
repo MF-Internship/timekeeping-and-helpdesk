@@ -1,0 +1,567 @@
+openapi: 3.0.3
+info:
+  title: Task Management Core API Fragment
+  version: 0.1.0
+  description: >-
+    Phase 1 planning contract for Feature 007. The implementation source of
+    truth remains generated contracts/openapi.yaml; this fragment is not copied
+    into the canonical artifact by hand.
+paths:
+  /api/v1/tasks/:
+    get:
+      operationId: tasks_list
+      summary: List authorized tasks in the four canonical groups
+      responses:
+        "200":
+          description: One mutually-exclusive projection captured against one business date
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupedTaskList"
+        "401": { $ref: "#/components/responses/FoundationError" }
+        "403": { $ref: "#/components/responses/FoundationError" }
+    post:
+      operationId: tasks_create
+      summary: Create a Manager-assigned or Helpdesk self-assigned task
+      description: >-
+        The authorization gate selects the actor's exact create mode before DTO
+        validation. Manager ASSIGN requires assignee_ids. Helpdesk SELF forbids
+        assignee_ids and the server creates the authenticated actor as sole
+        initial assignee.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskCreateInput"
+      responses:
+        "201":
+          description: Task created atomically with all assignees
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskDetail" }
+        "400": { $ref: "#/components/responses/FoundationError" }
+        "401": { $ref: "#/components/responses/FoundationError" }
+        "403": { $ref: "#/components/responses/FoundationError" }
+        "422":
+          description: INACTIVE_ASSIGNEE with every missing, wrong-role, or inactive ID
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InactiveAssigneeError" }
+  /api/v1/tasks/{task_id}/:
+    parameters:
+      - $ref: "#/components/parameters/TaskId"
+    get:
+      operationId: tasks_retrieve
+      summary: Retrieve an authorized task and lifecycle history
+      responses:
+        "200":
+          description: Task detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskDetail" }
+        "401": { $ref: "#/components/responses/FoundationError" }
+        "403": { $ref: "#/components/responses/FoundationError" }
+        "404": { $ref: "#/components/responses/FoundationError" }
+    patch:
+      operationId: tasks_partial_update
+      summary: Update nonterminal Task content and, for Manager ANY scope, assignees
+      description: >-
+        assigned_date and lifecycle snapshot fields are server-owned and absent.
+        assignee_ids is a full desired set and is accepted only in ANY mode.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskUpdateInput" }
+      responses:
+        "200":
+          description: Updated Task
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskDetail" }
+        "400": { $ref: "#/components/responses/FoundationError" }
+        "401": { $ref: "#/components/responses/FoundationError" }
+        "403": { $ref: "#/components/responses/FoundationError" }
+        "404": { $ref: "#/components/responses/FoundationError" }
+        "422":
+          description: INACTIVE_ASSIGNEE for every ineligible newly added ID
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InactiveAssigneeError" }
+    delete:
+      operationId: tasks_destroy
+      summary: Soft-delete an eligible Helpdesk self-created non-completed Task
+      responses:
+        "204": { description: Task hidden while its rows and audit evidence remain retained }
+        "401": { $ref: "#/components/responses/FoundationError" }
+        "403": { $ref: "#/components/responses/FoundationError" }
+        "404": { $ref: "#/components/responses/FoundationError" }
+        "409": { $ref: "#/components/responses/FoundationError" }
+  /api/v1/tasks/{task_id}/status:
+    parameters:
+      - $ref: "#/components/parameters/TaskId"
+    post:
+      operationId: tasks_status_create
+      summary: Apply an ordinary nonterminal Task status request
+      description: >-
+        COMPLETED is not in the request enum. A same-state nonterminal request
+        returns 200 without writing Task, TaskUpdate, AuditLog, or OutboxEvent.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskStatusInput" }
+      responses:
+        "200":
+          description: Current Task after transition or same-state no-op
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskDetail" }
+        "400":
+          description: VALIDATION_FAILED for unsupported target or invalid matrix edge
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FoundationError" }
+        "401": { $ref: "#/components/responses/FoundationError" }
+        "403": { $ref: "#/components/responses/FoundationError" }
+        "404": { $ref: "#/components/responses/FoundationError" }
+        "422":
+          description: BLOCK_REASON_REQUIRED
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BlockReasonError" }
+  /api/v1/tasks/{task_id}/complete-override:
+    parameters:
+      - $ref: "#/components/parameters/TaskId"
+    post:
+      operationId: tasks_complete_override_create
+      summary: Complete a Task using Manager override
+      description: >-
+        Requires exact task.complete.override and a nonblank note. It accepts no
+        photos or GPS. TaskUpdate, Task snapshot, and AuditLog commit together.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskOverrideInput" }
+      responses:
+        "200":
+          description: Completed Task
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskDetail" }
+        "400": { $ref: "#/components/responses/FoundationError" }
+        "401": { $ref: "#/components/responses/FoundationError" }
+        "403": { $ref: "#/components/responses/FoundationError" }
+        "404": { $ref: "#/components/responses/FoundationError" }
+        "409":
+          description: TASK_ALREADY_COMPLETED
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskCompletedError" }
+  /api/v1/tasks/{task_id}/evidence-uploads:
+    parameters:
+      - $ref: "#/components/parameters/TaskId"
+    post:
+      operationId: tasks_evidence_uploads_create
+      summary: Create a private staged photo upload intent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EvidenceUploadInput" }
+      responses:
+        "201":
+          description: Actor/Task-bound upload intent and short-lived presigned PUT
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EvidenceUploadIntent" }
+        "400": { $ref: "#/components/responses/FoundationError" }
+        "401": { $ref: "#/components/responses/FoundationError" }
+        "403": { $ref: "#/components/responses/FoundationError" }
+        "404": { $ref: "#/components/responses/FoundationError" }
+        "409": { $ref: "#/components/responses/FoundationError" }
+  /api/v1/tasks/{task_id}/complete-field:
+    parameters:
+      - $ref: "#/components/parameters/TaskId"
+      - in: header
+        name: Idempotency-Key
+        required: true
+        schema: { type: string, minLength: 1, maxLength: 128 }
+    post:
+      operationId: tasks_complete_field_create
+      summary: Complete an in-scope Task with verified photos and fresh GPS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskFieldCompletionInput" }
+      responses:
+        "200":
+          description: Atomic FIELD_EVIDENCE completion or matching idempotent replay
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskDetail" }
+        "400": { $ref: "#/components/responses/FoundationError" }
+        "401": { $ref: "#/components/responses/FoundationError" }
+        "403": { $ref: "#/components/responses/FoundationError" }
+        "404": { $ref: "#/components/responses/FoundationError" }
+        "409":
+          description: LOCATION_CHOICE_REQUIRED, IDEMPOTENCY_CONFLICT, or TASK_ALREADY_COMPLETED
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FoundationError" }
+        "422":
+          description: INVALID_LOCATION_CHOICE or invalid GPS/upload evidence
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FoundationError" }
+  /api/v1/tasks/{task_id}/photos/{photo_id}/access:
+    parameters:
+      - $ref: "#/components/parameters/TaskId"
+      - in: path
+        name: photo_id
+        required: true
+        schema: { type: string }
+    post:
+      operationId: tasks_photos_access_create
+      summary: Issue an authorized short-lived private photo URL
+      responses:
+        "200":
+          description: Short-lived access URL, never persisted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PhotoAccess" }
+        "401": { $ref: "#/components/responses/FoundationError" }
+        "403": { $ref: "#/components/responses/FoundationError" }
+        "404": { $ref: "#/components/responses/FoundationError" }
+components:
+  parameters:
+    TaskId:
+      in: path
+      name: task_id
+      required: true
+      schema: { type: string }
+      description: Parsed only after authentication and action authorization.
+  responses:
+    FoundationError:
+      description: Canonical error envelope
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/FoundationError" }
+  schemas:
+    TaskStatus:
+      type: string
+      enum: [TODO, IN_PROGRESS, BLOCKED, COMPLETED]
+    OrdinaryTaskStatus:
+      type: string
+      enum: [TODO, IN_PROGRESS, BLOCKED]
+      description: COMPLETED is available only through a completion operation.
+    CompletionMethod:
+      type: string
+      enum: [MANAGER_OVERRIDE, FIELD_EVIDENCE]
+    TaskListGroup:
+      type: string
+      enum: [OVERDUE, TODAY, UPCOMING, COMPLETED]
+    TaskCreateInput:
+      type: object
+      additionalProperties: false
+      required: [title, assigned_date]
+      properties:
+        title: { type: string, minLength: 1 }
+        description: { type: string, default: "" }
+        assigned_date: { type: string, format: date }
+        location_id:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Optional expected planning Location.
+        assignee_ids:
+          type: array
+          minItems: 1
+          items: { type: integer, minimum: 1 }
+          description: Required for ASSIGN mode; forbidden for SELF mode.
+    TaskUpdateInput:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        title: { type: string, minLength: 1 }
+        description: { type: string }
+        location_id:
+          type: integer
+          minimum: 1
+          nullable: true
+        assignee_ids:
+          type: array
+          minItems: 1
+          items: { type: integer, minimum: 1 }
+          description: Full desired set; ANY mode only; duplicates normalize to one relation.
+    TaskStatusInput:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status: { $ref: "#/components/schemas/OrdinaryTaskStatus" }
+        note:
+          type: string
+          nullable: true
+        block_reason:
+          type: string
+          nullable: true
+          description: Required, after trimming, when entering BLOCKED unless note is nonblank.
+    TaskOverrideInput:
+      type: object
+      additionalProperties: false
+      required: [completion_note]
+      properties:
+        completion_note:
+          type: string
+          minLength: 1
+          description: Must contain a non-whitespace character.
+    EvidenceUploadInput:
+      type: object
+      additionalProperties: false
+      required: [mime, size_bytes, checksum_sha256]
+      properties:
+        mime: { type: string, enum: [image/jpeg, image/png, image/webp] }
+        size_bytes: { type: integer, minimum: 1, maximum: 5242880 }
+        checksum_sha256: { type: string, pattern: "^[0-9a-f]{64}$" }
+    EvidenceUploadIntent:
+      type: object
+      additionalProperties: false
+      required: [upload_id, upload_url, headers, expires_at]
+      properties:
+        upload_id: { type: string, format: uuid }
+        upload_url: { type: string, format: uri }
+        headers: { type: object, additionalProperties: { type: string } }
+        expires_at: { type: string, format: date-time }
+    TaskFieldCompletionInput:
+      type: object
+      additionalProperties: false
+      required: [upload_ids, latitude, longitude, accuracy_m]
+      properties:
+        upload_ids:
+          type: array
+          minItems: 1
+          maxItems: 5
+          uniqueItems: true
+          items: { type: string, format: uuid }
+        latitude: { type: number, minimum: -90, maximum: 90 }
+        longitude: { type: number, minimum: -180, maximum: 180 }
+        accuracy_m: { type: number, exclusiveMinimum: 0 }
+        captured_at: { type: string, format: date-time, nullable: true }
+        selected_location_id: { type: integer, minimum: 1, nullable: true }
+        completion_note: { type: string, nullable: true }
+    PhotoAccess:
+      type: object
+      additionalProperties: false
+      required: [url, expires_at]
+      properties:
+        url: { type: string, format: uri }
+        expires_at: { type: string, format: date-time }
+    TaskUser:
+      type: object
+      additionalProperties: false
+      required: [id, full_name]
+      properties:
+        id: { type: integer }
+        full_name: { type: string }
+    TaskAssignee:
+      type: object
+      additionalProperties: false
+      required: [user, assigned_at]
+      properties:
+        user: { $ref: "#/components/schemas/TaskUser" }
+        assigned_at: { type: string, format: date-time }
+    TaskLocation:
+      type: object
+      additionalProperties: false
+      required: [id, code, name, is_active, address]
+      properties:
+        id: { type: integer }
+        code: { type: string }
+        name: { type: string }
+        is_active: { type: boolean }
+        address: { type: string }
+    TaskItem:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - created_by
+        - assigned_date
+        - status
+        - location
+        - assignees
+        - completed_by
+        - completed_at
+        - completion_method
+        - completion_note
+        - block_reason
+        - group
+        - overdue_days
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        description: { type: string }
+        created_by: { $ref: "#/components/schemas/TaskUser" }
+        assigned_date: { type: string, format: date }
+        status: { $ref: "#/components/schemas/TaskStatus" }
+        location:
+          allOf: [{ $ref: "#/components/schemas/TaskLocation" }]
+          nullable: true
+        assignees:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/TaskAssignee" }
+        completed_by:
+          allOf: [{ $ref: "#/components/schemas/TaskUser" }]
+          nullable: true
+        completed_at: { type: string, format: date-time, nullable: true }
+        completion_method:
+          allOf: [{ $ref: "#/components/schemas/CompletionMethod" }]
+          nullable: true
+        completion_note: { type: string, nullable: true }
+        block_reason: { type: string, nullable: true }
+        group: { $ref: "#/components/schemas/TaskListGroup" }
+        overdue_days:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Derived at read time; non-null only in OVERDUE.
+    TaskLifecycleUpdate:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - actor
+        - status
+        - recorded_at
+        - note
+        - block_reason
+        - completion_method
+        - completion_note
+        - captured_latitude
+        - captured_longitude
+        - accuracy_m
+        - captured_at
+        - gps_quality
+        - actual_location_id
+        - actual_location
+        - validation_result
+        - resolution_method
+        - distance_m
+        - location_candidates
+        - photos
+        - resolved_address
+        - maps_url
+      properties:
+        id: { type: integer }
+        actor: { $ref: "#/components/schemas/TaskUser" }
+        status: { $ref: "#/components/schemas/TaskStatus" }
+        recorded_at: { type: string, format: date-time }
+        note: { type: string, nullable: true }
+        block_reason: { type: string, nullable: true }
+        completion_method:
+          allOf: [{ $ref: "#/components/schemas/CompletionMethod" }]
+          nullable: true
+        completion_note: { type: string, nullable: true }
+        captured_latitude: { type: string, nullable: true }
+        captured_longitude: { type: string, nullable: true }
+        accuracy_m: { type: string, nullable: true }
+        captured_at: { type: string, format: date-time, nullable: true }
+        gps_quality: { type: string, enum: [GOOD, LOW_ACCURACY, UNRELIABLE], nullable: true }
+        actual_location_id: { type: integer, nullable: true }
+        actual_location:
+          allOf: [{ $ref: "#/components/schemas/TaskLocation" }]
+          nullable: true
+        validation_result: { type: string, enum: [INSIDE_GEOFENCE, OUTSIDE_GEOFENCE], nullable: true }
+        resolution_method: { type: string, enum: [AUTO_SINGLE, USER_SELECTED, GPS_ONLY], nullable: true }
+        distance_m: { type: string, nullable: true }
+        location_candidates:
+          type: array
+          items: { type: integer }
+        photos:
+          type: array
+          items:
+            type: object
+            required: [id, mime, size_bytes]
+            properties:
+              id: { type: integer }
+              mime: { type: string }
+              size_bytes: { type: integer }
+        resolved_address:
+          type: string
+          nullable: true
+          description: Selected Location name and address only; never reverse-geocoded.
+        maps_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Google Maps search URL derived from exact captured coordinates.
+    TaskDetail:
+      allOf:
+        - $ref: "#/components/schemas/TaskItem"
+        - type: object
+          required: [updates]
+          properties:
+            updates:
+              type: array
+              items: { $ref: "#/components/schemas/TaskLifecycleUpdate" }
+    GroupedTaskList:
+      type: object
+      additionalProperties: false
+      required: [business_date, overdue, today, upcoming, completed]
+      properties:
+        business_date: { type: string, format: date }
+        overdue:
+          type: array
+          items: { $ref: "#/components/schemas/TaskItem" }
+        today:
+          type: array
+          items: { $ref: "#/components/schemas/TaskItem" }
+        upcoming:
+          type: array
+          items: { $ref: "#/components/schemas/TaskItem" }
+        completed:
+          type: array
+          items: { $ref: "#/components/schemas/TaskItem" }
+    FoundationError:
+      type: object
+      additionalProperties: true
+      required: [error_code, message, details, request_id, error]
+      properties:
+        error_code: { type: string }
+        message: { type: string }
+        details: { type: object }
+        request_id: { type: string, format: uuid }
+        error: { type: string, deprecated: true }
+    InactiveAssigneeError:
+      allOf:
+        - $ref: "#/components/schemas/FoundationError"
+        - type: object
+          properties:
+            error_code: { type: string, enum: [INACTIVE_ASSIGNEE] }
+            details:
+              type: object
+              required: [assignee_ids]
+              properties:
+                assignee_ids:
+                  type: array
+                  items: { type: integer }
+                  description: De-duplicated ascending IDs that are missing, wrong-role, or inactive.
+    BlockReasonError:
+      allOf:
+        - $ref: "#/components/schemas/FoundationError"
+        - type: object
+          properties:
+            error_code: { type: string, enum: [BLOCK_REASON_REQUIRED] }
+    TaskCompletedError:
+      allOf:
+        - $ref: "#/components/schemas/FoundationError"
+        - type: object
+          properties:
+            error_code: { type: string, enum: [TASK_ALREADY_COMPLETED] }

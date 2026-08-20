@@ -20,7 +20,7 @@ _DESTRUCTIVE = {
 }
 _EXPANSION = {"AddField", "CreateModel"}
 _ALLOWED_OWNERS = frozenset(
-    {"operations", "identity", "audit", "locations", "attendance"}
+    {"operations", "identity", "audit", "locations", "attendance", "tasks"}
 )
 
 

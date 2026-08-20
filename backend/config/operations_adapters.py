@@ -42,12 +42,12 @@ class DjangoReadOnlyRepeatableRead:
         self._outer_atomic = connection.in_atomic_block
         self._atomic = transaction.atomic()
 
-    def __enter__(self):  # type: ignore[no-untyped-def]
-        value = self._atomic.__enter__()
+    def __enter__(self) -> DjangoReadOnlyRepeatableRead:
+        self._atomic.__enter__()
         if not self._outer_atomic:
             with connection.cursor() as cursor:
                 cursor.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
-        return value
+        return self
 
     def __exit__(self, exc_type, exc_value, traceback):  # type: ignore[no-untyped-def]
         return self._atomic.__exit__(exc_type, exc_value, traceback)

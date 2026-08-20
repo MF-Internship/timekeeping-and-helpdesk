@@ -17,6 +17,9 @@ class AuditAction(StrEnum):
     SESSIONS_REVOKED = "identity.sessions.revoked"
     ATTENDANCE_CHECK_IN_CREATED = "attendance.check_in.created"
     ATTENDANCE_CHECK_OUT_CREATED = "attendance.check_out.created"
+    TASK_COMPLETION_OVERRIDDEN = "task.completion.overridden"
+    TASK_COMPLETION_FIELD_EVIDENCE = "task.completion.field_evidence"
+    TASK_SELF_DELETED = "task.self_deleted"
 
 
 class IdentityEventType(StrEnum):

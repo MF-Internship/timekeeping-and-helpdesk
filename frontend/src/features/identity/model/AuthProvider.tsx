@@ -11,6 +11,7 @@ import {
 } from "react";
 
 import * as identityApi from "@/features/identity/api/identity-api";
+import { purgeEvidenceDrafts } from "@/features/tasks/model/evidence-draft";
 import {
   clearSession,
   getSessionState,
@@ -79,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .catch((error: unknown) => {
         if (!current) return;
         if (failureCode(error) === "ACCOUNT_INACTIVE") {
+          purgeEvidenceDrafts();
           clearMemoryAccessToken();
           setSessionState({ kind: "inactive" });
         } else {
@@ -92,7 +94,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setAuthenticationFailureHandler((code) => {
-      if (code === "ACCOUNT_INACTIVE") setSessionState({ kind: "inactive" });
+      if (code === "ACCOUNT_INACTIVE") {
+        purgeEvidenceDrafts();
+        setSessionState({ kind: "inactive" });
+      }
       if (code === "PASSWORD_CHANGE_REQUIRED") setSessionState({ kind: "forced_change" });
       if (code === "INVALID_TOKEN") clearSession();
     });
@@ -100,6 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (username: string, password: string) => {
+    purgeEvidenceDrafts();
     const session = await identityApi.login({ username, password });
     setMemoryAccessToken(session.access);
     if (session.must_change_password) {
@@ -113,10 +119,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await identityApi.logout();
     } finally {
+      purgeEvidenceDrafts(state.kind === "authenticated" ? state.account.id : undefined);
       clearMemoryAccessToken();
       clearSession();
     }
-  }, []);
+  }, [state]);
 
   const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
     const session = await identityApi.changePassword(currentPassword, newPassword);

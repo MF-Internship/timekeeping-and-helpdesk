@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/features/identity/model/AuthProvider";
 import { MobiFoneLogo } from "@/shared/ui/brand";
 import { Button } from "@/shared/ui/button";
+import { Badge } from "@/shared/ui/badge";
 
 import styles from "./AppHeader.module.css";
 
@@ -16,6 +17,7 @@ function initials(name: string): string {
     .map((part) => part[0]?.toUpperCase())
     .join("");
 }
+const ROLE_LABELS: Record<string, string> = { MANAGER: "Quản lý", LEADER: "Trưởng nhóm", HELPDESK: "Nhân viên Helpdesk" };
 
 export function AppHeader({
   title,
@@ -38,9 +40,17 @@ export function AppHeader({
           ←
         </Link>
       )}
-      <h1>{title}</h1>
-      {account && (
-        <div className={styles.account}>
+      <div className={styles.context}><span className={styles.eyebrow}>Trang hiện tại</span><h1>{title}</h1></div>
+      {account ? <AccountControls account={account} logout={auth.logout} /> : null}
+    </header>
+  );
+}
+
+function AccountControls({ account, logout }: {
+  account: Extract<ReturnType<typeof useAuth>["state"], { kind: "authenticated" }>["account"];
+  logout(): Promise<void>;
+}) {
+  return <div className={styles.account}>
           <Link
             href="/change-password"
             aria-label={`Tài khoản của ${account.full_name || account.username}`}
@@ -50,14 +60,12 @@ export function AppHeader({
             </span>
           </Link>
           <span className={styles.name}>{account.full_name || account.username}</span>
+          <Badge tone="neutral">{ROLE_LABELS[account.role] ?? account.role}</Badge>
           <Link className={styles.changePassword} href="/change-password">
             Đổi mật khẩu
           </Link>
-          <Button variant="quiet" onClick={() => void auth.logout()} aria-label="Đăng xuất">
+          <Button variant="quiet" onClick={() => void logout()} aria-label="Đăng xuất">
             Đăng xuất
           </Button>
-        </div>
-      )}
-    </header>
-  );
+        </div>;
 }

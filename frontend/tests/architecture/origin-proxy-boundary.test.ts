@@ -18,6 +18,7 @@ const CLIENT_MODULES = [
   "src/features/identity",
   "src/features/locations",
   "src/features/operations",
+  "src/features/tasks",
 ];
 
 function sourceFiles(directory: string): string[] {

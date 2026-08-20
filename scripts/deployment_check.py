@@ -56,10 +56,9 @@ def validate_cache_inventory(document: object) -> list[str]:
         path = f"environments.{environment_name}.cache.backend"
         environment = _mapping(environments.get(environment_name))
         choice = _mapping(environment.get("cache")).get("backend")
-        if choice not in CACHE_BACKEND_CHOICES:
-            findings.append(path)
-        elif environment_name != "development" and is_process_local_backend(
-            cache_backend_path(str(choice))
+        if choice not in CACHE_BACKEND_CHOICES or (
+            environment_name != "development"
+            and is_process_local_backend(cache_backend_path(str(choice)))
         ):
             findings.append(path)
     return findings

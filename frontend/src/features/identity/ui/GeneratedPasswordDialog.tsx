@@ -3,6 +3,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 
 import { subscribeSession } from "@/features/identity/model/session-store";
+import { Button } from "@/shared/ui/button";
 
 export type GeneratedPasswordDialogHandle = { show(value: string): void; clear(): void };
 
@@ -17,9 +18,9 @@ export const GeneratedPasswordDialog = forwardRef<GeneratedPasswordDialogHandle>
       <div role="dialog" aria-modal="true" aria-label="Mật khẩu được tạo">
         <p>Mật khẩu chỉ hiển thị lần này.</p>
         <output>{value}</output>
-        <button type="button" onClick={() => setValue(undefined)}>
+        <Button type="button" onClick={() => setValue(undefined)}>
           Đã lưu, đóng
-        </button>
+        </Button>
       </div>
     );
   },

@@ -8,11 +8,22 @@ describe("employee navigation registry", () => {
       employeeNavigation((capability) => capability === "attendance.view.self").map(
         (item) => item.label,
       ),
-    ).toEqual(["Attendance"]);
+    ).toEqual(["Chấm công"]);
     expect(employeeNavigation(() => false)).toEqual([]);
+    expect(
+      employeeNavigation((capability) => capability === "task.view.self").map((item) => item.label),
+    ).toEqual(["Công việc"]);
   });
 
-  it("does not invent Tasks, Reports, or Account routes", () => {
-    expect(employeeNavigation(() => true).map((item) => item.href)).toEqual(["/attendance"]);
+  it("lists every implemented role destination without placeholder routes", () => {
+    expect(employeeNavigation(() => true).map((item) => item.href)).toEqual([
+      "/tasks",
+      "/attendance",
+      "/users",
+      "/locations",
+      "/holidays",
+      "/config",
+      "/operations/job-health",
+    ]);
   });
 });

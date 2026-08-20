@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from rest_framework import serializers
 
@@ -15,7 +15,7 @@ class StrictSerializer(serializers.Serializer[Any]):
     def to_internal_value(self, data: Any) -> dict[str, Any]:
         if isinstance(data, dict) and set(data) - self.allowed_fields:
             raise IdentityAPIError(SERVER_OWNED_FIELD, status_code=400)
-        return super().to_internal_value(data)
+        return cast(dict[str, Any], super().to_internal_value(data))
 
 
 class LocationSerializer(serializers.Serializer[Any]):

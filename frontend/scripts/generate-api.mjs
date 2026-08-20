@@ -14,8 +14,8 @@ if (mode !== "--write" && mode !== "--check") {
   process.exit(2);
 }
 
-const executable = resolve(frontendRoot, "node_modules/.bin/openapi-typescript");
-const generated = spawnSync(executable, [contract], {
+const executable = resolve(frontendRoot, "node_modules/openapi-typescript/bin/cli.js");
+const generated = spawnSync(process.execPath, [executable, contract], {
   cwd: frontendRoot,
   encoding: "utf8",
   env: { ...process.env, NO_COLOR: "1" },

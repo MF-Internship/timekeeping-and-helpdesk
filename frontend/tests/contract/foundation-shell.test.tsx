@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const layout = readFileSync(resolve("src/app/(employee)/layout.tsx"), "utf8");
+const layout = readFileSync(resolve("src/shared/ui/shell/ApplicationFrame.tsx"), "utf8");
 const page = readFileSync(resolve("src/app/(employee)/attendance/page.tsx"), "utf8");
 const shellCss = readFileSync(resolve("src/shared/ui/shell/AppShell.module.css"), "utf8");
 const navigationCss = readFileSync(
@@ -11,7 +11,7 @@ const navigationCss = readFileSync(
 );
 
 describe("employee application shell contract", () => {
-  it("owns the shell once at the authenticated route-group boundary", () => {
+  it("owns the shell once at the authenticated application boundary", () => {
     expect(layout.match(/<AppShell/g)).toHaveLength(1);
     expect(page).not.toMatch(/<(main|header|nav)\b/);
   });

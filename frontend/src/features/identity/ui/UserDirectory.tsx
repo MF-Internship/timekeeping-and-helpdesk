@@ -14,6 +14,11 @@ import {
   type GeneratedPasswordDialogHandle,
 } from "@/features/identity/ui/GeneratedPasswordDialog";
 import { UserEditor } from "@/features/identity/ui/UserEditor";
+import { ActionGroup } from "@/shared/ui/action-group";
+import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
+import { Input, Select } from "@/shared/ui/form";
+import { StatusBadge } from "@/shared/ui/status-badge";
 import {
   IdentityFailureNotice,
   identityFailureView,
@@ -41,8 +46,10 @@ function useInitialPage(
   showPage: (page: DirectoryPage) => void,
   run: (action: () => Promise<void>) => Promise<void>,
 ) {
+  const initialized = useRef(false);
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || initialized.current) return;
+    initialized.current = true;
     let active = true;
     void run(async () => {
       const page = await listUsers({});
@@ -78,26 +85,26 @@ function DirectoryFilters(props: FiltersProps) {
     <form onSubmit={props.onSearch}>
       <label>
         Tìm kiếm
-        <input value={props.query} onChange={(event) => props.onQuery(event.target.value)} />
+        <Input value={props.query} onChange={(event) => props.onQuery(event.target.value)} />
       </label>
       <label>
         Vai trò
-        <select value={props.role} onChange={(event) => props.onRole(event.target.value)}>
+        <Select value={props.role} onChange={(event) => props.onRole(event.target.value)}>
           <option value="">Tất cả</option>
           <option value="MANAGER">Manager</option>
           <option value="LEADER">Leader</option>
           <option value="HELPDESK">Helpdesk</option>
-        </select>
+        </Select>
       </label>
       <label>
         Trạng thái
-        <select value={props.active} onChange={(event) => props.onActive(event.target.value)}>
+        <Select value={props.active} onChange={(event) => props.onActive(event.target.value)}>
           <option value="">Tất cả</option>
           <option value="true">Đang hoạt động</option>
           <option value="false">Đã khóa</option>
-        </select>
+        </Select>
       </label>
-      <button>Tìm</button>
+      <ActionGroup><Button variant="primary">Tìm</Button></ActionGroup>
     </form>
   );
 }
@@ -118,19 +125,23 @@ function UserList(props: UserListProps) {
       {props.users.map((user) => (
         <li key={user.id}>
           <span>
-            {user.full_name} ({user.username}) — {user.role}
+            {user.full_name} ({user.username}){" "}
+            <Badge tone="neutral">{user.role}</Badge>{" "}
+            <StatusBadge tone={user.is_active ? "ready" : "critical"}>
+              {user.is_active ? "Đang hoạt động" : "Đã khóa"}
+            </StatusBadge>
           </span>
           {user.role !== "MANAGER" && props.canManage && (
             <>
-              <button onClick={() => props.onEdit(user)}>Sửa hồ sơ</button>
-              <button onClick={() => props.onStatus(user)}>
+              <Button onClick={() => props.onEdit(user)}>Sửa hồ sơ</Button>
+              <Button onClick={() => props.onStatus(user)}>
                 {user.is_active ? "Khóa" : "Mở khóa"}
-              </button>
-              <button onClick={() => props.onReset(user.id)}>Đặt lại mật khẩu</button>
+              </Button>
+              <Button onClick={() => props.onReset(user.id)}>Đặt lại mật khẩu</Button>
             </>
           )}
           {user.role !== "MANAGER" && props.canAssignRole && (
-            <button onClick={() => props.onRole(user)}>Đổi vai trò</button>
+            <Button onClick={() => props.onRole(user)}>Đổi vai trò</Button>
           )}
         </li>
       ))}
@@ -149,16 +160,16 @@ type PaginationProps = {
 function Pagination(props: PaginationProps) {
   return (
     <nav aria-label="Phân trang người dùng">
-      <button disabled={!props.hasPrevious} onClick={() => props.onPage(props.page - 1)}>
+      <Button disabled={!props.hasPrevious} onClick={() => props.onPage(props.page - 1)}>
         Trang trước
-      </button>
+      </Button>
       <span>Trang {props.page}</span>
-      <button disabled={!props.hasNext} onClick={() => props.onPage(props.page + 1)}>
+      <Button disabled={!props.hasNext} onClick={() => props.onPage(props.page + 1)}>
         Trang sau
-      </button>
-      <button type="button" onClick={props.onReload}>
+      </Button>
+      <Button type="button" onClick={props.onReload}>
         Tải trang
-      </button>
+      </Button>
     </nav>
   );
 }

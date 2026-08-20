@@ -41,6 +41,15 @@ _ALLOWED_PROTECTED_SCHEMA_PATHS = frozenset(
         "$.components.schemas.IndexedAttendancePunch.properties.captured_latitude",
         "$.components.schemas.IndexedAttendancePunch.properties.captured_longitude",
         "$.components.schemas.AttendanceCommandResult.properties.session",
+        # Task evidence coordinates and short-lived access/upload URLs are
+        # approved only on their dedicated request/response schemas. Object
+        # keys, URL examples, and the same names elsewhere remain forbidden.
+        "$.components.schemas.TaskFieldCompletion.properties.latitude",
+        "$.components.schemas.TaskFieldCompletion.properties.longitude",
+        "$.components.schemas.TaskLifecycleUpdate.properties.captured_latitude",
+        "$.components.schemas.TaskLifecycleUpdate.properties.captured_longitude",
+        "$.components.schemas.EvidenceUploadIntent.properties.upload_url",
+        "$.components.schemas.PhotoAccess.properties.url",
     }
 )
 

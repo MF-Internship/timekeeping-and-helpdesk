@@ -8,6 +8,9 @@ import {
   identityFailureView,
   type IdentityFailureView,
 } from "@/features/identity/ui/IdentityFailure";
+import { Button } from "@/shared/ui/button";
+import { ActionGroup } from "@/shared/ui/action-group";
+import { Input, Select } from "@/shared/ui/form";
 
 type EditableUser = {
   id: number;
@@ -45,17 +48,17 @@ function ProfileFields({ user, failure }: { user?: EditableUser; failure?: Ident
     <>
       <label>
         Họ tên
-        <input name="full_name" required defaultValue={user?.full_name} />
+        <Input name="full_name" required defaultValue={user?.full_name} />
         <FieldError failure={failure} field="full_name" />
       </label>
       <label>
         Điện thoại
-        <input name="phone" defaultValue={user?.phone ?? ""} />
+        <Input name="phone" defaultValue={user?.phone ?? ""} />
         <FieldError failure={failure} field="phone" />
       </label>
       <label>
         Email
-        <input name="email" type="email" defaultValue={user?.email ?? ""} />
+        <Input name="email" type="email" defaultValue={user?.email ?? ""} />
         <FieldError failure={failure} field="email" />
       </label>
     </>
@@ -87,20 +90,20 @@ function CreateUserEditor(props: UserEditorProps) {
       <h2>Tạo người dùng</h2>
       <label>
         Tên đăng nhập
-        <input name="username" required />
+        <Input name="username" required />
         <FieldError failure={failure} field="username" />
       </label>
       <ProfileFields failure={failure} />
       <label>
         Vai trò
-        <select name="role" required>
+        <Select name="role" required>
           <option value="HELPDESK">Helpdesk</option>
           <option value="LEADER">Leader</option>
-        </select>
+        </Select>
         <FieldError failure={failure} field="role" />
       </label>
       <IdentityFailureNotice failure={failure} />
-      <button type="submit">Tạo</button>
+      <ActionGroup><Button type="submit" variant="primary">Tạo</Button></ActionGroup>
     </form>
   );
 }
@@ -122,10 +125,10 @@ function EditUserEditor(props: UserEditorProps & { user: EditableUser }) {
       <h2>Sửa hồ sơ</h2>
       <ProfileFields user={props.user} failure={failure} />
       <IdentityFailureNotice failure={failure} />
-      <button type="submit">Lưu hồ sơ</button>
-      <button type="button" onClick={props.onCancel}>
+      <ActionGroup><Button type="submit" variant="primary">Lưu hồ sơ</Button>
+      <Button type="button" onClick={props.onCancel}>
         Hủy
-      </button>
+      </Button></ActionGroup>
     </form>
   );
 }

@@ -9,6 +9,9 @@ import {
   identityFailureView,
   type IdentityFailureView,
 } from "@/features/identity/ui/IdentityFailure";
+import { Button } from "@/shared/ui/button";
+import { ActionGroup } from "@/shared/ui/action-group";
+import { Input } from "@/shared/ui/form";
 
 export function ChangePasswordForm() {
   const auth = useAuth();
@@ -34,16 +37,16 @@ export function ChangePasswordForm() {
     <form onSubmit={submit}>
       <label>
         Mật khẩu hiện tại
-        <input name="current_password" type="password" required />
+        <Input name="current_password" type="password" required />
         {error?.fields.current_password ? <span>{error.fields.current_password}</span> : null}
       </label>
       <label>
         Mật khẩu mới
-        <input name="new_password" type="password" minLength={12} required />
+        <Input name="new_password" type="password" minLength={12} required />
         {error?.fields.new_password ? <span>{error.fields.new_password}</span> : null}
       </label>
       <IdentityFailureNotice failure={error} />
-      <button type="submit">Đổi mật khẩu</button>
+      <ActionGroup><Button type="submit" variant="primary">Đổi mật khẩu</Button></ActionGroup>
     </form>
   );
 }

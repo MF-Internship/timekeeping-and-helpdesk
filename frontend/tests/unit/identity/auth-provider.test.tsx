@@ -1,5 +1,5 @@
 import { StrictMode } from "react";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AuthProvider, useAuth } from "@/features/identity/model/AuthProvider";
@@ -24,6 +24,16 @@ function Probe() {
   return <output>{useAuth().state.kind}</output>;
 }
 
+function LogoutProbe() {
+  const auth = useAuth();
+  return <><output>{auth.state.kind}</output><button onClick={() => void auth.logout()}>logout</button></>;
+}
+
+function LoginProbe() {
+  const auth = useAuth();
+  return <><output>{auth.state.kind}</output><button onClick={() => void auth.login("next", "secret")}>login</button></>;
+}
+
 const account = {
   id: 1,
   username: "manager",
@@ -40,6 +50,8 @@ beforeEach(() => {
   setSessionState({ kind: "loading" });
   api.refresh.mockReset();
   api.getMe.mockReset();
+  api.login.mockReset();
+  api.logout.mockReset();
   navigation.replace.mockReset();
   vi.unstubAllGlobals();
 });
@@ -86,6 +98,7 @@ describe("AuthProvider bootstrap", () => {
   });
 
   it("enters inactive and clears bootstrap access when current account is locked", async () => {
+    localStorage.setItem("task-evidence-draft:1:7", "draft");
     api.refresh.mockRejectedValue({ error_code: "ACCOUNT_INACTIVE" });
     render(
       <AuthProvider>
@@ -94,6 +107,31 @@ describe("AuthProvider bootstrap", () => {
     );
     await waitFor(() => expect(screen.getByText("inactive")).toBeInTheDocument());
     expect(api.getMe).not.toHaveBeenCalled();
+    expect(localStorage.getItem("task-evidence-draft:1:7")).toBeNull();
+  });
+
+  it("purges account-scoped evidence drafts on logout", async () => {
+    localStorage.setItem("task-evidence-draft:1:7", "draft");
+    api.refresh.mockResolvedValue({ access: "memory-access" });
+    api.getMe.mockResolvedValue(account);
+    api.logout.mockResolvedValue(undefined);
+    render(<AuthProvider><LogoutProbe /></AuthProvider>);
+    await screen.findByText("authenticated");
+    fireEvent.click(screen.getByRole("button", { name: "logout" }));
+    await waitFor(() => expect(screen.getByText("anonymous")).toBeInTheDocument());
+    expect(localStorage.getItem("task-evidence-draft:1:7")).toBeNull();
+  });
+
+  it("purges prior-account drafts before a new login", async () => {
+    localStorage.setItem("task-evidence-draft:1:7", "draft");
+    api.refresh.mockRejectedValue(new Error("no session"));
+    api.login.mockResolvedValue({ access: "next-access", must_change_password: false });
+    api.getMe.mockResolvedValue({ ...account, id: 2, username: "next" });
+    render(<AuthProvider><LoginProbe /></AuthProvider>);
+    await screen.findByText("anonymous");
+    fireEvent.click(screen.getByRole("button", { name: "login" }));
+    await screen.findByText("authenticated");
+    expect(localStorage.getItem("task-evidence-draft:1:7")).toBeNull();
   });
 
   it("keeps a forced bootstrap anonymous until login restores an access token", async () => {

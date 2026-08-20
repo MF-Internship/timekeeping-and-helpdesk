@@ -47,6 +47,16 @@ def test_all_paths_operation_ids_and_properties_are_canonical() -> None:
         "identity_me_partial_update",
         "operations_job_health_retrieve",
         "api_schema_retrieve",
+        "tasks_list",
+        "tasks_create",
+        "tasks_destroy",
+        "tasks_retrieve",
+        "tasks_partial_update",
+        "tasks_complete_field_create",
+        "tasks_complete_override_create",
+        "tasks_evidence_uploads_create",
+        "tasks_photos_access_create",
+        "tasks_status_create",
         "users_list",
         "users_create",
         "users_retrieve",
@@ -55,3 +65,13 @@ def test_all_paths_operation_ids_and_properties_are_canonical() -> None:
         "users_role_partial_update",
         "users_status_partial_update",
     ]
+
+
+def test_task_evidence_protected_fields_are_narrowly_allowlisted() -> None:
+    from scripts.check_openapi import check_openapi_text
+
+    generated = generate_openapi_bytes().decode("utf-8")
+    assert "TaskFieldCompletion" in generated
+    assert "EvidenceUploadIntent" in generated
+    assert "PhotoAccess" in generated
+    check_openapi_text(generated, "generated-task-evidence")

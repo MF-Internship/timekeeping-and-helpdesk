@@ -1,6 +1,7 @@
 "use client";
 
 import { useJobHealth } from "../model/job-health-state";
+import { Button } from "@/shared/ui/button";
 
 export function JobHealthPanel() {
   const { data, error, refreshing, refresh } = useJobHealth();
@@ -24,9 +25,9 @@ function HealthSnapshot({ data, error, refreshing, refresh }: ReturnType<typeof 
       ) : null}
       {data.escalation_guidance ? <p>{data.escalation_guidance}</p> : null}
       {error ? <p role="alert">Lần làm mới gần nhất thất bại; đang hiển thị dữ liệu cũ.</p> : null}
-      <button type="button" disabled={refreshing} onClick={() => void refresh()}>
+      <Button type="button" disabled={refreshing} onClick={() => void refresh()}>
         {refreshing ? "Đang làm mới…" : "Làm mới"}
-      </button>
+      </Button>
     </section>
   );
 }

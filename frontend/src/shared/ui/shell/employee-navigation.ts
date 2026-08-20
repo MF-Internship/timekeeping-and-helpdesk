@@ -1,24 +1,21 @@
 export type EmployeeNavigationItem = {
-  label: "Tasks" | "Attendance" | "Reports" | "Account";
+  label: string;
   href: string;
   capability?: string;
-  implemented: boolean;
 };
 
 const ITEMS: readonly EmployeeNavigationItem[] = [
-  { label: "Tasks", href: "/tasks", capability: "task.view.self", implemented: false },
-  {
-    label: "Attendance",
-    href: "/attendance",
-    capability: "attendance.view.self",
-    implemented: true,
-  },
-  { label: "Reports", href: "/reports", capability: "report.view.self", implemented: false },
-  { label: "Account", href: "/account", implemented: false },
+  { label: "Công việc", href: "/tasks", capability: "task.view.self" },
+  { label: "Chấm công", href: "/attendance", capability: "attendance.view.self" },
+  { label: "Người dùng", href: "/users", capability: "user.view" },
+  { label: "Địa điểm", href: "/locations", capability: "location.view" },
+  { label: "Ngày nghỉ", href: "/holidays", capability: "holiday.manage" },
+  { label: "Cấu hình", href: "/config", capability: "config.view" },
+  { label: "Vận hành", href: "/operations/job-health", capability: "operations.job_health.view" },
 ];
 
 export function employeeNavigation(hasCapability: (capability: string) => boolean) {
   return ITEMS.filter(
-    (item) => item.implemented && (!item.capability || hasCapability(item.capability)),
+    (item) => !item.capability || hasCapability(item.capability),
   );
 }
