@@ -15,6 +15,9 @@ from attendance.application.dependencies import AttendanceDependencies
 from attendance.application.queries import AttendanceQueryService
 from attendance.application.reconciliation import ReconciliationDependencies, ReconciliationService
 from audit.adapters.persistence.recording import DjangoAuditRecorder
+from audit.adapters.persistence.outbox_relay import DjangoOutboxRelayRepository
+from audit.application.relay import OutboxRelayService
+from audit.domain.relay import RelayConfig
 from config.attendance_adapters import DjangoAttendanceAuthorization, DjangoAttendanceReferenceData
 from config.notification_adapters import (
     DjangoNotificationAccountFacts,
@@ -75,6 +78,7 @@ from notifications.adapters.web_push import WebPushTransport
 from notifications.application.container import NotificationContainer, build_notification_container
 from notifications.application.dependencies import NotificationDependencies
 from operations.adapters.persistence.job_runs import DjangoJobRunRepository
+from operations.adapters.outbox import LoggingOutboxAlertSink, transport_from_name
 from operations.application.container import OperationsContainer
 from operations.application.dependencies import JobHealthDependencies
 from operations.application.job_health import JobHealthService
@@ -212,7 +216,7 @@ def reconciliation_service() -> ReconciliationService:
 def operations_container() -> OperationsContainer:
     repository = DjangoReconciliationRepository()
     return OperationsContainer(
-        JobHealthService(
+        job_health=JobHealthService(
             JobHealthDependencies(
                 authorization=DjangoAuthorizationGateway(),
                 clock=DjangoClock(),
@@ -220,7 +224,19 @@ def operations_container() -> OperationsContainer:
                 attendance_health=repository,
                 read_unit_of_work_factory=DjangoReadOnlyRepeatableRead,
             )
-        )
+        ),
+        outbox_relay=OutboxRelayService(
+            repository=DjangoOutboxRelayRepository(),
+            transport=transport_from_name(settings.OUTBOX_RELAY_TRANSPORT),
+            alerts=LoggingOutboxAlertSink(),
+            config=RelayConfig(
+                batch_size=settings.OUTBOX_RELAY_BATCH_SIZE,
+                lease_seconds=settings.OUTBOX_RELAY_LEASE_SECONDS,
+                max_attempts=settings.OUTBOX_RELAY_MAX_ATTEMPTS,
+                backoff_base_seconds=settings.OUTBOX_RELAY_BACKOFF_BASE_SECONDS,
+                backoff_max_seconds=settings.OUTBOX_RELAY_BACKOFF_MAX_SECONDS,
+            ),
+        ),
     )
 
 
