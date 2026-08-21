@@ -165,7 +165,7 @@ function ConfigForm({ draft, errors, busy, onChange, onSubmit, onReset }: FormPr
           <legend>Ngày làm việc</legend>
           <div className="weekday-grid">
             {WEEKDAYS.map((label, day) => (
-              <label className="checkbox" key={label}>
+              <label className={styles.weekdayOption} key={label}>
                 <Input
                   type="checkbox"
                   checked={draft.working_weekdays.includes(day)}

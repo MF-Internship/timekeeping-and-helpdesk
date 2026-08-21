@@ -7,21 +7,21 @@ from identity.domain.authorization import Role
 from tests.unit.identity.helpers import account
 
 
-def test_query_service_forwards_combined_filters_and_pages_stably() -> None:
+def test_query_service_forwards_combined_filters_and_offsets_stably() -> None:
     repository = Mock()
-    repository.list_users.return_value = [
-        account(user_id=index) for index in range(1, PAGE_SIZE + 2)
-    ]
+    repository.paginate_users.return_value = (PAGE_SIZE + 1, [account(user_id=PAGE_SIZE + 1)])
     service = UserQueryService(repository)
-    result = service.list(UserFilters("worker", Role.HELPDESK, True), 2)
-    repository.list_users.assert_called_once_with("worker", Role.HELPDESK, True)
+    result = service.list(UserFilters("worker", Role.HELPDESK, True), PAGE_SIZE, PAGE_SIZE)
+    repository.paginate_users.assert_called_once_with(
+        "worker", Role.HELPDESK, True, (PAGE_SIZE, PAGE_SIZE)
+    )
     assert result.count == PAGE_SIZE + 1
     assert [item.id for item in result.results] == [PAGE_SIZE + 1]
 
 
-@pytest.mark.parametrize("records,page", [([], 2), ([account()], 0), ([account()], 2)])
-def test_query_service_rejects_out_of_range_pages(records: list[object], page: int) -> None:
+@pytest.mark.parametrize("count,offset,limit", [(0, -1, PAGE_SIZE), (1, 1, PAGE_SIZE), (1, 0, 0)])
+def test_query_service_rejects_invalid_offsets(count: int, offset: int, limit: int) -> None:
     repository = Mock()
-    repository.list_users.return_value = records
-    with pytest.raises(ValueError, match="page"):
-        UserQueryService(repository).list(UserFilters(), page)
+    repository.paginate_users.return_value = (count, [])
+    with pytest.raises(ValueError, match="pagination"):
+        UserQueryService(repository).list(UserFilters(), offset, limit)

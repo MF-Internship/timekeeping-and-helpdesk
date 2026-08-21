@@ -4,8 +4,163 @@
   width: 100%;
   min-width: 0;
 }
-.panel > form {
-  width: min(100%, 52rem);
+.createSection,
+.taskWorkspace {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+.sectionIntro h2,
+.sectionIntro p {
+  margin: 0;
+}
+.sectionIntro p {
+  margin-top: var(--space-1);
+}
+.createForm {
+  width: 100%;
+  max-width: none !important;
+}
+.editForm {
+  width: 100%;
+  max-width: none !important;
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+.taskFormGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  align-items: end;
+}
+.taskFormGrid label {
+  min-width: 0;
+}
+.taskFormGrid input,
+.taskFormGrid textarea {
+  min-height: 3rem;
+  height: 3rem;
+}
+.descriptionInput {
+  resize: none;
+}
+.assignmentBlock {
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-1);
+}
+.assignmentHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.assignmentHeading h3,
+.assignmentHeading p,
+.emptyAssignees {
+  margin: 0;
+}
+.assignmentHeading h3 {
+  font-size: 1rem;
+}
+.assignmentHeading p {
+  margin-top: var(--space-1);
+  font-size: var(--font-size-sm);
+}
+.assignmentHeading > span {
+  flex: none;
+  padding: var(--space-1) var(--space-2);
+  border-radius: 999px;
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.assigneeList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  border-block: 1px solid var(--color-border);
+}
+.assigneeOption {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  min-height: 3.5rem;
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.assigneeOption:hover,
+.assigneeOption:has(input:checked) {
+  background: hsl(var(--accent) / 0.6);
+}
+.assigneeOption input[type="checkbox"] {
+  flex: 0 0 1rem;
+  width: 1rem;
+  height: 1rem;
+  min-height: 1rem;
+  margin: 0;
+  padding: 0;
+  box-shadow: none;
+}
+.assigneeOption > span {
+  display: grid;
+  min-width: 0;
+}
+.assigneeOption strong,
+.assigneeOption small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.assigneeOption small {
+  color: var(--color-text-secondary);
+}
+.emptyAssignees {
+  grid-column: 1 / -1;
+  padding: var(--space-3);
+}
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+.tabs button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-weight: 700;
+}
+.tabs button[data-state="active"] {
+  background: var(--color-surface);
+  color: var(--color-brand-primary);
+  box-shadow: 0 1px 3px hsl(var(--foreground) / 0.12);
+}
+.tabs button span {
+  display: inline-grid;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--color-surface-muted);
+  font-size: 0.75rem;
+}
+.tabContent {
+  margin-top: var(--space-4);
 }
 
 .group {
@@ -19,13 +174,30 @@
   align-content: start;
   gap: 0.75rem;
 }
+.taskCard {
+  position: relative;
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  box-shadow: 0 1px 2px hsl(var(--foreground) / 0.05);
+}
+.taskCard::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--color-brand-primary);
+}
 .summary {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-4);
   min-width: 0;
 }
 .titleRow {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-3);
@@ -33,14 +205,24 @@
 .titleRow h3 {
   margin: 0;
   min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 1.125rem;
+  letter-spacing: -0.01em;
+}
+.titleRow > span {
+  justify-self: end;
+  text-align: center;
+  white-space: nowrap;
 }
 .description {
   margin: 0;
-  line-height: 1.6;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  line-height: 1.55;
 }
 .metadata {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
   margin: 0;
 }
@@ -48,12 +230,31 @@
   min-width: 0;
 }
 .metadata dt {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
   font-weight: 700;
 }
+.metadata dt svg {
+  width: 1rem;
+  height: 1rem;
+  color: var(--color-brand-primary);
+}
 .metadata dd {
   margin: var(--space-1) 0 0;
+  overflow-wrap: anywhere;
+}
+.locationMeta {
+  grid-column: 1 / -1;
+  padding: var(--space-3);
+  border-left: 3px solid var(--color-brand-primary);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--color-surface-muted);
+}
+.locationMeta dd {
+  line-height: 1.5;
 }
 .evidenceForm {
   margin-top: var(--space-4);
@@ -94,19 +295,110 @@
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
 }
+.history {
+  display: grid;
+  gap: var(--space-4);
+}
+.historyHeading,
+.updateHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.historyHeading h2,
+.historyHeading span,
+.actor,
+.updateNote {
+  margin: 0;
+}
+.historyHeading span,
+.actor,
+.updateHeading time {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+.updateCount {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+.timeline {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.timeline > li {
+  position: relative;
+  display: grid;
+  gap: var(--space-2);
+  margin-left: var(--space-3);
+  padding: 0 0 var(--space-5) var(--space-6);
+  border-left: 2px solid var(--color-border);
+}
+.timeline > li:last-child {
+  padding-bottom: 0;
+  border-left-color: transparent;
+}
+.timelineDot {
+  position: absolute;
+  top: 0.2rem;
+  left: -0.45rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid var(--color-surface);
+  border-radius: 50%;
+  background: var(--color-brand-primary);
+  box-shadow: 0 0 0 2px var(--color-brand-primary);
+}
+.updateNote {
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+}
 @media (min-width: 72rem) {
   .group {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 @media (max-width: 30rem) {
-  .titleRow {
+  .assignmentHeading {
     display: grid;
   }
+  .assignmentHeading > span {
+    justify-self: start;
+  }
+  .assigneeList,
   .metadata {
     grid-template-columns: 1fr;
   }
   .group {
     gap: var(--space-3);
+  }
+  .createSection,
+  .taskWorkspace {
+    padding: var(--space-4);
+  }
+  .taskFormGrid,
+  .tabs {
+    grid-template-columns: 1fr;
+  }
+  .tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .titleRow {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+  .titleRow > span {
+    justify-self: start;
+    font-size: 0.75rem;
+  }
+  .historyHeading,
+  .updateHeading {
+    display: grid;
   }
 }

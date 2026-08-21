@@ -1765,8 +1765,14 @@ paths:
         name: is_active
         schema:
           type: boolean
-      - in: query
-        name: page
+      - description: Số bản ghi, tối đa 100.
+        in: query
+        name: limit
+        schema:
+          type: integer
+      - description: Vị trí bắt đầu, từ 0.
+        in: query
+        name: offset
         schema:
           type: integer
       - in: query

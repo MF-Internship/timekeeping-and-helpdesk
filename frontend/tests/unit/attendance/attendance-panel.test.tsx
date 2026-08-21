@@ -123,9 +123,9 @@ describe("AttendancePanel", () => {
     await waitFor(() => expect(mocks.checkIn).toHaveBeenCalledOnce());
     await waitFor(() => expect(mocks.getToday).toHaveBeenCalledTimes(2));
     expect(screen.getByText("Check In thành công")).toBeInTheDocument();
-    expect(screen.getByText("Tổng thời gian: 30.000000 phút")).toBeInTheDocument();
+    expect(screen.getByText("Tổng thời gian: 30 phút")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Phiên làm việc (1)" })).toBeInTheDocument();
-    expect(screen.getByText(/Location 1.*Location 2.*30.000000 phút/)).toBeInTheDocument();
+    expect(screen.getByText(/Location 1.*Location 2.*30 phút/)).toBeInTheDocument();
   });
 
   it("keeps IN and OUT boundary locations separate in one indexed timeline", async () => {
@@ -164,7 +164,7 @@ describe("AttendancePanel", () => {
   it("does not acquire or poll location while an open session is merely displayed", async () => {
     mocks.getToday.mockResolvedValue(today(true));
     render(<AttendancePanel />);
-    expect(await screen.findByText(/Đang mở/)).toBeInTheDocument();
+    expect(await screen.findByText("Đang mở", { selector: "strong" })).toBeInTheDocument();
     expect(mocks.acquire).not.toHaveBeenCalled();
   });
 
@@ -178,7 +178,7 @@ describe("AttendancePanel", () => {
     mockReference([directoryRow("A", 0)]);
     mockGeolocation();
     render(<AttendancePanel />);
-    await screen.findByText("Tổng thời gian: 30.000000 phút");
+    await screen.findByText("Tổng thời gian: 30 phút");
     expect(screen.queryByRole("button", { name: /Check/ })).not.toBeInTheDocument();
 
     await showPreview();

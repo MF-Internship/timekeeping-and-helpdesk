@@ -2,6 +2,38 @@
   display: grid;
   gap: var(--space-5);
 }
+.overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+.overview > div {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+.overview svg {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0.65rem;
+  border-radius: var(--radius-md);
+  background: hsl(var(--accent));
+  color: var(--color-brand-primary);
+}
+.overview span {
+  display: grid;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+.overview strong {
+  color: var(--color-text-primary);
+  font-size: 1.5rem;
+}
 .pushCard {
   display: grid;
   gap: var(--space-3);
@@ -63,7 +95,9 @@
 .list {
   display: grid;
   padding: 0;
-  border-top: 1px solid var(--color-border);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
   list-style: none;
 }
 .list > li {
@@ -75,6 +109,13 @@
   padding: var(--space-4);
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
+  transition: background 150ms ease;
+}
+.list > li:last-child {
+  border-bottom: 0;
+}
+.list > li:hover {
+  background: var(--color-surface-muted);
 }
 .list > li.unread {
   background: hsl(var(--accent) / 0.55);
@@ -154,6 +195,9 @@
   font-size: 0.75rem;
 }
 @media (max-width: 40rem) {
+  .overview {
+    grid-template-columns: 1fr;
+  }
   .inboxHeader {
     align-items: stretch;
     flex-direction: column;

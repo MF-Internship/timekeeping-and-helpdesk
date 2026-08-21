@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import * as Tabs from "@radix-ui/react-tabs";
 
 import { UI_MESSAGES } from "@/shared/messages";
 import { Button } from "@/shared/ui/button";
@@ -63,15 +64,9 @@ export function TaskManagementPanel() {
         <p role="alert">{UI_MESSAGES.tasks.staleFailure}</p>
       ) : null}
       {taskCount(data) === 0 ? <p>{UI_MESSAGES.tasks.empty}</p> : null}
-      {TASK_GROUPS.map((group) => (
-        <TaskGroup
-          key={group}
-          group={group}
-          tasks={data[group]}
-          management={management}
-          onDetail={(id) => void openDetail(id)}
-        />
-      ))}
+      {taskCount(data) > 0 ? (
+        <TaskTabs data={data} management={management} onDetail={(id) => void openDetail(id)} />
+      ) : null}
       <TaskEvidenceHistory detail={detail} error={detailError} />
     </section>
   );
@@ -81,13 +76,78 @@ function CreateTask({ management }: { management: ReturnType<typeof useTaskManag
   const mode = management.capabilities.canAssign ? "assign-create" : "self-create";
   if (!management.capabilities.canAssign && !management.capabilities.canCreateSelf) return null;
   return (
-    <TaskForm
-      mode={mode}
-      users={management.users}
-      locations={management.locations}
-      busy={management.mutation.kind === "submitting"}
-      onCreate={management.create}
-    />
+    <section className={styles.createSection} aria-labelledby="create-task-title">
+      <div className={styles.sectionIntro}>
+        <h2 id="create-task-title">Tạo công việc</h2>
+        <p>Nhập thông tin giao việc rõ ràng để nhân sự có thể bắt đầu ngay.</p>
+      </div>
+      <TaskForm
+        mode={mode}
+        users={management.users}
+        locations={management.locations}
+        busy={management.mutation.kind === "submitting"}
+        onCreate={management.create}
+      />
+    </section>
+  );
+}
+
+type TaskTab = "todo" | "completed" | "inProgress" | "overdue";
+const TAB_LABELS: Record<TaskTab, string> = {
+  todo: "Cần làm",
+  completed: "Đã xong",
+  inProgress: "Đang thực hiện",
+  overdue: "Quá hạn",
+};
+
+function TaskTabs({
+  data,
+  management,
+  onDetail,
+}: {
+  data: Parameters<typeof taskCount>[0];
+  management: ReturnType<typeof useTaskManagement>;
+  onDetail(id: number): void;
+}) {
+  const all = TASK_GROUPS.flatMap((group) => data[group]);
+  const overdueIds = new Set(data.overdue.map((task) => task.id));
+  const groups: Record<TaskTab, typeof all> = {
+    todo: all.filter(
+      (task) => !overdueIds.has(task.id) && (task.status === "TODO" || task.status === "BLOCKED"),
+    ),
+    completed: all.filter((task) => task.status === "COMPLETED"),
+    inProgress: all.filter((task) => !overdueIds.has(task.id) && task.status === "IN_PROGRESS"),
+    overdue: data.overdue.filter((task) => task.status !== "COMPLETED"),
+  };
+  const tabs = Object.keys(TAB_LABELS) as TaskTab[];
+  const initial = tabs.find((tab) => groups[tab].length > 0) ?? "todo";
+  return (
+    <section className={styles.taskWorkspace} aria-labelledby="task-list-title">
+      <div className={styles.sectionIntro}>
+        <h2 id="task-list-title">Danh sách công việc</h2>
+        <p>Chọn trạng thái để tập trung vào đúng nhóm cần xử lý.</p>
+      </div>
+      <Tabs.Root defaultValue={initial}>
+        <Tabs.List className={styles.tabs} aria-label="Trạng thái công việc">
+          {tabs.map((tab) => (
+            <Tabs.Trigger key={tab} value={tab}>
+              {TAB_LABELS[tab]} <span>{groups[tab].length}</span>
+            </Tabs.Trigger>
+          ))}
+        </Tabs.List>
+        {tabs.map((tab) => (
+          <Tabs.Content className={styles.tabContent} key={tab} value={tab}>
+            <TaskGroup
+              title={TAB_LABELS[tab]}
+              id={tab}
+              tasks={groups[tab]}
+              management={management}
+              onDetail={onDetail}
+            />
+          </Tabs.Content>
+        ))}
+      </Tabs.Root>
+    </section>
   );
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { Check, KeyRound, LogOut, Palette, UserRound } from "lucide-react";
+import { Check, KeyRound, Laptop, LogOut, Moon, Palette, Sun, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import type { Account } from "@/features/identity/model/session-store";
@@ -22,6 +22,12 @@ type AccountMenuProps = {
   logout(): Promise<void>;
   defaultOpen?: boolean;
 };
+
+const THEME_OPTIONS = [
+  { value: "light", label: "Sáng", icon: Sun },
+  { value: "dark", label: "Tối", icon: Moon },
+  { value: "system", label: "Hệ thống", icon: Laptop },
+] as const;
 
 export function AccountMenu({ account, logout, defaultOpen = false }: AccountMenuProps) {
   const name = account.full_name || account.username;
@@ -55,30 +61,24 @@ export function AccountMenu({ account, logout, defaultOpen = false }: AccountMen
               Đổi mật khẩu
             </Link>
           </DropdownMenu.Item>
-          <DropdownMenu.Sub>
-            <DropdownMenu.SubTrigger className={styles.menuItem}>
-              <Palette size={17} />
-              Giao diện
-            </DropdownMenu.SubTrigger>
-            <DropdownMenu.Portal>
-              <DropdownMenu.SubContent className={styles.menu} sideOffset={6}>
-                <DropdownMenu.RadioGroup value={theme} onValueChange={setTheme}>
-                  {[
-                    ["light", "Sáng"],
-                    ["dark", "Tối"],
-                    ["system", "Hệ thống"],
-                  ].map(([value, label]) => (
-                    <DropdownMenu.RadioItem className={styles.menuItem} value={value} key={value}>
-                      <DropdownMenu.ItemIndicator className={styles.menuIndicator}>
-                        <Check size={15} />
-                      </DropdownMenu.ItemIndicator>
-                      {label}
-                    </DropdownMenu.RadioItem>
-                  ))}
-                </DropdownMenu.RadioGroup>
-              </DropdownMenu.SubContent>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Sub>
+          <DropdownMenu.Label className={styles.themeLabel}>
+            <Palette size={17} /> Giao diện
+          </DropdownMenu.Label>
+          <DropdownMenu.RadioGroup
+            className={styles.themeOptions}
+            value={theme}
+            onValueChange={setTheme}
+          >
+            {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
+              <DropdownMenu.RadioItem className={styles.themeOption} value={value} key={value}>
+                <Icon size={16} aria-hidden="true" />
+                <span>{label}</span>
+                <DropdownMenu.ItemIndicator className={styles.menuIndicator}>
+                  <Check size={14} />
+                </DropdownMenu.ItemIndicator>
+              </DropdownMenu.RadioItem>
+            ))}
+          </DropdownMenu.RadioGroup>
           <DropdownMenu.Separator className={styles.menuSeparator} />
           <DropdownMenu.Item className={styles.menuItem} onSelect={() => void logout()}>
             <LogOut size={17} />

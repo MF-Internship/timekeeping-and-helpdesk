@@ -7,9 +7,10 @@ import type { listLocations } from "@/features/locations/api/location-api";
 import { UI_MESSAGES } from "@/shared/messages";
 import { Button } from "@/shared/ui/button";
 import { ActionGroup } from "@/shared/ui/action-group";
-import { Input, Select, Textarea } from "@/shared/ui/form";
+import { Input, Textarea } from "@/shared/ui/form";
 
 import type { TaskCreateInput, TaskItem, TaskUpdateInput } from "../api/task-api";
+import styles from "./TaskManagement.module.css";
 
 type User = Awaited<ReturnType<typeof listUsers>>["results"][number];
 type Location = Awaited<ReturnType<typeof listLocations>>[number];
@@ -65,7 +66,11 @@ export function TaskForm(props: TaskFormProps) {
   }
 
   return (
-    <form onSubmit={submit} aria-label={props.mode === "edit" ? "Sửa công việc" : "Tạo công việc"}>
+    <form
+      className={props.mode === "edit" ? styles.editForm : styles.createForm}
+      onSubmit={submit}
+      aria-label={props.mode === "edit" ? "Sửa công việc" : "Tạo công việc"}
+    >
       <TaskContentFields
         task={props.task}
         locations={props.locations}
@@ -128,14 +133,18 @@ function TaskContentFields(props: {
   locationListId: string;
 }) {
   return (
-    <div className="form-grid">
+    <div className={styles.taskFormGrid}>
       <label>
         Tiêu đề
         <Input name="title" required defaultValue={props.task?.title} />
       </label>
       <label>
         Mô tả
-        <Textarea name="description" defaultValue={props.task?.description} />
+        <Textarea
+          className={styles.descriptionInput}
+          name="description"
+          defaultValue={props.task?.description}
+        />
       </label>
       {props.creating ? (
         <label>
@@ -163,18 +172,38 @@ function TaskContentFields(props: {
 }
 
 function AssignmentFields(props: TaskFormProps) {
+  const headingId = useId();
   return (
-    <fieldset>
-      <legend>{UI_MESSAGES.tasks.activeAssignees}</legend>
-      <Select name="assignee_ids" multiple aria-label={UI_MESSAGES.tasks.activeAssignees}>
-        {props.users.map((user) => (
-          <option key={user.id} value={user.id}>
-            {user.full_name}
-          </option>
-        ))}
-      </Select>
+    <div className={styles.assignmentBlock}>
+      <div className={styles.assignmentHeading}>
+        <div>
+          <h3 id={headingId}>{UI_MESSAGES.tasks.activeAssignees}</h3>
+          <p>Chọn một hoặc nhiều người phụ trách công việc.</p>
+        </div>
+        <span>{props.users.length} người</span>
+      </div>
+      <div
+        className={styles.assigneeList}
+        role="group"
+        aria-labelledby={headingId}
+        aria-label={UI_MESSAGES.tasks.activeAssignees}
+      >
+        {props.users.length ? (
+          props.users.map((user) => (
+            <label className={styles.assigneeOption} key={user.id}>
+              <Input type="checkbox" name="assignee_ids" value={user.id} />
+              <span>
+                <strong>{user.full_name}</strong>
+                <small>@{user.username}</small>
+              </span>
+            </label>
+          ))
+        ) : (
+          <p className={styles.emptyAssignees}>Không có Helpdesk đang hoạt động.</p>
+        )}
+      </div>
       {props.mode === "edit" && props.task ? <RetainedAssignees task={props.task} /> : null}
-    </fieldset>
+    </div>
   );
 }
 

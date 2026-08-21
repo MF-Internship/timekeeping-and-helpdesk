@@ -4,6 +4,7 @@ import { useGuidance } from "@/features/guidance/model/guidance-state";
 import { GuidanceContent } from "@/features/guidance/ui/GuidancePanel";
 import { ErrorState, LoadingState } from "@/shared/ui/async-state";
 import { Card } from "@/shared/ui/card";
+import { formatMinutes } from "@/shared/formatters/duration";
 
 import { useAttendanceExperience } from "../model/use-attendance-experience";
 import { AttendanceContextHeader } from "./AttendanceContextHeader";
@@ -51,9 +52,14 @@ export function AttendancePanel() {
         primaryAction={action}
         outcome={outcome}
       />
-      <Card aria-labelledby="today-history-title">
-        <h2 id="today-history-title">Hôm nay</h2>
-        <p>Tổng thời gian: {today.total_duration_minutes} phút</p>
+      <Card className={styles.todayCard} aria-labelledby="today-history-title">
+        <div className={styles.todayHeading}>
+          <div>
+            <span>Lịch sử chấm công</span>
+            <h2 id="today-history-title">Hôm nay</h2>
+          </div>
+          <strong>Tổng thời gian: {formatMinutes(today.total_duration_minutes)} phút</strong>
+        </div>
         <TodayTimeline punches={today.punches} sessions={today.sessions} />
       </Card>
     </div>

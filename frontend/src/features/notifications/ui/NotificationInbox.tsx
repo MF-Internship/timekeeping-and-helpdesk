@@ -1,6 +1,14 @@
 "use client";
 import * as Tabs from "@radix-ui/react-tabs";
-import { Bell, BriefcaseBusiness, Clock3, ExternalLink, RefreshCw } from "lucide-react";
+import {
+  Bell,
+  BellRing,
+  BriefcaseBusiness,
+  CheckCheck,
+  Clock3,
+  ExternalLink,
+  RefreshCw,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { UI_MESSAGES } from "@/shared/messages";
@@ -54,6 +62,7 @@ function InboxContent({ notifications }: { notifications: ReturnType<typeof useN
   const items = tab === "unread" ? data.items.filter((item) => item.is_unread) : data.items;
   return (
     <Tabs.Root value={tab} onValueChange={setTab}>
+      <NotificationOverview total={data.items.length} unread={data.unread_count} />
       <div className={styles.inboxHeader}>
         <Tabs.List className={styles.tabs} aria-label="Lọc thông báo">
           <Tabs.Trigger value="all">Tất cả</Tabs.Trigger>
@@ -101,6 +110,27 @@ function InboxContent({ notifications }: { notifications: ReturnType<typeof useN
         )}
       </Tabs.Content>
     </Tabs.Root>
+  );
+}
+
+function NotificationOverview({ total, unread }: { total: number; unread: number }) {
+  const items = [
+    { label: "Chưa đọc", value: unread, icon: BellRing },
+    { label: "Đã xem", value: Math.max(0, total - unread), icon: CheckCheck },
+    { label: "Tổng gần đây", value: total, icon: Bell },
+  ];
+  return (
+    <div className={styles.overview} aria-label="Tổng quan thông báo">
+      {items.map(({ label, value, icon: Icon }) => (
+        <div key={label}>
+          <Icon aria-hidden="true" />
+          <span>
+            <strong>{value}</strong>
+            {label}
+          </span>
+        </div>
+      ))}
+    </div>
   );
 }
 function NotificationRow({

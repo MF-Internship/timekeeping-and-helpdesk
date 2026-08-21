@@ -46,9 +46,14 @@ class DjangoUserRepository:
     def record_login(self, user_id: int) -> None:
         User.objects.filter(pk=user_id).update(last_login=timezone.now())
 
-    def list_users(
-        self, query: str | None, role: Role | None, is_active: bool | None
-    ) -> list[AccountSnapshot]:
+    def paginate_users(
+        self,
+        query: str | None,
+        role: Role | None,
+        is_active: bool | None,
+        window: tuple[int, int],
+    ) -> tuple[int, list[AccountSnapshot]]:
+        offset, limit = window
         users = User.objects.all()
         if query:
             users = users.filter(Q(full_name__icontains=query) | Q(username__icontains=query))
@@ -56,7 +61,9 @@ class DjangoUserRepository:
             users = users.filter(role=role.value)
         if is_active is not None:
             users = users.filter(is_active=is_active)
-        return [to_snapshot(user) for user in users.order_by("full_name", "username", "id")]
+        count = users.count()
+        page = users.order_by("full_name", "username", "id")[offset : offset + limit]
+        return count, [to_snapshot(user) for user in page]
 
     def save(self, account: AccountSnapshot) -> AccountSnapshot:
         user = User.objects.get(pk=account.id)

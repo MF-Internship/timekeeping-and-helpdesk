@@ -6,6 +6,7 @@ import { listUsers } from "@/features/identity/api/identity-api";
 import { useAuth } from "@/features/identity/model/AuthProvider";
 import { listLocations } from "@/features/locations/api/location-api";
 import { UI_MESSAGES } from "@/shared/messages";
+import { readUserCache, writeUserCache } from "@/shared/cache/user-resource-cache";
 
 import * as taskApi from "../api/task-api";
 import { isTaskConflict, type TaskLoadState, type TaskMutationState } from "./task-state";
@@ -14,36 +15,100 @@ type UserPage = Awaited<ReturnType<typeof listUsers>>;
 type LocationList = Awaited<ReturnType<typeof listLocations>>;
 type Mutation = () => Promise<unknown>;
 
-function useTaskList() {
-  const [loadState, setLoadState] = useState<TaskLoadState>({ kind: "loading" });
+function useTaskList(accountId: number | undefined) {
+  const [loadState, setLoadState] = useState<TaskLoadState>(() => cachedTaskState(accountId));
+  const accountRef = useRef(accountId);
   const refresh = useCallback(async () => {
+    const requestedAccount = accountId;
     try {
-      setLoadState({ kind: "ready", data: await taskApi.listTasks() });
+      const data = await taskApi.listTasks();
+      if (accountRef.current !== requestedAccount) return;
+      writeUserCache(requestedAccount, "tasks", data);
+      setLoadState({ kind: "ready", data });
     } catch (error) {
+      if (accountRef.current !== requestedAccount) return;
       setLoadState((current) =>
         current.kind === "ready" ? { ...current, refreshError: error } : { kind: "failed", error },
       );
     }
-  }, []);
-  useEffect(() => queueMicrotask(() => void refresh()), [refresh]);
+  }, [accountId]);
+  useEffect(() => {
+    accountRef.current = accountId;
+    queueMicrotask(() => {
+      setLoadState(cachedTaskState(accountId));
+      void refresh();
+    });
+  }, [accountId, refresh]);
   return { loadState, refresh };
 }
 
-function useTaskReferences(canAssign: boolean, loadLocations: boolean) {
-  const [users, setUsers] = useState<UserPage["results"]>([]);
-  const [locations, setLocations] = useState<LocationList>([]);
-  useEffect(() => {
-    if (loadLocations) {
-      void listLocations({ is_active: true }).then(setLocations).catch(clearLocations);
-    }
-    if (canAssign) {
-      void listUsers({ role: "HELPDESK", is_active: true }).then((page) => setUsers(page.results));
-    }
-    function clearLocations() {
-      setLocations([]);
-    }
-  }, [canAssign, loadLocations]);
+function cachedTaskState(accountId: number | undefined): TaskLoadState {
+  const cached = readUserCache<Awaited<ReturnType<typeof taskApi.listTasks>>>(accountId, "tasks");
+  return cached ? { kind: "ready", data: cached } : { kind: "loading" };
+}
+
+function useTaskReferences(
+  accountId: number | undefined,
+  canAssign: boolean,
+  loadLocations: boolean,
+) {
+  const users = useTaskUsers(accountId, canAssign);
+  const locations = useTaskLocations(accountId, loadLocations);
   return { users, locations };
+}
+
+function useTaskUsers(accountId: number | undefined, enabled: boolean) {
+  const [users, setUsers] = useState<UserPage["results"]>(
+    () => readUserCache<UserPage["results"]>(accountId, "task-assignees") ?? [],
+  );
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(() => active && setUsers(cachedUsers(accountId, enabled)));
+    if (enabled) {
+      void listUsers({ role: "HELPDESK", is_active: true })
+        .then((page) => {
+          if (!active) return;
+          setUsers(page.results);
+          writeUserCache(accountId, "task-assignees", page.results);
+        })
+        .catch(() => undefined);
+    }
+    return () => {
+      active = false;
+    };
+  }, [accountId, enabled]);
+  return users;
+}
+
+function cachedUsers(accountId: number | undefined, enabled: boolean) {
+  return enabled ? (readUserCache<UserPage["results"]>(accountId, "task-assignees") ?? []) : [];
+}
+
+function useTaskLocations(accountId: number | undefined, enabled: boolean) {
+  const [locations, setLocations] = useState<LocationList>(
+    () => readUserCache<LocationList>(accountId, "task-locations") ?? [],
+  );
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(() => active && setLocations(cachedLocations(accountId, enabled)));
+    if (enabled) {
+      void listLocations({ is_active: true })
+        .then((values) => {
+          if (!active) return;
+          setLocations(values);
+          writeUserCache(accountId, "task-locations", values);
+        })
+        .catch(() => undefined);
+    }
+    return () => {
+      active = false;
+    };
+  }, [accountId, enabled]);
+  return locations;
+}
+
+function cachedLocations(accountId: number | undefined, enabled: boolean) {
+  return enabled ? (readUserCache<LocationList>(accountId, "task-locations") ?? []) : [];
 }
 
 function useTaskMutation(refresh: () => Promise<void>) {
@@ -82,17 +147,24 @@ async function refreshTaskConflict(error: unknown, refresh: Mutation, conflictRe
 
 export function useTaskManagement() {
   const auth = useAuth();
+  const accountId = auth.state?.kind === "authenticated" ? auth.state.account.id : undefined;
   const canAssign = auth.hasCapability("task.create.assign");
   const canEdit = auth.hasCapability("task.update.self") || auth.hasCapability("task.update.any");
-  const list = useTaskList();
+  const list = useTaskList(accountId);
   const references = useTaskReferences(
+    accountId,
     canAssign,
     canAssign || canEdit || auth.hasCapability("task.create.self"),
   );
   const commands = useTaskMutation(list.refresh);
   const capabilities = taskCapabilities(auth, canAssign);
-  const accountId = auth.state?.kind === "authenticated" ? auth.state.account.id : 0;
-  return taskManagement({ ...list, ...references, ...commands, capabilities, accountId });
+  return taskManagement({
+    ...list,
+    ...references,
+    ...commands,
+    capabilities,
+    accountId: accountId ?? 0,
+  });
 }
 
 function taskCapabilities(auth: ReturnType<typeof useAuth>, canAssign: boolean) {

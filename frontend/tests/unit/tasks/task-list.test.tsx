@@ -13,7 +13,7 @@ vi.mock("@/features/tasks/model/use-task-management", () => ({
 afterEach(cleanup);
 
 describe("Task grouped list", () => {
-  it("renders the four server groups in canonical order without regrouping", () => {
+  it("renders status tabs and keeps server overdue membership authoritative", () => {
     const futureInServerOverdue = taskFixture({
       id: 1,
       title: "Server overdue",
@@ -33,14 +33,17 @@ describe("Task grouped list", () => {
       },
     });
     render(<TaskManagementPanel />);
-    const headings = screen.getAllByRole("heading", { level: 2 }).map((item) => item.textContent);
-    expect(headings.slice(1, 5)).toEqual(["Quá hạn", "Hôm nay", "Sắp tới", "Đã hoàn thành"]);
-    expect(
-      within(screen.getByRole("region", { name: "Quá hạn" })).getByText("Server overdue"),
-    ).toBeInTheDocument();
-    expect(
-      within(screen.getByRole("region", { name: "Đã hoàn thành" })).getByText("Old completed"),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("tablist", { name: "Trạng thái công việc" })).toBeInTheDocument();
+    fireEvent.mouseDown(screen.getByRole("tab", { name: /Quá hạn/ }), {
+      button: 0,
+      ctrlKey: false,
+    });
+    expect(within(screen.getByRole("tabpanel")).getByText("Server overdue")).toBeInTheDocument();
+    fireEvent.mouseDown(screen.getByRole("tab", { name: /Đã xong/ }), {
+      button: 0,
+      ctrlKey: false,
+    });
+    expect(within(screen.getByRole("tabpanel")).getByText("Old completed")).toBeInTheDocument();
   });
 
   it("loads scoped detail history only after the user asks for it", async () => {
@@ -66,8 +69,9 @@ describe("Task grouped list", () => {
     render(<TaskManagementPanel />);
     fireEvent.click(screen.getByRole("button", { name: "Xem lịch sử" }));
     expect(await screen.findByRole("region", { name: /Lịch sử/ })).toHaveTextContent(
-      "IN_PROGRESS — An",
+      "Đang thực hiện",
     );
+    expect(screen.getByRole("region", { name: /Lịch sử/ })).toHaveTextContent("An");
     expect(detail).toHaveBeenCalledWith(1);
   });
 
@@ -82,7 +86,7 @@ describe("Task grouped list", () => {
     });
     render(<TaskManagementPanel />);
     expect(screen.getByText("Quá hạn 4 ngày")).toBeInTheDocument();
-    expect(screen.getByText(/2026-08-16/)).toBeInTheDocument();
+    expect(screen.getByText("16/08/2026")).toBeInTheDocument();
   });
 
   it("covers loading, empty, and retained-data refetch failure states", () => {

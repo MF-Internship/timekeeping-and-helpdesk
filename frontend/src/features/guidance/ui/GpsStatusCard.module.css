@@ -3,7 +3,8 @@
   gap: var(--space-4);
 }
 .body {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: var(--space-5);
 }
@@ -16,7 +17,10 @@
 }
 @media (max-width: 22rem) {
   .body {
-    align-items: flex-start;
-    flex-direction: column;
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+  .body > div:last-child {
+    width: 100%;
   }
 }

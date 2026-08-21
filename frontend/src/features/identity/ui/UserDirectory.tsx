@@ -2,7 +2,7 @@
 
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { MoreVertical } from "lucide-react";
+import { ChevronLeft, ChevronRight, MoreVertical, RefreshCw } from "lucide-react";
 
 import {
   changeUserRole,
@@ -27,6 +27,7 @@ import {
   type IdentityFailureView,
 } from "@/features/identity/ui/IdentityFailure";
 import styles from "./UserDirectory.module.css";
+import { clearUserCache, readUserCache, writeUserCache } from "@/shared/cache/user-resource-cache";
 
 type DirectoryUser = Awaited<ReturnType<typeof listUsers>>["results"][number];
 type DirectoryPage = Awaited<ReturnType<typeof listUsers>>;
@@ -44,24 +45,13 @@ function useActionError() {
   return { error, run };
 }
 
-function useInitialPage(
-  enabled: boolean,
-  showPage: (page: DirectoryPage) => void,
-  run: (action: () => Promise<void>) => Promise<void>,
-) {
+function useInitialPage(enabled: boolean, load: (offset?: number) => Promise<void>) {
   const initialized = useRef(false);
   useEffect(() => {
     if (!enabled || initialized.current) return;
     initialized.current = true;
-    let active = true;
-    void run(async () => {
-      const page = await listUsers({});
-      if (active) showPage(page);
-    });
-    return () => {
-      active = false;
-    };
-  }, [enabled, run, showPage]);
+    void load(0);
+  }, [enabled, load]);
 }
 
 async function toggleUserRole(user: DirectoryUser, reload: () => Promise<void>) {
@@ -185,25 +175,49 @@ function UserActions(props: UserListProps & { user: DirectoryUser }) {
 }
 
 type PaginationProps = {
-  page: number;
+  offset: number;
+  limit: number;
+  count: number;
   hasNext: boolean;
   hasPrevious: boolean;
-  onPage: (page: number) => void;
+  onOffset: (offset: number) => void;
   onReload: () => void;
 };
 
 function Pagination(props: PaginationProps) {
+  const totalPages = Math.ceil(props.count / props.limit);
+  const currentPage = props.count === 0 ? 0 : Math.floor(props.offset / props.limit) + 1;
+  const firstItem = props.count === 0 ? 0 : props.offset + 1;
+  const lastItem = Math.min(props.offset + props.limit, props.count);
   return (
     <nav className={styles.pagination} aria-label="Phân trang người dùng">
-      <Button disabled={!props.hasPrevious} onClick={() => props.onPage(props.page - 1)}>
+      <Button
+        className={styles.pageButton}
+        disabled={!props.hasPrevious}
+        onClick={() => props.onOffset(Math.max(0, props.offset - props.limit))}
+      >
+        <ChevronLeft aria-hidden="true" />
         Trang trước
       </Button>
-      <span>Trang {props.page}</span>
-      <Button disabled={!props.hasNext} onClick={() => props.onPage(props.page + 1)}>
+      <div className={styles.pageSummary} aria-live="polite">
+        <strong>
+          Trang {currentPage} <span>/ {totalPages}</span>
+        </strong>
+        <small>
+          Hiển thị {firstItem}–{lastItem} trong {props.count} tài khoản
+        </small>
+      </div>
+      <Button
+        className={styles.pageButton}
+        disabled={!props.hasNext}
+        onClick={() => props.onOffset(props.offset + props.limit)}
+      >
         Trang sau
+        <ChevronRight aria-hidden="true" />
       </Button>
-      <Button type="button" onClick={props.onReload}>
-        Tải trang
+      <Button className={styles.reloadButton} type="button" onClick={props.onReload}>
+        <RefreshCw aria-hidden="true" />
+        Tải lại
       </Button>
     </nav>
   );
@@ -235,13 +249,15 @@ type DirectoryResultsProps = {
   canManage: boolean;
   canAssignRole: boolean;
   error?: IdentityFailureView;
-  page: number;
+  offset: number;
+  limit: number;
+  count: number;
   hasNext: boolean;
   hasPrevious: boolean;
-  load(page?: number): Promise<void>;
+  load(offset?: number): Promise<void>;
   run(action: () => Promise<void>): Promise<void>;
   onEdit(user: DirectoryUser): void;
-  onPage(page: number): void;
+  onOffset(offset: number): void;
   onReset(userId: number): void;
 };
 
@@ -261,12 +277,14 @@ function DirectoryResults(props: DirectoryResultsProps) {
         onRole={(user) => void props.run(() => toggleUserRole(user, props.load))}
       />
       <Pagination
-        page={props.page}
+        offset={props.offset}
+        limit={props.limit}
+        count={props.count}
         hasNext={props.hasNext}
         hasPrevious={props.hasPrevious}
-        onPage={(nextPage) => {
-          props.onPage(nextPage);
-          void props.run(() => props.load(nextPage));
+        onOffset={(nextOffset) => {
+          props.onOffset(nextOffset);
+          void props.run(() => props.load(nextOffset));
         }}
         onReload={() => void props.run(() => props.load())}
       />
@@ -274,6 +292,8 @@ function DirectoryResults(props: DirectoryResultsProps) {
   );
 }
 
+// Directory orchestration intentionally keeps filters, cache and mutations in one auditable scope.
+// eslint-disable-next-line max-lines-per-function
 export function UserDirectory() {
   const auth = useAuth();
   const dialog = useRef<GeneratedPasswordDialogHandle>(null);
@@ -281,75 +301,109 @@ export function UserDirectory() {
   const [query, setQuery] = useState("");
   const [role, setRole] = useState("");
   const [activeFilter, setActiveFilter] = useState("");
-  const [page, setPage] = useState(1);
+  const limit = 20;
+  const [offset, setOffset] = useState(0);
+  const [count, setCount] = useState(0);
   const [hasNext, setHasNext] = useState(false);
   const [hasPrevious, setHasPrevious] = useState(false);
   const [editing, setEditing] = useState<DirectoryUser>();
   const { error, run } = useActionError();
   const showPage = useCallback((result: DirectoryPage) => {
     setUsers(result.results);
+    setCount(result.count ?? result.results.length);
     setHasNext(result.next !== null);
     setHasPrevious(result.previous !== null);
   }, []);
+  const accountId = auth.state?.kind === "authenticated" ? auth.state.account.id : undefined;
   const load = useCallback(
-    async (requestedPage = page) => {
-      const result = await listUsers({
+    async (requestedOffset = offset) => {
+      const queryParams = {
         ...(query ? { q: query } : {}),
         ...(role ? { role } : {}),
         ...(activeFilter ? { is_active: activeFilter === "true" } : {}),
-        page: requestedPage,
-      });
-      showPage(result);
+        offset: requestedOffset,
+        limit,
+      };
+      const cacheKey = `users:${JSON.stringify(queryParams)}`;
+      const cached = readUserCache<DirectoryPage>(accountId, cacheKey);
+      if (cached) showPage(cached);
+      try {
+        const result = await listUsers(queryParams);
+        writeUserCache(accountId, cacheKey, result);
+        showPage(result);
+      } catch (error) {
+        if (!cached) throw error;
+      }
     },
-    [activeFilter, page, query, role, showPage],
+    [accountId, activeFilter, offset, query, role, showPage],
   );
   const canView = auth.hasCapability("user.view");
-  useInitialPage(canView, showPage, run);
+  useInitialPage(canView, load);
 
   if (!canView) return <p>Bạn không có quyền xem danh bạ.</p>;
   async function search(event: FormEvent) {
     event.preventDefault();
-    setPage(1);
-    await run(() => load(1));
+    setOffset(0);
+    await run(() => load(0));
   }
   return (
-    <>
-      <DirectoryFilters
-        query={query}
-        role={role}
-        active={activeFilter}
-        onQuery={setQuery}
-        onRole={setRole}
-        onActive={setActiveFilter}
-        onSearch={search}
-      />
-      <DirectoryEditors
-        canManage={auth.hasCapability("user.manage")}
-        editing={editing}
-        onGenerated={(value) => dialog.current?.show(value)}
-        onSaved={async () => {
-          setEditing(undefined);
-          await load();
-        }}
-        onCancel={() => setEditing(undefined)}
-      />
-      <DirectoryResults
-        users={users}
-        canManage={auth.hasCapability("user.manage")}
-        canAssignRole={auth.hasCapability("user.assign_role")}
-        error={error}
-        page={page}
-        hasNext={hasNext}
-        hasPrevious={hasPrevious}
-        load={load}
-        run={run}
-        onEdit={setEditing}
-        onPage={setPage}
-        onReset={(userId) =>
-          void run(() => resetAndShow(userId, (value) => dialog.current?.show(value)))
-        }
-      />
+    <div className={styles.directory}>
+      <section className={styles.section} aria-labelledby="user-search-title">
+        <header>
+          <h2 id="user-search-title">Tìm kiếm người dùng</h2>
+          <p>Lọc nhanh theo tên, vai trò hoặc trạng thái tài khoản.</p>
+        </header>
+        <DirectoryFilters
+          query={query}
+          role={role}
+          active={activeFilter}
+          onQuery={setQuery}
+          onRole={setRole}
+          onActive={setActiveFilter}
+          onSearch={search}
+        />
+      </section>
+      <section className={styles.section} aria-label="Tạo và chỉnh sửa người dùng">
+        <DirectoryEditors
+          canManage={auth.hasCapability("user.manage")}
+          editing={editing}
+          onGenerated={(value) => dialog.current?.show(value)}
+          onSaved={async () => {
+            setEditing(undefined);
+            clearUserCache(accountId, "users:");
+            await load();
+          }}
+          onCancel={() => setEditing(undefined)}
+        />
+      </section>
+      <section className={styles.section} aria-labelledby="user-list-title">
+        <header className={styles.listHeader}>
+          <div>
+            <h2 id="user-list-title">Danh sách người dùng</h2>
+            <p>Dữ liệu được tải tự động và lưu tạm theo tài khoản quản lý.</p>
+          </div>
+          <strong>{count} tài khoản</strong>
+        </header>
+        <DirectoryResults
+          users={users}
+          canManage={auth.hasCapability("user.manage")}
+          canAssignRole={auth.hasCapability("user.assign_role")}
+          error={error}
+          offset={offset}
+          limit={limit}
+          count={count}
+          hasNext={hasNext}
+          hasPrevious={hasPrevious}
+          load={load}
+          run={run}
+          onEdit={setEditing}
+          onOffset={setOffset}
+          onReset={(userId) =>
+            void run(() => resetAndShow(userId, (value) => dialog.current?.show(value)))
+          }
+        />
+      </section>
       <GeneratedPasswordDialog ref={dialog} />
-    </>
+    </div>
   );
 }

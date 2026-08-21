@@ -22,6 +22,118 @@
   min-height: 3.5rem;
   font-size: 1.1rem;
 }
+.todayCard {
+  display: grid;
+  gap: var(--space-5);
+}
+.todayHeading {
+  display: grid;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+.todayHeading h2,
+.todayHeading span {
+  margin: 0;
+}
+.todayHeading span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+.todayHeading > strong {
+  justify-self: start;
+  padding: var(--space-2) var(--space-3);
+  border-radius: 999px;
+  background: var(--color-surface-muted);
+  line-height: 1.35;
+}
+.punchList,
+.sessionList {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.punchList li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+.punchIcon {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-brand-primary);
+}
+.punchIcon svg {
+  width: 1.15rem;
+}
+.punchList li > div {
+  display: grid;
+  min-width: 0;
+}
+.punchList time,
+.punchList li > div span,
+.sessionList small {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+.punchList li > div span {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.punchList li > div span svg {
+  width: 0.9rem;
+}
+.punchList a {
+  color: var(--color-brand-primary);
+  font-weight: 700;
+  text-decoration: none;
+}
+.sessions {
+  display: grid;
+  gap: var(--space-3);
+}
+.sessions h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+}
+.sessions h3 svg {
+  width: 1.1rem;
+}
+.sessions h3 span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+.sessionList li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.sessionList small {
+  grid-column: 1 / -1;
+}
+@media (max-width: 32rem) {
+  .punchList li {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .punchList a {
+    grid-column: 2;
+  }
+}
 @media (min-width: 64rem) {
   .page {
     max-width: 64rem;

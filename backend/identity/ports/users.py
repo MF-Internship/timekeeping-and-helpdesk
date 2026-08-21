@@ -19,9 +19,13 @@ class UserRepository(Protocol):
 
     def record_login(self, user_id: int) -> None: ...
 
-    def list_users(
-        self, query: str | None, role: Role | None, is_active: bool | None
-    ) -> list[AccountSnapshot]: ...
+    def paginate_users(
+        self,
+        query: str | None,
+        role: Role | None,
+        is_active: bool | None,
+        window: tuple[int, int],
+    ) -> tuple[int, list[AccountSnapshot]]: ...
 
 
 class MutableUserRepository(UserRepository, Protocol):

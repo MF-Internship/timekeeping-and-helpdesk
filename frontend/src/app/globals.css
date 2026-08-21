@@ -97,9 +97,9 @@ summary:focus-visible {
   gap: var(--space-2);
   min-height: var(--touch-target);
   padding-inline: var(--space-2);
-  border: 1px solid var(--color-border);
+  border: 0;
   border-radius: var(--radius-md);
-  background: var(--color-surface);
+  background: transparent;
 }
 .theme-toggle select {
   position: absolute;
@@ -254,10 +254,17 @@ canvas {
 .checkbox input {
   min-height: auto;
 }
+.checkbox input[type="checkbox"] {
+  flex: 0 0 1rem;
+  width: 1rem;
+  height: 1rem;
+  padding: 0;
+  box-shadow: none;
+}
 .weekday-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.8rem;
+  gap: var(--space-2);
 }
 table {
   width: 100%;

@@ -1,20 +1,40 @@
 .indicator {
-  width: 7.5rem;
+  position: relative;
+  flex: 0 0 auto;
+  width: clamp(6.5rem, 18vw, 7.5rem);
   aspect-ratio: 1;
-  border: 0.6rem solid var(--color-border);
   border-radius: 50%;
   display: grid;
   place-content: center;
   place-items: center;
   text-align: center;
+  background: conic-gradient(currentColor 0 78%, var(--color-border) 78% 100%);
+  color: var(--color-text-secondary);
+  isolation: isolate;
+}
+.indicator::before {
+  content: "";
+  position: absolute;
+  inset: 0.5rem;
+  z-index: -1;
+  border-radius: inherit;
   background: var(--color-surface);
 }
 .indicator span {
-  font-size: 1.3rem;
+  max-width: 5.25rem;
+  font-size: 1.05rem;
   font-weight: 800;
+  line-height: 1.1;
 }
-.indicator b {
-  font-size: 1.25rem;
+.indicator small {
+  color: var(--color-text-secondary);
+  font-size: 0.7rem;
+  font-weight: 650;
+}
+.icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-bottom: var(--space-1);
 }
 .ready {
   border-color: var(--color-success);
@@ -22,8 +42,6 @@
 }
 .weak,
 .stale {
-  border-style: dashed;
-  border-color: var(--color-warning);
   color: var(--color-warning);
 }
 .unavailable {
@@ -32,6 +50,14 @@
 }
 .requesting,
 .refreshing {
-  border-style: dotted;
   color: var(--color-brand-primary);
+}
+.requesting .icon,
+.refreshing .icon {
+  animation: gps-spin 1s linear infinite;
+}
+@keyframes gps-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

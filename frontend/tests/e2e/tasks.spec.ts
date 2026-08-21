@@ -154,7 +154,8 @@ test("Manager creates for multiple assignees and confirms override", async ({ pa
   await page.goto("/tasks");
   await page.getByLabel("Tiêu đề").fill("Công việc mới");
   await page.getByLabel("Ngày giao").fill("2026-08-20");
-  await page.getByLabel("Nhân viên Helpdesk đang hoạt động").selectOption(["2", "3"]);
+  await page.getByRole("checkbox", { name: /Helpdesk An/ }).check();
+  await page.getByRole("checkbox", { name: /Helpdesk Bình/ }).check();
   const createRequest = page.waitForRequest(
     (request) => request.url().endsWith("/api/v1/tasks/") && request.method() === "POST",
   );

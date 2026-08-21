@@ -26,7 +26,9 @@ describe("AccountMenu", () => {
       "href",
       "/change-password",
     );
-    expect(screen.getByRole("menuitem", { name: "Giao diện" })).toBeInTheDocument();
+    expect(screen.getByText("Giao diện")).toBeInTheDocument();
+    expect(screen.getByRole("menuitemradio", { name: "Sáng" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitemradio", { name: "Tối" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("menuitem", { name: "Đăng xuất" }));
     expect(logout).toHaveBeenCalledOnce();
   });
