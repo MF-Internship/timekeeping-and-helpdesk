@@ -114,7 +114,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - attendance
   /api/v1/attendance/check-out:
     post:
       operationId: attendance_check_out
@@ -226,7 +226,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - attendance
   /api/v1/attendance/today:
     get:
       operationId: attendance_today_retrieve
@@ -240,7 +240,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - attendance
   /api/v1/auth/login:
     post:
       operationId: auth_login_create
@@ -288,7 +288,7 @@ paths:
                 $ref: '#/components/schemas/IdentityError'
           description: ''
       tags:
-      - api
+      - auth
   /api/v1/auth/logout:
     post:
       operationId: auth_logout_create
@@ -316,7 +316,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - auth
   /api/v1/auth/refresh:
     post:
       operationId: auth_refresh_create
@@ -358,7 +358,7 @@ paths:
                 $ref: '#/components/schemas/IdentityError'
           description: ''
       tags:
-      - api
+      - auth
   /api/v1/change-password:
     post:
       operationId: identity_change_password_create
@@ -414,7 +414,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - change-password
   /api/v1/config/:
     get:
       operationId: config_retrieve
@@ -446,7 +446,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - config
     patch:
       operationId: config_partial_update
       requestBody:
@@ -494,7 +494,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - config
   /api/v1/holidays/:
     get:
       operationId: holidays_list
@@ -522,7 +522,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - holidays
     post:
       operationId: holidays_create
       requestBody:
@@ -565,7 +565,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - holidays
   /api/v1/holidays/{holiday_id}/:
     delete:
       operationId: holidays_destroy
@@ -599,7 +599,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - holidays
   /api/v1/locations/:
     get:
       operationId: locations_list
@@ -649,7 +649,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - locations
   /api/v1/locations/{location_id}/:
     patch:
       operationId: locations_partial_update
@@ -711,7 +711,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - locations
   /api/v1/me/:
     get:
       operationId: identity_me_retrieve
@@ -737,7 +737,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - me
     patch:
       operationId: identity_me_partial_update
       requestBody:
@@ -779,7 +779,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - me
   /api/v1/notifications/:
     get:
       operationId: notifications_list
@@ -793,7 +793,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - notifications
   /api/v1/notifications/{public_id}/read:
     patch:
       operationId: notifications_mark_read
@@ -813,7 +813,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - notifications
   /api/v1/notifications/{public_id}/target:
     get:
       operationId: notifications_resolve_target
@@ -833,7 +833,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - notifications
   /api/v1/operations/job-health:
     get:
       operationId: operations_job_health_retrieve
@@ -847,7 +847,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - operations
   /api/v1/push-subscriptions/:
     post:
       operationId: push_subscriptions_upsert
@@ -873,7 +873,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - push-subscriptions
   /api/v1/push-subscriptions/{public_id}/:
     delete:
       operationId: push_subscriptions_revoke
@@ -889,7 +889,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - push-subscriptions
   /api/v1/reports/attendance/:
     get:
       operationId: reports_attendance_retrieve
@@ -918,7 +918,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - reports
   /api/v1/reports/attendance/export/:
     get:
       operationId: reports_attendance_export
@@ -951,7 +951,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - reports
   /api/v1/reports/tasks/:
     get:
       operationId: reports_tasks_retrieve
@@ -980,7 +980,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - reports
   /api/v1/reports/tasks/export/:
     get:
       operationId: reports_tasks_export
@@ -1009,7 +1009,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - reports
   /api/v1/schema/:
     get:
       description: Machine-readable schema endpoint; no interactive UI is registered.
@@ -1150,7 +1150,7 @@ paths:
       - bearerAuth: []
       - {}
       tags:
-      - api
+      - schema
   /api/v1/tasks/:
     get:
       operationId: tasks_list
@@ -1182,7 +1182,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - tasks
     post:
       operationId: tasks_create
       requestBody:
@@ -1317,7 +1317,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - tasks
   /api/v1/tasks/{task_id}/:
     delete:
       operationId: tasks_destroy
@@ -1363,7 +1363,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - tasks
     get:
       operationId: tasks_retrieve
       parameters:
@@ -1400,7 +1400,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - tasks
     patch:
       operationId: tasks_partial_update
       parameters:
@@ -1460,7 +1460,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - tasks
   /api/v1/tasks/{task_id}/complete-field:
     post:
       operationId: tasks_complete_field_create
@@ -1533,7 +1533,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - tasks
   /api/v1/tasks/{task_id}/complete-override:
     post:
       operationId: tasks_complete_override_create
@@ -1595,7 +1595,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - tasks
   /api/v1/tasks/{task_id}/evidence-uploads:
     post:
       operationId: tasks_evidence_uploads_create
@@ -1651,7 +1651,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - tasks
   /api/v1/tasks/{task_id}/photos/{photo_id}/access:
     post:
       operationId: tasks_photos_access_create
@@ -1694,7 +1694,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - tasks
   /api/v1/tasks/{task_id}/status:
     post:
       operationId: tasks_status_create
@@ -1756,7 +1756,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - tasks
   /api/v1/users/:
     get:
       operationId: users_list
@@ -1811,7 +1811,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - users
     post:
       operationId: users_create
       requestBody:
@@ -1854,7 +1854,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - users
   /api/v1/users/{user_id}/:
     get:
       operationId: users_retrieve
@@ -1892,7 +1892,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - users
     patch:
       operationId: users_partial_update
       parameters:
@@ -1946,7 +1946,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - users
   /api/v1/users/{user_id}/reset-password:
     post:
       operationId: users_reset_password_create
@@ -1990,7 +1990,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - users
   /api/v1/users/{user_id}/role:
     patch:
       operationId: users_role_partial_update
@@ -2046,7 +2046,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - users
   /api/v1/users/{user_id}/status:
     patch:
       operationId: users_status_partial_update
@@ -2102,7 +2102,7 @@ paths:
       security:
       - bearerAuth: []
       tags:
-      - api
+      - users
 components:
   schemas:
     AccessResponse:

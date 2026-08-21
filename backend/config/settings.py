@@ -130,6 +130,8 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "Timekeeping and Helpdesk API",
     "VERSION": "1.0.0",
     "OAS_VERSION": "3.0.3",
+    # Auto-detection uses the host OS path separator and changes generated tags.
+    "SCHEMA_PATH_PREFIX": r"/api/v1",
     "COMPONENT_SPLIT_PATCH": False,
     "SERVE_INCLUDE_SCHEMA": True,
     "ENUM_GENERATE_CHOICE_DESCRIPTION": False,
