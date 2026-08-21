@@ -21,14 +21,39 @@ export interface AsyncStateProps {
 
 export function LoadingState({ message = UI_MESSAGES.loading }: { message?: string }) {
   return (
-    <p role="status" aria-live="polite" aria-busy="true">
+    <div role="status" aria-live="polite" aria-busy="true" className="state-panel">
+      <span className="state-spinner" aria-hidden="true" />
       {message}
-    </p>
+    </div>
   );
 }
 
 export function EmptyState({ message = UI_MESSAGES.empty }: { message?: string }) {
-  return <p role="status">{message}</p>;
+  return (
+    <div className="state-panel" role="status">
+      <strong>Chưa có dữ liệu</strong>
+      <span>{message}</span>
+    </div>
+  );
+}
+
+export function PermissionState({ message = UI_MESSAGES.permissionDenied }: { message?: string }) {
+  return (
+    <div className="state-panel" role="alert">
+      <strong>Không thể truy cập</strong>
+      <span>{message}</span>
+    </div>
+  );
+}
+
+export function SkeletonState({ rows = 3 }: { rows?: number }) {
+  return (
+    <div className="skeleton-stack" role="status" aria-label={UI_MESSAGES.loading}>
+      {Array.from({ length: rows }, (_, index) => (
+        <span key={index} className="skeleton-row" />
+      ))}
+    </div>
+  );
 }
 
 export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
@@ -50,10 +75,14 @@ export function AsyncState({ state, onRetry }: AsyncStateProps) {
       <p>{message}</p>
       {state.kind === "canonical" ? (
         <>
-          {Object.entries(state.details).map(([field, value]) => (
-            <p key={field}>{safeDetail(value)}</p>
-          ))}
-          <p>Mã hỗ trợ: {state.requestId}</p>
+          {Object.entries(state.details).map(([field, value]) => {
+            const detail = safeDetail(value);
+            return detail ? <p key={field}>{detail}</p> : null;
+          })}
+          <details>
+            <summary>Thông tin hỗ trợ</summary>
+            <p>Mã yêu cầu: {state.requestId}</p>
+          </details>
         </>
       ) : null}
       {onRetry ? <Button onClick={onRetry}>{UI_MESSAGES.retry}</Button> : null}
@@ -67,9 +96,9 @@ function failureMessage(state: Exclude<AsyncStateValue, { kind: "loading" | "emp
   return UI_MESSAGES.unexpectedResponse;
 }
 
-function safeDetail(value: unknown): string {
+function safeDetail(value: unknown): string | undefined {
   if (Array.isArray(value) && value.every((item) => typeof item === "string")) {
     return value.join(" ");
   }
-  return UI_MESSAGES.unexpectedResponse;
+  return undefined;
 }

@@ -17,14 +17,14 @@ describe("employee application shell contract", () => {
   });
 
   it("provides bounded content and mobile safe-area clearance", () => {
-    expect(shellCss).toContain("max-width: var(--content-max)");
+    expect(shellCss).toMatch(/max-width:\s*var\(--content-max\)/);
     expect(shellCss).toContain("env(safe-area-inset-bottom)");
     expect(navigationCss).toContain("env(safe-area-inset-bottom)");
   });
 
   it("switches from bottom bar to rail at the content breakpoint", () => {
-    expect(navigationCss).toContain("@media (min-width: 48rem)");
-    expect(navigationCss).toMatch(/\.bottom[\s\S]*display: none/);
-    expect(navigationCss).toMatch(/\.rail[\s\S]*display: block/);
+    expect(navigationCss).toMatch(/@media\s*\(min-width:\s*48rem\)/);
+    expect(navigationCss).toMatch(/\.bottom\s*\{\s*display:\s*none/);
+    expect(navigationCss).toMatch(/\.rail\s*\{\s*display:\s*block/);
   });
 });

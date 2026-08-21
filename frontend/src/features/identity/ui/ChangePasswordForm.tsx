@@ -13,6 +13,39 @@ import { Button } from "@/shared/ui/button";
 import { ActionGroup } from "@/shared/ui/action-group";
 import { Input } from "@/shared/ui/form";
 
+function PasswordFields({ fields }: { fields: Record<string, string> }) {
+  const currentError = fields.current_password;
+  const newError = fields.new_password;
+  return (
+    <>
+      <div>
+        <label htmlFor="current-password">Mật khẩu hiện tại</label>
+        <Input
+          id="current-password"
+          name="current_password"
+          type="password"
+          required
+          aria-describedby={currentError ? "current-password-error" : undefined}
+        />
+        {currentError ? <span id="current-password-error">{currentError}</span> : null}
+      </div>
+      <div>
+        <label htmlFor="new-password">Mật khẩu mới</label>
+        <Input
+          id="new-password"
+          name="new_password"
+          type="password"
+          minLength={12}
+          required
+          aria-describedby={newError ? "new-password-error" : "password-guidance"}
+        />
+        <small id="password-guidance">Tối thiểu 12 ký tự.</small>
+        {newError ? <span id="new-password-error">{newError}</span> : null}
+      </div>
+    </>
+  );
+}
+
 export function ChangePasswordForm() {
   const auth = useAuth();
   const router = useRouter();
@@ -34,17 +67,8 @@ export function ChangePasswordForm() {
   }
 
   return (
-    <form onSubmit={submit}>
-      <label>
-        Mật khẩu hiện tại
-        <Input name="current_password" type="password" required />
-        {error?.fields.current_password ? <span>{error.fields.current_password}</span> : null}
-      </label>
-      <label>
-        Mật khẩu mới
-        <Input name="new_password" type="password" minLength={12} required />
-        {error?.fields.new_password ? <span>{error.fields.new_password}</span> : null}
-      </label>
+    <form className="account-form" onSubmit={submit}>
+      <PasswordFields fields={error?.fields ?? {}} />
       <IdentityFailureNotice failure={error} />
       <ActionGroup>
         <Button type="submit" variant="primary">

@@ -3,21 +3,24 @@ import type { ReactNode } from "react";
 
 import { AuthProvider } from "@/features/identity/model/AuthProvider";
 import { ApplicationFrame } from "@/shared/ui/shell/ApplicationFrame";
+import { ThemeProvider } from "@/shared/ui/theme";
 
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Nền tảng API",
-  description: "Nền tảng kỹ thuật dùng chung cho các tính năng sau.",
+  title: "MobiFone Helpdesk",
+  description: "Chấm công và quản lý công việc Helpdesk.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="vi">
+    <html lang="vi" suppressHydrationWarning>
       <body>
-        <AuthProvider>
-          <ApplicationFrame>{children}</ApplicationFrame>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <ApplicationFrame>{children}</ApplicationFrame>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

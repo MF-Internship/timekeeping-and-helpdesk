@@ -94,41 +94,16 @@ export function FieldEvidenceForm(props: {
           <p>1–5 ảnh, mỗi ảnh tối đa 5 MB. GPS mới được lấy khi bạn gửi.</p>
         </div>
       </div>
-      <label>
-        Ảnh minh chứng
-        <Input
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          multiple
-          required={!uploadIds.length}
-          onChange={(event) => {
-            const selected = Array.from(event.target.files ?? []).slice(0, MAX_FILES);
-            setFiles(selected);
-            void prepareEvidenceFiles(selected)
-              .then(setFiles)
-              .catch(() => setError("Không thể xử lý ảnh đã chọn."));
-            setUploadIds([]);
-            setIdempotencyKey("");
-            setCandidates([]);
-            setSelectedLocationId(undefined);
-          }}
-        />
-      </label>
-      <DraftNotice persistence={draft.persistence} files={files} />
-      <SelectedFiles files={files} />
-      <label>
-        Ghi chú hoàn thành{" "}
-        <Textarea
-          name="completion_note"
-          value={note}
-          onChange={(event) => setNote(event.target.value)}
-          placeholder="Mô tả ngắn kết quả đã thực hiện"
-        />
-      </label>
-      <LocationChoice
+      <EvidenceInputs
+        draft={draft}
+        uploadIds={uploadIds}
         candidates={candidates}
-        selected={selectedLocationId}
-        onSelect={setSelectedLocationId}
+        selectedLocationId={selectedLocationId}
+        setError={setError}
+        setUploadIds={setUploadIds}
+        setIdempotencyKey={setIdempotencyKey}
+        setCandidates={setCandidates}
+        setSelectedLocationId={setSelectedLocationId}
       />
       <SubmissionFeedback stage={stage} error={error} />
       <ActionGroup>
@@ -140,6 +115,71 @@ export function FieldEvidenceForm(props: {
         </Button>
       </ActionGroup>
     </form>
+  );
+}
+
+function EvidenceInputs({
+  draft,
+  uploadIds,
+  candidates,
+  selectedLocationId,
+  setError,
+  setUploadIds,
+  setIdempotencyKey,
+  setCandidates,
+  setSelectedLocationId,
+}: {
+  draft: ReturnType<typeof useTaskEvidenceDraft>;
+  uploadIds: string[];
+  candidates: Candidate[];
+  selectedLocationId?: number;
+  setError: (value: string | undefined) => void;
+  setUploadIds: (value: string[]) => void;
+  setIdempotencyKey: (value: string) => void;
+  setCandidates: (value: Candidate[]) => void;
+  setSelectedLocationId: (value: number | undefined) => void;
+}) {
+  function selectFiles(files: File[]) {
+    draft.setFiles(files);
+    void prepareEvidenceFiles(files)
+      .then(draft.setFiles)
+      .catch(() => setError("Không thể xử lý ảnh đã chọn."));
+    setUploadIds([]);
+    setIdempotencyKey("");
+    setCandidates([]);
+    setSelectedLocationId(undefined);
+  }
+  return (
+    <>
+      <label>
+        Ảnh minh chứng
+        <Input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          required={!uploadIds.length}
+          onChange={(event) =>
+            selectFiles(Array.from(event.target.files ?? []).slice(0, MAX_FILES))
+          }
+        />
+      </label>
+      <DraftNotice persistence={draft.persistence} files={draft.files} />
+      <SelectedFiles files={draft.files} />
+      <label>
+        Ghi chú hoàn thành{" "}
+        <Textarea
+          name="completion_note"
+          value={draft.note}
+          onChange={(event) => draft.setNote(event.target.value)}
+          placeholder="Mô tả ngắn kết quả đã thực hiện"
+        />
+      </label>
+      <LocationChoice
+        candidates={candidates}
+        selected={selectedLocationId}
+        onSelect={setSelectedLocationId}
+      />
+    </>
   );
 }
 

@@ -7,6 +7,8 @@ import { useAuth } from "@/features/identity/model/AuthProvider";
 import { UI_MESSAGES } from "@/shared/messages";
 
 type IdentityRoute =
+  | "home"
+  | "account"
   | "login"
   | "change-password"
   | "users"
@@ -50,6 +52,7 @@ function authenticatedDestination(
   state: Extract<ReturnType<typeof useAuth>["state"], { kind: "authenticated" }>,
 ): string | null {
   if (route === "login" || route === "change-password") return "/";
+  if (route === "home" || route === "account") return null;
   return state.account.capabilities.includes(REQUIRED_CAPABILITY[route]) ? null : "/";
 }
 

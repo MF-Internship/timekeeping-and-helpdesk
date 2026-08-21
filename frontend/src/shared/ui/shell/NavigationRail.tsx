@@ -1,13 +1,14 @@
 import Link from "next/link";
 
-import type { EmployeeNavigationItem } from "./employee-navigation";
+import type { NavigationItem } from "./navigation";
+import { isNavigationActive } from "./navigation";
 import styles from "./PrimaryNavigation.module.css";
 
 export function NavigationRail({
   items,
   pathname,
 }: {
-  items: readonly EmployeeNavigationItem[];
+  items: readonly NavigationItem[];
   pathname: string;
 }) {
   return (
@@ -15,8 +16,12 @@ export function NavigationRail({
       <ul>
         {items.map((item) => (
           <li key={item.href}>
-            <Link href={item.href} aria-current={pathname === item.href ? "page" : undefined}>
-              {item.label}
+            <Link
+              href={item.href}
+              aria-current={isNavigationActive(item, pathname) ? "page" : undefined}
+            >
+              {item.icon ? <item.icon aria-hidden="true" /> : null}
+              <span>{item.label}</span>
             </Link>
           </li>
         ))}

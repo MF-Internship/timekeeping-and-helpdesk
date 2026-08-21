@@ -4,6 +4,9 @@
   width: 100%;
   min-width: 0;
 }
+.panel > form {
+  width: min(100%, 52rem);
+}
 
 .group {
   display: grid;
@@ -94,5 +97,16 @@
 @media (min-width: 72rem) {
   .group {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 30rem) {
+  .titleRow {
+    display: grid;
+  }
+  .metadata {
+    grid-template-columns: 1fr;
+  }
+  .group {
+    gap: var(--space-3);
   }
 }

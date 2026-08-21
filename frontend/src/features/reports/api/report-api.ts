@@ -1,6 +1,7 @@
 import { apiClient } from "@/shared/api/client";
 import type { components } from "@/shared/api/schema";
 import { parseApiResultFailure } from "@/shared/errors/api-error";
+import { authenticatedFetch } from "@/shared/transport/authenticated-fetch";
 
 export type AttendanceReport = components["schemas"]["AttendanceReport"];
 export type TaskReport = components["schemas"]["TaskReport"];
@@ -35,3 +36,16 @@ function query(filters: ReportFilters) {
   };
 }
 
+export async function downloadReport(
+  kind: "attendance" | "tasks",
+  filters: ReportFilters,
+): Promise<Blob> {
+  const params = new URLSearchParams({ start_date: filters.startDate, end_date: filters.endDate });
+  if (filters.userId !== undefined) params.set("user_id", String(filters.userId));
+  const response = await authenticatedFetch(
+    `/api/v1/reports/${kind}/export/?${params.toString()}`,
+    { headers: { Accept: "text/csv" } },
+  );
+  if (!response.ok) throw new Error("Không thể xuất báo cáo.");
+  return await response.blob();
+}

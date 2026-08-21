@@ -10,13 +10,17 @@ test("shell exposes only implemented and permitted navigation", async ({
     .poll(() => logo.evaluate((image: HTMLImageElement) => image.currentSrc))
     .toContain("logo-phone.jpg");
   const navigation = page.getByRole("navigation", { name: "Điều hướng chính" }).first();
-  await expect(navigation.getByRole("link", { name: "Attendance" })).toHaveAttribute(
+  await expect(navigation.getByRole("link", { name: "Chấm công" })).toHaveAttribute(
     "aria-current",
     "page",
   );
-  await expect(navigation.getByText(/Tasks|Reports|Account/)).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "Tài khoản của Nguyễn Văn An" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Đăng xuất" })).toBeVisible();
+  await expect(navigation.getByRole("link", { name: "Công việc" })).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Mở menu tài khoản của Nguyễn Văn An" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Mở menu tài khoản của Nguyễn Văn An" }).click();
+  await expect(page.getByRole("menuitem", { name: "Tài khoản" })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Đăng xuất" })).toBeVisible();
 });
 
 test("bottom navigation and rail are responsive views of the same registry", async ({

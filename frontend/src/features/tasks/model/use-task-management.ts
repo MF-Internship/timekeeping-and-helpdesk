@@ -64,9 +64,7 @@ function useTaskMutation(refresh: () => Promise<void>) {
         await refresh();
         setMutation({ kind: "succeeded", message: successMessage });
       } catch (error) {
-        if (isTaskConflict(error)) {
-          await Promise.all([refresh(), conflictRefresh?.()]);
-        }
+        await refreshTaskConflict(error, refresh, conflictRefresh);
         setMutation({ kind: "failed", error });
         if (propagate) throw error;
       } finally {
@@ -76,6 +74,10 @@ function useTaskMutation(refresh: () => Promise<void>) {
     [refresh],
   );
   return { mutation, runMutation };
+}
+
+async function refreshTaskConflict(error: unknown, refresh: Mutation, conflictRefresh?: Mutation) {
+  if (isTaskConflict(error)) await Promise.all([refresh(), conflictRefresh?.()]);
 }
 
 export function useTaskManagement() {

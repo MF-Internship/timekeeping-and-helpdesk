@@ -78,6 +78,9 @@ describe("Task assignment presentation", () => {
         }}
       />,
     );
-    expect(screen.getByText("ID không hợp lệ: 3, 8, 12")).toBeInTheDocument();
+    expect(
+      screen.getByText("Một hoặc nhiều người được phân công không còn hợp lệ."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("3, 8, 12")).not.toBeInTheDocument();
   });
 });

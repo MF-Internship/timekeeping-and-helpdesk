@@ -24,12 +24,13 @@ vi.mock("@/features/identity/model/AuthProvider", () => ({
 }));
 
 describe("page header", () => {
-  it("announces the current page, account and Vietnamese role label", () => {
+  it("announces the current page and exposes an accessible account menu trigger", () => {
     render(<AppHeader title="Công việc" />);
     expect(screen.getByRole("heading", { level: 1, name: "Công việc" })).toBeInTheDocument();
     expect(screen.getByText("Trang hiện tại")).toBeInTheDocument();
-    expect(screen.getByText("Nhân viên Helpdesk")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Tài khoản của Nguyễn An" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Đăng xuất" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Mở menu tài khoản của Nguyễn An" })).toHaveAttribute(
+      "aria-haspopup",
+      "menu",
+    );
   });
 });

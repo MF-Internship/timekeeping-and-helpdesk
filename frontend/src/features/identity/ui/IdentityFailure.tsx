@@ -46,7 +46,12 @@ export function IdentityFailureNotice({ failure }: { failure?: IdentityFailureVi
   return (
     <div role="alert">
       <p>{failure.message}</p>
-      {failure.requestId ? <small>Mã yêu cầu: {failure.requestId}</small> : null}
+      {failure.requestId ? (
+        <details>
+          <summary>Thông tin hỗ trợ</summary>
+          <small>Mã yêu cầu: {failure.requestId}</small>
+        </details>
+      ) : null}
     </div>
   );
 }

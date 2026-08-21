@@ -93,3 +93,68 @@ Expected:
 - retry/dead-letter behavior matches R-105 on controlled provider failures;
 - no payload, URL, token, credential, or GPS-sensitive value appears in logs/provider previews.
 Status: PENDING
+
+## Feature 015 Manual Verification
+
+## UI-015-01
+
+- **Feature**: Responsive application shell and primary workflows
+- **Reason**: Physical Android browser rendering and device safe-area behavior cannot be proven by desktop automation.
+- **Environment**: Android phone, current Chrome, authenticated HELPDESK and MANAGER accounts
+- **Steps**: Open Home, Tasks, Attendance, Notifications, and More navigation in portrait and landscape; exercise menus and dialogs.
+- **Expected**: No horizontal overflow or overlap; bottom navigation remains reachable and does not cover content.
+- **Status**: PENDING
+
+## UI-015-02
+
+- **Feature**: Responsive application shell and overlays
+- **Reason**: iOS Safari viewport and safe-area behavior require a physical device.
+- **Environment**: Supported iPhone, current Safari, authenticated account
+- **Steps**: Open every permitted route; scroll forms and charts; open account, More, and task detail overlays.
+- **Expected**: Controls remain usable, overlays fit the viewport, and safe-area insets are respected.
+- **Status**: PENDING
+
+## UI-015-03
+
+- **Feature**: Light, Dark, and System themes
+- **Reason**: Hardware and browser color rendering cannot be fully assessed in automated screenshots.
+- **Environment**: Android and iPhone with light/dark system appearance
+- **Steps**: Select each theme on representative routes and restart the browser.
+- **Expected**: Preference persists locally, System follows the device, and text/status/chart contrast remains readable.
+- **Status**: PENDING
+
+## UI-015-04
+
+- **Feature**: Screen-reader accessibility
+- **Reason**: Automated accessibility checks do not validate announcement quality or practical navigation order.
+- **Environment**: NVDA with Firefox or VoiceOver with Safari
+- **Steps**: Navigate Login, Home, Attendance, Notifications, Reports, Users, and Account using headings, landmarks, forms, menus, and dialogs.
+- **Expected**: Labels, errors, status changes, chart summaries, and overlay focus are announced coherently.
+- **Status**: PENDING
+
+## UI-015-05
+
+- **Feature**: Attendance location guidance
+- **Reason**: Real GPS permissions and map touch/zoom require device sensors and touch input.
+- **Environment**: GPS-capable Android and iPhone on a permitted test location
+- **Steps**: Grant/deny location permission, refresh position, pan/zoom guidance, and attempt authorized attendance actions.
+- **Expected**: Permission guidance is clear, touch gestures work, and canonical geofence decisions remain unchanged.
+- **Status**: PENDING
+
+## UI-015-06
+
+- **Feature**: Long production content
+- **Reason**: Production names, addresses, task evidence, and notification titles may exceed fixture lengths.
+- **Environment**: Staging data containing maximum-length permitted values
+- **Steps**: Inspect lists, tables, menus, charts, dialogs, and forms at 320 px and desktop widths.
+- **Expected**: Text wraps or truncates intentionally without covering controls or causing document overflow.
+- **Status**: PENDING
+
+## UI-015-07
+
+- **Feature**: Browser-specific safe areas and responsive charts
+- **Reason**: Engine-specific viewport behavior needs validation beyond Chromium.
+- **Environment**: Current Safari and Firefox on supported desktop/mobile devices
+- **Steps**: Review navigation, sticky content, report charts, dropdowns, and sheets at representative widths.
+- **Expected**: Layout remains stable and all interactive content stays visible and keyboard reachable.
+- **Status**: PENDING

@@ -16,9 +16,12 @@ export function TaskFailureNotice({ error }: { error?: unknown }) {
       <div role="alert">
         <p>{message}</p>
         {Array.isArray(ids) && ids.every((id) => typeof id === "number") ? (
-          <p>ID không hợp lệ: {ids.join(", ")}</p>
+          <p>Một hoặc nhiều người được phân công không còn hợp lệ.</p>
         ) : null}
-        <p>Mã hỗ trợ: {error.requestId}</p>
+        <details>
+          <summary>Thông tin hỗ trợ</summary>
+          <p>Mã yêu cầu: {error.requestId}</p>
+        </details>
       </div>
     );
   }

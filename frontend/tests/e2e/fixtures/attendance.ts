@@ -6,7 +6,7 @@ const account = {
   full_name: "Nguyễn Văn An",
   phone: null,
   email: null,
-  role: "EMPLOYEE",
+  role: "HELPDESK",
   is_active: true,
   must_change_password: false,
   capabilities: ["attendance.view.self", "attendance.check_in.self", "attendance.check_out.self"],

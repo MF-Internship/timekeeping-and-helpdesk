@@ -15,6 +15,7 @@ import {
 import { Button } from "@/shared/ui/button";
 import { Input, Select, Textarea } from "@/shared/ui/form";
 import { StatusBadge } from "@/shared/ui/status-badge";
+import styles from "./Administration.module.css";
 
 type Filters = {
   kind: "" | "BUSINESS_CENTER" | "SHOP";
@@ -38,7 +39,7 @@ function LocationFilters({
   onChange: (value: Filters) => void;
 }) {
   return (
-    <div className="filter-grid">
+    <div className={styles.filters}>
       <label>
         Loại địa điểm
         <Select
@@ -86,23 +87,30 @@ function LocationList({
   onEdit: (item: LocationRecord) => void;
 }) {
   return (
-    <ul className="record-list">
+    <ul className={styles.recordList}>
       {items.map((item) => (
-        <li key={item.id}>
-          <div>
+        <li className={styles.recordRow} key={item.id}>
+          <div className={styles.recordIdentity}>
             <strong>
               {item.code} — {item.name}
             </strong>
-            <br />
-            {item.kind} · cha {item.parent_code ?? "—"} ·{" "}
-            <StatusBadge tone={item.is_active ? "ready" : "critical"}>
-              {item.is_active ? "Đang hoạt động" : "Ngừng hoạt động"}
-            </StatusBadge>
-            <br />
-            {item.address}
-            <br />
-            {item.latitude}, {item.longitude} · bán kính {item.radius_m} m · phiên bản{" "}
-            {item.version}
+            <span>
+              {item.kind} · Địa điểm cha: {item.parent_code ?? "Không có"}
+            </span>
+            <span>
+              <StatusBadge tone={item.is_active ? "ready" : "critical"}>
+                {item.is_active ? "Đang hoạt động" : "Ngừng hoạt động"}
+              </StatusBadge>
+            </span>
+            <span className={styles.meta}>
+              {item.address} · Bán kính {item.radius_m} m
+            </span>
+            <details className={styles.meta}>
+              <summary>Chi tiết kỹ thuật</summary>
+              <span>
+                {item.latitude}, {item.longitude} · Phiên bản {item.version}
+              </span>
+            </details>
           </div>
           {canManage && (
             <Button aria-label={`Chỉnh sửa ${item.code}`} onClick={() => onEdit(item)}>
@@ -129,10 +137,9 @@ function LocationEditForm({ draft, busy, onChange, onCancel, onSubmit }: EditPro
     value: string,
   ) => onChange({ ...draft, [field]: value });
   return (
-    <form className="editor-card" onSubmit={onSubmit}>
-      <h2>Chỉnh sửa {draft.code}</h2>
-      <p>Phiên bản máy chủ: {draft.version}</p>
-      <div className="form-grid">
+    <form className={styles.editor} onSubmit={onSubmit}>
+      <LocationEditHeading code={draft.code} version={draft.version} />
+      <div className={styles.fieldGrid}>
         <label>
           Tên địa điểm
           <Input
@@ -205,6 +212,15 @@ function LocationEditForm({ draft, busy, onChange, onCancel, onSubmit }: EditPro
   );
 }
 
+function LocationEditHeading({ code, version }: { code: string; version: number }) {
+  return (
+    <header>
+      <h2>Chỉnh sửa {code}</h2>
+      <p>Phiên bản máy chủ: {version}</p>
+    </header>
+  );
+}
+
 export function LocationDirectory() {
   const canManage = useAuth().hasCapability("location.manage");
   const [items, setItems] = useState<LocationRecord[]>([]);
@@ -257,9 +273,13 @@ export function LocationDirectory() {
     }
   }
   return (
-    <section>
+    <section className={styles.surface}>
       <LocationFilters value={filters} onChange={setFilters} />
-      {notice && <p role={notice.alert ? "alert" : "status"}>{notice.text}</p>}
+      {notice && (
+        <p className={styles.notice} role={notice.alert ? "alert" : "status"}>
+          {notice.text}
+        </p>
+      )}
       {draft && (
         <LocationEditForm
           draft={draft}
@@ -277,6 +297,7 @@ export function LocationDirectory() {
           setNotice(undefined);
         }}
       />
+      {!items.length ? <p className={styles.empty}>Không có địa điểm phù hợp bộ lọc.</p> : null}
     </section>
   );
 }
