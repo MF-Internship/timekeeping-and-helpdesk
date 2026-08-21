@@ -122,8 +122,8 @@
 
 **Purpose**: Complete the authorized feature/develop workflow without touching main.
 
-- [ ] T046 Review `git diff`, verify no secrets/generated manual edits/business drift, commit Feature 016, and push `feature/016-release-hardening`
-- [ ] T047 Inspect required GitHub Actions jobs for the feature branch; for each failure add its root cause and targeted fix to `specs/016-release-hardening/contracts/workflow-inventory.md`, rerun locally, commit, and push until green or report NOT VERIFIED if access is unavailable
+- [X] T046 Review `git diff`, verify no secrets/generated manual edits/business drift, commit Feature 016, and push `feature/016-release-hardening`
+- [X] T047 Inspect required GitHub Actions jobs for the feature branch; for each failure add its root cause and targeted fix to `specs/016-release-hardening/contracts/workflow-inventory.md`, rerun locally, commit, and push until green or report NOT VERIFIED if access is unavailable
 - [ ] T048 Merge `feature/016-release-hardening` into updated `develop` with `--no-ff` only after every observable required gate passes
 - [ ] T049 Run the complete clean release gate on merged `develop`; push `develop` only after it passes and leave `main` untouched
 
