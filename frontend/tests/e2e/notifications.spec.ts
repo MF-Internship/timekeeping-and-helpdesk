@@ -64,10 +64,11 @@ test("in-app inbox remains usable on mobile and marks unread as read", async ({ 
   await mockNotifications(page);
   await page.goto("/notifications");
 
-  await expect(page.getByRole("heading", { name: "Thông báo" })).toBeVisible();
-  await expect(page.getByText("1 chưa đọc")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Thông báo" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Chưa đọc 1" })).toBeVisible();
   await page.getByRole("button", { name: "Đánh dấu đã đọc" }).click();
-  await expect(page.getByText("Đã đọc", { exact: true })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Chưa đọc 0" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Đánh dấu đã đọc" })).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 
   const results = await new AxeBuilder({ page }).analyze();

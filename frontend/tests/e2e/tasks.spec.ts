@@ -303,7 +303,7 @@ test("authorized task history opens evidence through the protected access endpoi
   await expect(page.getByText(/Trường THCS Nguyễn Du — Quận 1, TP\.HCM/)).toBeVisible();
   await expect(page.getByRole("link", { name: "Mở vị trí trên Google Maps" })).toHaveAttribute(
     "href",
-    /query=10\.0000000,106\.0000000/,
+    /query=10\.0000000(?:%2C|,)106\.0000000/,
   );
   const access = page.waitForRequest((request) => request.url().endsWith("/photos/21/access"));
   await page.getByRole("button", { name: "Xem ảnh 1" }).click();

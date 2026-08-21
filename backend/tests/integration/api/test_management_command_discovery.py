@@ -33,6 +33,46 @@ def test_command_handle_is_a_thin_delegate_without_query_or_policy_logic() -> No
     assert (handle.end_lineno or handle.lineno) - handle.lineno + 1 <= 20
 
 
+def test_relay_outbox_command_is_a_thin_operations_delegate() -> None:
+    from django.core.management import get_commands
+
+    assert get_commands()["relay_outbox"] == "operations"
+    path = Path("backend/operations/management/commands/relay_outbox.py")
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    command = next(
+        node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "Command"
+    )
+    handle = next(
+        node for node in command.body if isinstance(node, ast.FunctionDef) and node.name == "handle"
+    )
+    source = ast.unparse(handle)
+    assert "operations_container().outbox_relay.run_once" in source
+    assert "select_for_update" not in source
+    assert "OutboxEvent" not in source
+    assert "publish_state" not in source
+    assert (handle.end_lineno or handle.lineno) - handle.lineno + 1 <= 20
+
+
+def test_prune_retention_command_is_a_thin_operations_delegate() -> None:
+    from django.core.management import get_commands
+
+    assert get_commands()["prune_retention"] == "operations"
+    path = Path("backend/operations/management/commands/prune_retention.py")
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    command = next(
+        node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "Command"
+    )
+    handle = next(
+        node for node in command.body if isinstance(node, ast.FunctionDef) and node.name == "handle"
+    )
+    source = ast.unparse(handle)
+    assert "prune_retention" in source
+    assert "OutboxEvent" not in source
+    assert "ProcessedEvent" not in source
+    assert "delete(" not in source
+    assert (handle.end_lineno or handle.lineno) - handle.lineno + 1 <= 20
+
+
 def test_reconciliation_command_is_owned_by_attendance_and_has_no_repair_arguments() -> None:
     from django.core.management import get_commands, load_command_class
 

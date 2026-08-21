@@ -308,6 +308,70 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/reports/attendance/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["reports_attendance_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/reports/attendance/export/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["reports_attendance_export"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/reports/tasks/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["reports_tasks_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/reports/tasks/export/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["reports_tasks_export"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/schema/": {
     parameters: {
       query?: never;
@@ -596,6 +660,28 @@ export interface components {
       /** Format: date */
       readonly work_date: string;
     };
+    AttendanceReport: {
+      anomaly_counts: {
+        [key: string]: number;
+      };
+      attempt_counts: {
+        [key: string]: number;
+      };
+      failure_rate: components["schemas"]["FailureRate"];
+      nearest_location_diagnostics: {
+        [key: string]: number;
+      };
+      punch_count: number;
+      rejected_attempt_diagnostics: {
+        [key: string]: number;
+      };
+      system_closed_missing_checkout_sessions: number;
+      /** Format: double */
+      total_valid_worked_minutes: number;
+      users_checked_out_today: number;
+      users_in_open_session: number;
+      users_no_check_in_today: number;
+    };
     AttendanceSession: {
       /** Format: date-time */
       readonly check_in_at: string;
@@ -697,6 +783,13 @@ export interface components {
       upload_id: string;
       /** Format: uri */
       upload_url: string;
+    };
+    FailureRate: {
+      denominator: number;
+      excluded_count: number;
+      numerator: number;
+      /** Format: double */
+      rate_percent: number | null;
     };
     FoundationError: {
       details: {
@@ -1149,6 +1242,22 @@ export interface components {
       id: number;
       mime: components["schemas"]["MimeEnum"];
       size_bytes: number;
+    };
+    TaskReport: {
+      actual_completer_counts: {
+        [key: string]: number;
+      };
+      assigned_task_closed_count: number;
+      completion_method_counts: {
+        [key: string]: number;
+      };
+      gps_quality_counts: {
+        [key: string]: number;
+      };
+      status_counts: {
+        [key: string]: number;
+      };
+      total_tasks: number;
     };
     TaskStatus: {
       block_reason?: string | null;
@@ -2131,6 +2240,99 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+    };
+  };
+  reports_attendance_retrieve: {
+    parameters: {
+      query: {
+        end_date: string;
+        start_date: string;
+        user_id?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceReport"];
+        };
+      };
+    };
+  };
+  reports_attendance_export: {
+    parameters: {
+      query: {
+        end_date: string;
+        include_sensitive_coordinates?: boolean;
+        start_date: string;
+        user_id?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "text/csv": string;
+        };
+      };
+    };
+  };
+  reports_tasks_retrieve: {
+    parameters: {
+      query: {
+        end_date: string;
+        start_date: string;
+        user_id?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskReport"];
+        };
+      };
+    };
+  };
+  reports_tasks_export: {
+    parameters: {
+      query: {
+        end_date: string;
+        start_date: string;
+        user_id?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "text/csv": string;
+        };
       };
     };
   };

@@ -70,7 +70,7 @@ DEFAULT_PROBES = (
     ),
     Probe(
         "unpublished_outbox",
-        "SELECT count(*) >= 0 FROM operations_outboxevent "
+        "SELECT count(*) >= 0 FROM audit_outboxevent "
         "WHERE publish_state = 'PENDING' AND published_at IS NULL "
         "AND (lease_expires_at IS NULL OR lease_expires_at <= CURRENT_TIMESTAMP)",
     ),

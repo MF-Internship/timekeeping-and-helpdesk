@@ -15,6 +15,9 @@ from attendance.application.dependencies import AttendanceDependencies
 from attendance.application.queries import AttendanceQueryService
 from attendance.application.reconciliation import ReconciliationDependencies, ReconciliationService
 from audit.adapters.persistence.recording import DjangoAuditRecorder
+from audit.adapters.persistence.outbox_relay import DjangoOutboxRelayRepository
+from audit.application.relay import OutboxRelayService
+from audit.domain.relay import RelayConfig
 from config.attendance_adapters import DjangoAttendanceAuthorization, DjangoAttendanceReferenceData
 from config.notification_adapters import (
     DjangoNotificationAccountFacts,
@@ -25,6 +28,7 @@ from config.notification_adapters import (
     notification_shift_end,
 )
 from config.operations_adapters import DjangoReadOnlyRepeatableRead, DjangoReconciliationJobRuns
+from config.reporting_adapters import DjangoReportingAuthorization, DjangoReportingRepository
 from config.task_adapters import (
     DjangoAssigneeDirectory,
     DjangoTaskAuthorization,
@@ -74,9 +78,12 @@ from notifications.adapters.web_push import WebPushTransport
 from notifications.application.container import NotificationContainer, build_notification_container
 from notifications.application.dependencies import NotificationDependencies
 from operations.adapters.persistence.job_runs import DjangoJobRunRepository
+from operations.adapters.outbox import LoggingOutboxAlertSink, transport_from_name
 from operations.application.container import OperationsContainer
 from operations.application.dependencies import JobHealthDependencies
 from operations.application.job_health import JobHealthService
+from reporting.application.container import ReportingContainer
+from reporting.application.queries import ReportingDependencies, ReportingQueryService
 from tasks.adapters.clock import DjangoClock as TaskDjangoClock
 from tasks.adapters.evidence_storage import S3EvidenceStorage
 from tasks.adapters.notification_facts import DjangoTaskNotificationFacts
@@ -209,13 +216,38 @@ def reconciliation_service() -> ReconciliationService:
 def operations_container() -> OperationsContainer:
     repository = DjangoReconciliationRepository()
     return OperationsContainer(
-        JobHealthService(
+        job_health=JobHealthService(
             JobHealthDependencies(
                 authorization=DjangoAuthorizationGateway(),
                 clock=DjangoClock(),
                 job_runs=DjangoJobRunRepository(),
                 attendance_health=repository,
                 read_unit_of_work_factory=DjangoReadOnlyRepeatableRead,
+            )
+        ),
+        outbox_relay=OutboxRelayService(
+            repository=DjangoOutboxRelayRepository(),
+            transport=transport_from_name(settings.OUTBOX_RELAY_TRANSPORT),
+            alerts=LoggingOutboxAlertSink(),
+            config=RelayConfig(
+                batch_size=settings.OUTBOX_RELAY_BATCH_SIZE,
+                lease_seconds=settings.OUTBOX_RELAY_LEASE_SECONDS,
+                max_attempts=settings.OUTBOX_RELAY_MAX_ATTEMPTS,
+                backoff_base_seconds=settings.OUTBOX_RELAY_BACKOFF_BASE_SECONDS,
+                backoff_max_seconds=settings.OUTBOX_RELAY_BACKOFF_MAX_SECONDS,
+            ),
+        ),
+    )
+
+
+@lru_cache(maxsize=1)
+def reporting_container() -> ReportingContainer:
+    return ReportingContainer(
+        ReportingQueryService(
+            ReportingDependencies(
+                authorization=DjangoReportingAuthorization(),
+                repository=DjangoReportingRepository(),
+                audit=DjangoAuditRecorder(),
             )
         )
     )

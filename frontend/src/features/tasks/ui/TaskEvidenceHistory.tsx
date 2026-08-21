@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/shared/ui/button";
+import { googleMapsSearchUrl } from "@/shared/formatters/maps";
 
 import { accessTaskPhoto, type TaskDetail } from "../api/task-api";
 import { TaskFailureNotice } from "./TaskFailureNotice";
@@ -32,8 +33,8 @@ export function TaskEvidenceHistory({ detail, error }: { detail?: TaskDetail; er
                   <span>Sai số: {update.accuracy_m} m</span>
                   <span>Chất lượng: {update.gps_quality ?? "Chưa phân loại"}</span>
                   <span>Đối chiếu: {evidenceLocationLabel(update)}</span>
-                  {update.maps_url ? (
-                    <a href={update.maps_url} target="_blank" rel="noopener noreferrer">
+                  {evidenceMapsUrl(update) ? (
+                    <a href={evidenceMapsUrl(update)} target="_blank" rel="noopener noreferrer">
                       Mở vị trí trên Google Maps
                     </a>
                   ) : null}
@@ -78,6 +79,15 @@ function evidenceLocationLabel(update: TaskDetail["updates"][number]) {
   if (update.resolved_address) {
     return `${update.resolved_address} (${resolutionLabel(update.resolution_method)})`;
   }
+  if (update.actual_location) {
+    return `${update.actual_location.name} — ${update.actual_location.address} (${resolutionLabel(update.resolution_method)})`;
+  }
   if (update.gps_quality === "GOOD") return "Ngoài mọi địa điểm đã đăng ký";
   return "GPS sai số cao, chưa xác nhận địa chỉ";
+}
+
+function evidenceMapsUrl(update: TaskDetail["updates"][number]) {
+  if (update.maps_url) return update.maps_url;
+  if (!update.captured_latitude || !update.captured_longitude) return undefined;
+  return googleMapsSearchUrl(update.captured_latitude, update.captured_longitude);
 }

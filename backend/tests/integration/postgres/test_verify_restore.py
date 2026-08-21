@@ -13,7 +13,9 @@ LOCAL_DATABASE_URL = "postgresql://app_runtime:local_runtime_only@127.0.0.1:5432
 
 
 def postgres_test_database_url() -> str:
-    return os.environ.get("POSTGRES_TEST_DATABASE_URL", LOCAL_DATABASE_URL)
+    return os.environ.get("POSTGRES_TEST_DATABASE_URL") or os.environ.get(
+        "DATABASE_URL", LOCAL_DATABASE_URL
+    )
 
 
 def recovery_inputs() -> RecoveryInputs:
@@ -37,7 +39,7 @@ def prepared_connection(
         "audit_auditlog": audit_columns,
         "token_blacklist_outstandingtoken": "id integer, expires_at timestamptz",
         "token_blacklist_blacklistedtoken": "id integer, token_id integer",
-        "operations_outboxevent": (
+        "audit_outboxevent": (
             "id integer, publish_state text, published_at timestamptz, lease_expires_at timestamptz"
         ),
         "django_migrations": "app text, name text",

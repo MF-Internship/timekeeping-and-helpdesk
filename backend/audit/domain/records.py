@@ -20,6 +20,7 @@ class AuditAction(StrEnum):
     TASK_COMPLETION_OVERRIDDEN = "task.completion.overridden"
     TASK_COMPLETION_FIELD_EVIDENCE = "task.completion.field_evidence"
     TASK_SELF_DELETED = "task.self_deleted"
+    REPORT_EXPORTED = "report.exported"
 
 
 class IdentityEventType(StrEnum):

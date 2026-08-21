@@ -7,6 +7,8 @@ import { useAuth } from "@/features/identity/model/AuthProvider";
 import { UI_MESSAGES } from "@/shared/messages";
 
 type IdentityRoute =
+  | "home"
+  | "account"
   | "login"
   | "change-password"
   | "users"
@@ -15,6 +17,7 @@ type IdentityRoute =
   | "holidays"
   | "attendance"
   | "tasks"
+  | "reports"
   | "notifications"
   | "job-health";
 
@@ -25,6 +28,7 @@ const REQUIRED_CAPABILITY = {
   holidays: "holiday.manage",
   attendance: "attendance.view.self",
   tasks: "task.view.self",
+  reports: "report.view.self",
   notifications: "notification.view.self",
   "job-health": "operations.job_health.view",
 } as const;
@@ -48,6 +52,7 @@ function authenticatedDestination(
   state: Extract<ReturnType<typeof useAuth>["state"], { kind: "authenticated" }>,
 ): string | null {
   if (route === "login" || route === "change-password") return "/";
+  if (route === "home" || route === "account") return null;
   return state.account.capabilities.includes(REQUIRED_CAPABILITY[route]) ? null : "/";
 }
 

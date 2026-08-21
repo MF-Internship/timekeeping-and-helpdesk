@@ -6,6 +6,7 @@ import { createHoliday, deleteHoliday, listHolidays } from "@/features/locations
 import { useAuth } from "@/features/identity/model/AuthProvider";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/form";
+import styles from "./Administration.module.css";
 
 type Holiday = Awaited<ReturnType<typeof listHolidays>>[number];
 
@@ -45,8 +46,8 @@ export function HolidayManager() {
     }
   }
   return (
-    <section>
-      <form onSubmit={(event) => void submit(event)}>
+    <section className={styles.surface}>
+      <form className={styles.holidayForm} onSubmit={(event) => void submit(event)}>
         <label>
           Ngày <Input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
         </label>
@@ -55,11 +56,19 @@ export function HolidayManager() {
         </label>
         <Button variant="primary">Thêm ngày nghỉ</Button>
       </form>
-      {error && <p role="alert">{error}</p>}
-      <ul>
+      {error && (
+        <p className={styles.notice} role="alert">
+          {error}
+        </p>
+      )}
+      {!items.length ? <p className={styles.empty}>Chưa có ngày nghỉ nào được cấu hình.</p> : null}
+      <ul className={styles.recordList}>
         {items.map((item) => (
-          <li key={item.id}>
-            {item.date} — {item.name}{" "}
+          <li className={styles.recordRow} key={item.id}>
+            <span className={styles.recordIdentity}>
+              <strong>{item.name}</strong>
+              <span className={styles.meta}>{item.date}</span>
+            </span>
             <Button
               onClick={() => {
                 if (!window.confirm("Xác nhận xóa ngày nghỉ?")) return;

@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from django.db import connection, transaction
 
 from attendance.ports.job_runs import ReconciliationFinalization
+from audit.domain.relay import OutboxPublishState
+from audit.models import OutboxEvent, ProcessedEvent
 from operations.adapters.persistence.job_runs import DjangoJobRunRepository
 from operations.domain.job_runs import JobRunCounterDelta, classify_terminal
+from operations.ports.retention import RetentionRepository
 
 
 class DjangoReconciliationJobRuns:
@@ -51,3 +56,35 @@ class DjangoReadOnlyRepeatableRead:
 
     def __exit__(self, exc_type, exc_value, traceback):  # type: ignore[no-untyped-def]
         return self._atomic.__exit__(exc_type, exc_value, traceback)
+
+
+class DjangoRetentionRepository(RetentionRepository):
+    def delete_processed_events(self, *, older_than: datetime, limit: int) -> int:
+        ids = list(
+            ProcessedEvent.objects.filter(processed_at__lt=older_than)
+            .order_by("processed_at", "id")
+            .values_list("id", flat=True)[:limit]
+        )
+        return ProcessedEvent.objects.filter(pk__in=ids).delete()[0] if ids else 0
+
+    def delete_published_outbox(self, *, older_than: datetime, limit: int) -> int:
+        ids = list(
+            OutboxEvent.objects.filter(
+                publish_state=OutboxPublishState.PUBLISHED.value,
+                published_at__lt=older_than,
+            )
+            .order_by("published_at", "id")
+            .values_list("id", flat=True)[:limit]
+        )
+        return OutboxEvent.objects.filter(pk__in=ids).delete()[0] if ids else 0
+
+    def delete_dead_letter_outbox(self, *, older_than: datetime, limit: int) -> int:
+        ids = list(
+            OutboxEvent.objects.filter(
+                publish_state=OutboxPublishState.DEAD_LETTER.value,
+                created_at__lt=older_than,
+            )
+            .order_by("created_at", "id")
+            .values_list("id", flat=True)[:limit]
+        )
+        return OutboxEvent.objects.filter(pk__in=ids).delete()[0] if ids else 0

@@ -25,5 +25,14 @@
 @media (min-width: 64rem) {
   .page {
     max-width: 64rem;
+    grid-template-columns: minmax(0, 1.65fr) minmax(18rem, 0.85fr);
+    align-items: start;
+  }
+  .page > section:first-child {
+    min-width: 0;
+  }
+  .page > section:last-child {
+    position: sticky;
+    top: 5rem;
   }
 }

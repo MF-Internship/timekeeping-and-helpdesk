@@ -60,6 +60,16 @@ class OutboxEvent(models.Model):
     )
     published_at: models.DateTimeField[Any, Any] = models.DateTimeField(null=True, blank=True)
     lease_expires_at: models.DateTimeField[Any, Any] = models.DateTimeField(null=True, blank=True)
+    leased_by: models.CharField[str | None, str | None] = models.CharField(
+        max_length=64, null=True, blank=True
+    )
+    attempt_count: models.PositiveIntegerField[int, int] = models.PositiveIntegerField(
+        default=0, db_default=0
+    )
+    next_attempt_at: models.DateTimeField[Any, Any] = models.DateTimeField(null=True, blank=True)
+    last_error: models.CharField[str, str] = models.CharField(
+        max_length=256, default="", db_default="", blank=True
+    )
 
     class Meta:
         constraints: ClassVar[list[models.BaseConstraint]] = [
@@ -79,10 +89,41 @@ class OutboxEvent(models.Model):
                 condition=models.Q(publish_state__in=["PENDING", "PUBLISHED", "DEAD_LETTER"]),
                 name="audit_outbox_publish_state_valid",
             ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(leased_by__isnull=True, lease_expires_at__isnull=True)
+                    | models.Q(leased_by__isnull=False, lease_expires_at__isnull=False)
+                ),
+                name="audit_outbox_lease_shape_valid",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(publish_state="PUBLISHED", published_at__isnull=False)
+                    | ~models.Q(publish_state="PUBLISHED")
+                ),
+                name="audit_outbox_published_at_required",
+            ),
         ]
         indexes: ClassVar[list[models.Index]] = [
             models.Index(
-                fields=["publish_state", "created_at", "id"],
+                fields=["publish_state", "next_attempt_at", "lease_expires_at", "created_at", "id"],
                 name="audit_outbox_pending_idx",
             )
+        ]
+
+
+class ProcessedEvent(models.Model):
+    consumer: models.CharField[str, str] = models.CharField(max_length=100)
+    event_id: models.UUIDField[Any, Any] = models.UUIDField()
+    processed_at: models.DateTimeField[Any, Any] = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints: ClassVar[list[models.BaseConstraint]] = [
+            models.UniqueConstraint(
+                fields=["consumer", "event_id"],
+                name="audit_processed_event_unique",
+            )
+        ]
+        indexes: ClassVar[list[models.Index]] = [
+            models.Index(fields=["consumer", "processed_at", "id"], name="audit_processed_time_idx")
         ]

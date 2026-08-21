@@ -1,6 +1,8 @@
 "use client";
 
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { MoreVertical } from "lucide-react";
 
 import {
   changeUserRole,
@@ -24,6 +26,7 @@ import {
   identityFailureView,
   type IdentityFailureView,
 } from "@/features/identity/ui/IdentityFailure";
+import styles from "./UserDirectory.module.css";
 
 type DirectoryUser = Awaited<ReturnType<typeof listUsers>>["results"][number];
 type DirectoryPage = Awaited<ReturnType<typeof listUsers>>;
@@ -82,7 +85,7 @@ type FiltersProps = {
 
 function DirectoryFilters(props: FiltersProps) {
   return (
-    <form onSubmit={props.onSearch}>
+    <form className={styles.filters} onSubmit={props.onSearch}>
       <label>
         Tìm kiếm
         <Input value={props.query} onChange={(event) => props.onQuery(event.target.value)} />
@@ -123,30 +126,61 @@ type UserListProps = {
 
 function UserList(props: UserListProps) {
   return (
-    <ul>
+    <ul className={styles.list}>
       {props.users.map((user) => (
         <li key={user.id}>
-          <span>
-            {user.full_name} ({user.username}) <Badge tone="neutral">{user.role}</Badge>{" "}
-            <StatusBadge tone={user.is_active ? "ready" : "critical"}>
-              {user.is_active ? "Đang hoạt động" : "Đã khóa"}
-            </StatusBadge>
+          <span className={styles.identity}>
+            <strong>{user.full_name}</strong>
+            <span>@{user.username}</span>
+            <span className={styles.badges}>
+              <Badge tone="neutral">{user.role}</Badge>{" "}
+              <StatusBadge tone={user.is_active ? "ready" : "critical"}>
+                {user.is_active ? "Đang hoạt động" : "Đã khóa"}
+              </StatusBadge>
+            </span>
           </span>
-          {user.role !== "MANAGER" && props.canManage && (
-            <>
-              <Button onClick={() => props.onEdit(user)}>Sửa hồ sơ</Button>
-              <Button onClick={() => props.onStatus(user)}>
-                {user.is_active ? "Khóa" : "Mở khóa"}
-              </Button>
-              <Button onClick={() => props.onReset(user.id)}>Đặt lại mật khẩu</Button>
-            </>
-          )}
-          {user.role !== "MANAGER" && props.canAssignRole && (
-            <Button onClick={() => props.onRole(user)}>Đổi vai trò</Button>
-          )}
+          <UserActions user={user} {...props} />
         </li>
       ))}
     </ul>
+  );
+}
+
+function UserActions(props: UserListProps & { user: DirectoryUser }) {
+  if (props.user.role === "MANAGER" || (!props.canManage && !props.canAssignRole)) return null;
+  return (
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild>
+        <Button
+          className={styles.actionTrigger}
+          aria-label={`Thao tác với ${props.user.full_name}`}
+        >
+          <MoreVertical aria-hidden="true" />
+        </Button>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content className={styles.menu} align="end">
+          {props.canManage ? (
+            <>
+              <DropdownMenu.Item onSelect={() => props.onEdit(props.user)}>
+                Sửa hồ sơ
+              </DropdownMenu.Item>
+              <DropdownMenu.Item onSelect={() => props.onStatus(props.user)}>
+                {props.user.is_active ? "Khóa" : "Mở khóa"}
+              </DropdownMenu.Item>
+              <DropdownMenu.Item onSelect={() => props.onReset(props.user.id)}>
+                Đặt lại mật khẩu
+              </DropdownMenu.Item>
+            </>
+          ) : null}
+          {props.canAssignRole ? (
+            <DropdownMenu.Item onSelect={() => props.onRole(props.user)}>
+              Đổi vai trò
+            </DropdownMenu.Item>
+          ) : null}
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
   );
 }
 
@@ -160,7 +194,7 @@ type PaginationProps = {
 
 function Pagination(props: PaginationProps) {
   return (
-    <nav aria-label="Phân trang người dùng">
+    <nav className={styles.pagination} aria-label="Phân trang người dùng">
       <Button disabled={!props.hasPrevious} onClick={() => props.onPage(props.page - 1)}>
         Trang trước
       </Button>

@@ -14,6 +14,7 @@ def test_cache_table_provisioning_has_one_operations_leaf() -> None:
     assert [path.name for path in migrations] == [
         "0001_throttle_cache_table.py",
         "0002_job_run.py",
+        "0003_observability.py",
     ]
 
 

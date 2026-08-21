@@ -164,7 +164,8 @@ LOGGING = {
             "format": (
                 "%(levelname)s %(name)s request_id=%(request_id)s "
                 "correlation_id=%(correlation_id)s %(message)s"
-            )
+            ),
+            "defaults": {"request_id": "", "correlation_id": ""},
         }
     },
     "handlers": {
@@ -175,7 +176,40 @@ LOGGING = {
         }
     },
     "root": {"handlers": ["console"], "level": "INFO"},
+    "loggers": {
+        "operations.outbox": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "operations.metrics": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "operations.alerts": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+        "django.request": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+    },
 }
+
+
+def _positive_int_env(key: str, default: int) -> int:
+    raw = os.environ.get(key, str(default))
+    try:
+        value = int(raw)
+    except ValueError as error:
+        raise ConfigurationError(key) from error
+    if value < 1:
+        raise ConfigurationError(key)
+    return value
+
+
+OUTBOX_RELAY_TRANSPORT = os.environ.get("OUTBOX_RELAY_TRANSPORT", "disabled")
+if OUTBOX_RELAY_TRANSPORT not in {"disabled", "logging"}:
+    raise ConfigurationError("OUTBOX_RELAY_TRANSPORT")
+OUTBOX_RELAY_BATCH_SIZE = _positive_int_env("OUTBOX_RELAY_BATCH_SIZE", 100)
+OUTBOX_RELAY_LEASE_SECONDS = _positive_int_env("OUTBOX_RELAY_LEASE_SECONDS", 60)
+OUTBOX_RELAY_MAX_ATTEMPTS = _positive_int_env("OUTBOX_RELAY_MAX_ATTEMPTS", 12)
+OUTBOX_RELAY_BACKOFF_BASE_SECONDS = _positive_int_env(
+    "OUTBOX_RELAY_BACKOFF_BASE_SECONDS", 30
+)
+OUTBOX_RELAY_BACKOFF_MAX_SECONDS = _positive_int_env("OUTBOX_RELAY_BACKOFF_MAX_SECONDS", 3600)
+RETENTION_PRUNE_BATCH_SIZE = _positive_int_env("RETENTION_PRUNE_BATCH_SIZE", 500)
+OPERATIONS_HEARTBEAT_STALE_SECONDS = _positive_int_env(
+    "OPERATIONS_HEARTBEAT_STALE_SECONDS", 900
+)
 
 LANGUAGE_CODE = "vi"
 TIME_ZONE = "Asia/Ho_Chi_Minh"

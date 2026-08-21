@@ -110,3 +110,25 @@ class JobRun(models.Model):
                 name="job_run_status_idx",
             ),
         ]
+
+
+class JobHeartbeat(models.Model):
+    job_name: models.CharField[str, str] = models.CharField(max_length=64)
+    started_at: models.DateTimeField[datetime, datetime] = models.DateTimeField()
+    last_success_at: models.DateTimeField[datetime | None, datetime | None] = models.DateTimeField(
+        null=True, blank=True
+    )
+    outcome: models.CharField[str, str] = models.CharField(max_length=32)
+    updated_at: models.DateTimeField[datetime, datetime] = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints: ClassVar[list[models.BaseConstraint]] = [
+            models.UniqueConstraint(fields=["job_name"], name="job_heartbeat_name_unique"),
+            models.CheckConstraint(
+                condition=models.Q(outcome__in=["ok", "failed", "running"]),
+                name="job_heartbeat_outcome_valid",
+            ),
+        ]
+        indexes: ClassVar[list[models.Index]] = [
+            models.Index(fields=["job_name", "updated_at"], name="job_heartbeat_updated_idx")
+        ]

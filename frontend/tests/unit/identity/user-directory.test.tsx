@@ -37,6 +37,12 @@ const manager = {
 };
 const worker = { ...manager, id: 2, username: "worker", full_name: "Worker", role: "HELPDESK" };
 
+function openUserActions(name = "Worker") {
+  fireEvent.keyDown(screen.getByRole("button", { name: `Thao tác với ${name}` }), {
+    key: "Enter",
+  });
+}
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
@@ -51,10 +57,13 @@ describe("UserDirectory", () => {
       previous: null,
     });
     render(<UserDirectory />);
-    await screen.findByText(/Manager \(manager\)/);
-    expect(screen.getByText(/Worker \(worker\)/)).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Sửa hồ sơ" })).toHaveLength(1);
-    expect(screen.getAllByRole("button", { name: "Đổi vai trò" })).toHaveLength(1);
+    await screen.findByText("Manager", { selector: "strong" });
+    expect(screen.getByText("Worker", { selector: "strong" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Thao tác với Manager" })).not.toBeInTheDocument();
+    openUserActions();
+    expect(screen.getByRole("menuitem", { name: "Sửa hồ sơ" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Đổi vai trò" })).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
   });
 
   it("sends combined filters and resets a new search to page one", async () => {
@@ -65,7 +74,9 @@ describe("UserDirectory", () => {
     });
     render(<UserDirectory />);
     await waitFor(() => expect(controls.listUsers).toHaveBeenCalledWith({}));
-    fireEvent.click(screen.getByRole("button", { name: "Trang sau" }));
+    const nextButton = screen.getByRole("button", { name: "Trang sau" });
+    await waitFor(() => expect(nextButton).toBeEnabled());
+    fireEvent.click(nextButton);
     await waitFor(() => expect(controls.listUsers).toHaveBeenLastCalledWith({ page: 2 }));
     fireEvent.change(screen.getByLabelText("Tìm kiếm"), { target: { value: "worker" } });
     fireEvent.change(screen.getAllByLabelText("Vai trò")[0], { target: { value: "HELPDESK" } });
@@ -87,10 +98,13 @@ describe("UserDirectory", () => {
     controls.changeUserRole.mockResolvedValue({});
     controls.resetUserPassword.mockResolvedValue({ generated_password: "ResetOnly123!" });
     render(<UserDirectory />);
-    await screen.findByText(/Worker \(worker\)/);
-    fireEvent.click(screen.getByRole("button", { name: "Khóa" }));
-    fireEvent.click(screen.getByRole("button", { name: "Đổi vai trò" }));
-    fireEvent.click(screen.getByRole("button", { name: "Đặt lại mật khẩu" }));
+    await screen.findByText("Worker", { selector: "strong" });
+    openUserActions();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Khóa" }));
+    openUserActions();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Đổi vai trò" }));
+    openUserActions();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Đặt lại mật khẩu" }));
     await waitFor(() => expect(controls.changeUserStatus).toHaveBeenCalledWith(2, false));
     expect(controls.changeUserRole).toHaveBeenCalledWith(2, "LEADER");
     expect(await screen.findByRole("dialog")).toHaveTextContent("ResetOnly123!");
@@ -106,8 +120,9 @@ describe("UserDirectory", () => {
       requestId: "123e4567-e89b-42d3-a456-426614174000",
     });
     render(<UserDirectory />);
-    await screen.findByText(/Worker \(worker\)/);
-    fireEvent.click(screen.getByRole("button", { name: "Khóa" }));
+    await screen.findByText("Worker", { selector: "strong" });
+    openUserActions();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Khóa" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Bạn không có quyền thực hiện thao tác này.",
     );
@@ -121,8 +136,9 @@ describe("UserDirectory", () => {
     controls.listUsers.mockResolvedValue({ results: [worker], next: null, previous: null });
     controls.updateUser.mockResolvedValue({});
     render(<UserDirectory />);
-    await screen.findByText(/Worker \(worker\)/);
-    fireEvent.click(screen.getByRole("button", { name: "Sửa hồ sơ" }));
+    await screen.findByText("Worker", { selector: "strong" });
+    openUserActions();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Sửa hồ sơ" }));
     const form = screen.getByRole("form", { name: "Sửa hồ sơ người dùng" });
     fireEvent.change(within(form).getByLabelText("Họ tên"), {
       target: { value: "Worker Updated" },
@@ -146,8 +162,9 @@ describe("UserDirectory", () => {
   it("cancels profile editing without issuing a mutation", async () => {
     controls.listUsers.mockResolvedValue({ results: [worker], next: null, previous: null });
     render(<UserDirectory />);
-    await screen.findByText(/Worker \(worker\)/);
-    fireEvent.click(screen.getByRole("button", { name: "Sửa hồ sơ" }));
+    await screen.findByText("Worker", { selector: "strong" });
+    openUserActions();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Sửa hồ sơ" }));
     fireEvent.click(screen.getByRole("button", { name: "Hủy" }));
     expect(screen.queryByRole("form", { name: "Sửa hồ sơ người dùng" })).not.toBeInTheDocument();
     expect(controls.updateUser).not.toHaveBeenCalled();
@@ -156,8 +173,9 @@ describe("UserDirectory", () => {
   it("blocks an invalid email before the profile API is called", async () => {
     controls.listUsers.mockResolvedValue({ results: [worker], next: null, previous: null });
     render(<UserDirectory />);
-    await screen.findByText(/Worker \(worker\)/);
-    fireEvent.click(screen.getByRole("button", { name: "Sửa hồ sơ" }));
+    await screen.findByText("Worker", { selector: "strong" });
+    openUserActions();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Sửa hồ sơ" }));
     const form = screen.getByRole("form", { name: "Sửa hồ sơ người dùng" });
     fireEvent.change(within(form).getByLabelText("Email"), {
       target: { value: "not-an-email" },
@@ -176,8 +194,9 @@ describe("UserDirectory", () => {
       requestId: "123e4567-e89b-42d3-a456-426614174002",
     });
     render(<UserDirectory />);
-    await screen.findByText(/Worker \(worker\)/);
-    fireEvent.click(screen.getByRole("button", { name: "Sửa hồ sơ" }));
+    await screen.findByText("Worker", { selector: "strong" });
+    openUserActions();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Sửa hồ sơ" }));
     const form = screen.getByRole("form", { name: "Sửa hồ sơ người dùng" });
     fireEvent.submit(form);
 
