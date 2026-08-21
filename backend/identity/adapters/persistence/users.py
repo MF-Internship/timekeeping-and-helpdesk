@@ -3,7 +3,7 @@ from __future__ import annotations
 from django.db.models import Q
 from django.utils import timezone
 
-from identity.domain.accounts import AccountSnapshot, NewAccount
+from identity.domain.accounts import AccountSnapshot, NewAccount, UserFilters
 from identity.domain.authorization import Role
 from identity.models import User
 
@@ -48,19 +48,19 @@ class DjangoUserRepository:
 
     def paginate_users(
         self,
-        query: str | None,
-        role: Role | None,
-        is_active: bool | None,
+        filters: UserFilters,
         window: tuple[int, int],
     ) -> tuple[int, list[AccountSnapshot]]:
         offset, limit = window
         users = User.objects.all()
-        if query:
-            users = users.filter(Q(full_name__icontains=query) | Q(username__icontains=query))
-        if role is not None:
-            users = users.filter(role=role.value)
-        if is_active is not None:
-            users = users.filter(is_active=is_active)
+        if filters.query:
+            users = users.filter(
+                Q(full_name__icontains=filters.query) | Q(username__icontains=filters.query)
+            )
+        if filters.role is not None:
+            users = users.filter(role=filters.role.value)
+        if filters.is_active is not None:
+            users = users.filter(is_active=filters.is_active)
         count = users.count()
         page = users.order_by("full_name", "username", "id")[offset : offset + limit]
         return count, [to_snapshot(user) for user in page]

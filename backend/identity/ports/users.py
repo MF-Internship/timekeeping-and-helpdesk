@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from identity.domain.accounts import AccountSnapshot, NewAccount
-from identity.domain.authorization import Role
+from identity.domain.accounts import AccountSnapshot, NewAccount, UserFilters
 
 
 class UserRepository(Protocol):
@@ -21,9 +20,7 @@ class UserRepository(Protocol):
 
     def paginate_users(
         self,
-        query: str | None,
-        role: Role | None,
-        is_active: bool | None,
+        filters: UserFilters,
         window: tuple[int, int],
     ) -> tuple[int, list[AccountSnapshot]]: ...
 

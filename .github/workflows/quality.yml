@@ -1,5 +1,8 @@
 name: Quality
 
+permissions:
+  contents: read
+
 on:
   pull_request:
   push:
@@ -42,7 +45,9 @@ jobs:
       - run: uv run --project backend python scripts/generate_openapi.py --check
       - run: uv run --project backend python scripts/check_openapi.py --all
       - run: uv run --project backend python scripts/check_contract_drift.py
+      - run: uv run --project backend python backend/manage.py makemigrations --check --dry-run --settings=tests.settings
       - run: uv run --project backend python scripts/migration_check.py check
+      - run: scripts/check_backend.sh
 
   frontend-quality:
     runs-on: ubuntu-latest

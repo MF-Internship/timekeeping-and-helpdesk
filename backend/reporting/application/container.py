@@ -8,4 +8,3 @@ from reporting.application.queries import ReportingQueryService
 @dataclass(frozen=True, slots=True)
 class ReportingContainer:
     queries: ReportingQueryService
-

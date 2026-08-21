@@ -69,4 +69,3 @@ def failure_rate_payload(rate: FailureRate) -> dict[str, object]:
         "excluded_count": rate.excluded_count,
         "rate_percent": rate.rate_percent,
     }
-

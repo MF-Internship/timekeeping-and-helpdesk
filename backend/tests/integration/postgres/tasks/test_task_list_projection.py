@@ -86,6 +86,4 @@ def test_helpdesk_soft_delete_retains_rows_and_filters_repository_reads() -> Non
     assert retained.deleted_at is not None
     assert TaskAssignee.objects.filter(task_id=task.pk, user_id=actor.pk).exists()
     assert repository.get(task.pk) is None
-    assert all(
-        item.id != task.pk for item in repository.list_scoped(actor.pk, all_tasks=False)
-    )
+    assert all(item.id != task.pk for item in repository.list_scoped(actor.pk, all_tasks=False))

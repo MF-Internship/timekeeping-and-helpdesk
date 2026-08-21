@@ -22,6 +22,7 @@ def test_quality_workflow_contains_each_required_job_once() -> None:
         "check_openapi.py --all",
         "check_contract_drift.py",
         "migration_check.py check",
+        "check_backend.sh",
         "check_feature_002_convergence.sh --all",
     ):
         assert command in source
@@ -41,6 +42,7 @@ def test_repository_gate_invokes_complete_feature_verification() -> None:
         "check_openapi.py --all",
         "check_contract_drift.py",
         "migration_check.py check",
+        "check_backend.sh",
         "api:check",
         "format:check",
         "frontend run lint",

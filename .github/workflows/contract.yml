@@ -1,5 +1,8 @@
 name: Contract
 
+permissions:
+  contents: read
+
 on:
   pull_request:
   push:
@@ -49,6 +52,7 @@ jobs:
       - run: npm --prefix frontend run typecheck
       - run: uv run --project backend python scripts/check_contract_drift.py
       - run: scripts/check_openapi_compatibility.sh
+      - run: uv run --project backend python backend/manage.py makemigrations --check --dry-run --settings=tests.settings
       - run: uv run --project backend python scripts/migration_check.py check
       - run: uv run --project backend pytest backend/tests/integration/postgres/test_cache_migration.py
       - run: uv run --project backend python scripts/deployment_check.py isolation

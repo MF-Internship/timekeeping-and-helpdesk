@@ -112,7 +112,13 @@ def test_competing_read_updates_preserve_the_first_read_timestamp() -> None:
         occurred_at=NOW,
     )
     barrier = Barrier(2)
-    candidates = (NOW + timedelta(seconds=1), NOW + timedelta(seconds=2))
+    # The constraint is based on the persisted creation timestamp, not the
+    # occurrence fixture. Deriving candidates from the row keeps this race test
+    # deterministic regardless of the wall clock on which the suite runs.
+    candidates = (
+        row.created_at + timedelta(seconds=1),
+        row.created_at + timedelta(seconds=2),
+    )
 
     def mark_read(read_at: datetime) -> None:
         close_old_connections()

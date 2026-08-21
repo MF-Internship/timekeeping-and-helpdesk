@@ -23,9 +23,7 @@ class DjangoAttendanceNotificationFacts:
         self._authorization = authorization
         self._shift_end = shift_end
 
-    def due_open_sessions(
-        self, now: datetime
-    ) -> tuple[AttendanceNotificationCandidate, ...]:
+    def due_open_sessions(self, now: datetime) -> tuple[AttendanceNotificationCandidate, ...]:
         local_now = now.astimezone(LOCAL_TIMEZONE)
         rows = AttendanceSession.objects.filter(
             check_out__isnull=True,
@@ -39,18 +37,20 @@ class DjangoAttendanceNotificationFacts:
     def revalidate(self, session_id: int, recipient_id: int, event_type: str) -> bool:
         if event_type != "ATTENDANCE_SESSION_OPEN_NEAR_SHIFT_END":
             return False
-        return AttendanceSession.objects.select_for_update().filter(
-            pk=session_id,
-            user_id=recipient_id,
-            check_out__isnull=True,
-            closed_by_job=False,
-            user__is_active=True,
-            user__role="HELPDESK",
-        ).exists()
+        return (
+            AttendanceSession.objects.select_for_update()
+            .filter(
+                pk=session_id,
+                user_id=recipient_id,
+                check_out__isnull=True,
+                closed_by_job=False,
+                user__is_active=True,
+                user__role="HELPDESK",
+            )
+            .exists()
+        )
 
-    def resolve(
-        self, actor_id: int, session_id: int
-    ) -> AttendanceNotificationTarget | None:
+    def resolve(self, actor_id: int, session_id: int) -> AttendanceNotificationTarget | None:
         self._authorization.authorize_view_self(actor_id)
         exists = AttendanceSession.objects.filter(pk=session_id, user_id=actor_id).exists()
         return AttendanceNotificationTarget("attendance", session_id) if exists else None

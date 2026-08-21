@@ -110,9 +110,12 @@ def test_competing_field_completions_commit_exactly_one_evidence_set(monkeypatch
     assert TaskUpdate.objects.filter(task=task, status="COMPLETED").count() == 1
     assert TaskPhoto.objects.filter(task_update__task=task).count() == 1
     assert CompletionIdempotency.objects.filter(task=task).count() == 1
-    assert AuditLog.objects.filter(
-        target_type="Task", target_id=str(task.pk), action="task.completion.field_evidence"
-    ).count() == 1
+    assert (
+        AuditLog.objects.filter(
+            target_type="Task", target_id=str(task.pk), action="task.completion.field_evidence"
+        ).count()
+        == 1
+    )
     assert EvidenceUpload.objects.filter(task=task, status="BOUND").count() == 1
     assert EvidenceUpload.objects.filter(task=task, status="PENDING").count() == 1
     composition.task_container.cache_clear()

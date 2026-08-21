@@ -20,6 +20,7 @@ dist/
 htmlcov/
 node_modules/
 .next/
+frontend/next-env.d.ts
 *.tsbuildinfo
 build/
 coverage/

@@ -27,7 +27,16 @@ Generated exclusions chỉ áp dụng cho `contracts/openapi.yaml` và
 
 ## Commands và gates
 
-- Chạy toàn bộ local gate: `scripts/check_all.sh`.
+- Runtime chuẩn: Python 3.12, Node.js 22, uv và npm (không dùng pnpm/yarn).
+- Cài dependency bất biến: `uv sync --project backend --locked` và
+  `npm --prefix frontend ci`.
+- Chạy toàn bộ local release gate: `scripts/check_all.sh`.
+- Kiểm tra/ghi format frontend: `npm --prefix frontend run format:check` /
+  `npm --prefix frontend run format`.
+- Kiểm tra/ghi format backend: `uv run --project backend ruff format --check backend scripts` /
+  `uv run --project backend ruff format backend scripts`.
+- Django system/deployment checks với giá trị phát triển có phạm vi:
+  `scripts/check_backend.sh`.
 - Migration safety: `uv run --project backend python scripts/migration_check.py check`.
 - Environment isolation: `uv run --project backend python scripts/deployment_check.py isolation`.
 - Recovery verification: `uv run --project backend python backend/manage.py verify_restore`.

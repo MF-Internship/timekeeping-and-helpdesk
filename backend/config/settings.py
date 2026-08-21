@@ -52,7 +52,13 @@ def _cache_configuration(runtime: RuntimeSettings) -> dict[str, dict[str, object
 
 SECRET_KEY = RUNTIME.secret_key
 DEBUG = RUNTIME.debug
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "testserver"]
+ALLOWED_HOSTS = list(RUNTIME.allowed_hosts)
+SECURE_SSL_REDIRECT = RUNTIME.environment is not EnvironmentName.DEVELOPMENT
+CSRF_COOKIE_SECURE = RUNTIME.environment is not EnvironmentName.DEVELOPMENT
+SESSION_COOKIE_SECURE = RUNTIME.environment is not EnvironmentName.DEVELOPMENT
+SECURE_HSTS_SECONDS = 31_536_000 if RUNTIME.environment is EnvironmentName.PRODUCTION else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = RUNTIME.environment is EnvironmentName.PRODUCTION
+SECURE_HSTS_PRELOAD = RUNTIME.environment is EnvironmentName.PRODUCTION
 
 INSTALLED_APPS = [
     "django.contrib.auth",
@@ -70,8 +76,11 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
     "core.middleware.RequestIdentityMiddleware",
     "core.middleware.OriginCredentialMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
@@ -202,14 +211,10 @@ if OUTBOX_RELAY_TRANSPORT not in {"disabled", "logging"}:
 OUTBOX_RELAY_BATCH_SIZE = _positive_int_env("OUTBOX_RELAY_BATCH_SIZE", 100)
 OUTBOX_RELAY_LEASE_SECONDS = _positive_int_env("OUTBOX_RELAY_LEASE_SECONDS", 60)
 OUTBOX_RELAY_MAX_ATTEMPTS = _positive_int_env("OUTBOX_RELAY_MAX_ATTEMPTS", 12)
-OUTBOX_RELAY_BACKOFF_BASE_SECONDS = _positive_int_env(
-    "OUTBOX_RELAY_BACKOFF_BASE_SECONDS", 30
-)
+OUTBOX_RELAY_BACKOFF_BASE_SECONDS = _positive_int_env("OUTBOX_RELAY_BACKOFF_BASE_SECONDS", 30)
 OUTBOX_RELAY_BACKOFF_MAX_SECONDS = _positive_int_env("OUTBOX_RELAY_BACKOFF_MAX_SECONDS", 3600)
 RETENTION_PRUNE_BATCH_SIZE = _positive_int_env("RETENTION_PRUNE_BATCH_SIZE", 500)
-OPERATIONS_HEARTBEAT_STALE_SECONDS = _positive_int_env(
-    "OPERATIONS_HEARTBEAT_STALE_SECONDS", 900
-)
+OPERATIONS_HEARTBEAT_STALE_SECONDS = _positive_int_env("OPERATIONS_HEARTBEAT_STALE_SECONDS", 900)
 
 LANGUAGE_CODE = "vi"
 TIME_ZONE = "Asia/Ho_Chi_Minh"

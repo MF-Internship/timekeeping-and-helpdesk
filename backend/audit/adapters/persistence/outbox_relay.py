@@ -47,8 +47,7 @@ class DjangoOutboxRelayRepository:
                 .filter(publish_state=OutboxPublishState.PENDING.value)
                 .filter(models.Q(next_attempt_at__isnull=True) | models.Q(next_attempt_at__lte=now))
                 .filter(
-                    models.Q(lease_expires_at__isnull=True)
-                    | models.Q(lease_expires_at__lte=now)
+                    models.Q(lease_expires_at__isnull=True) | models.Q(lease_expires_at__lte=now)
                 )
                 .order_by("created_at", "id")[: config.batch_size]
             )

@@ -43,6 +43,16 @@ repos:
         pass_filenames: false
       - id: frontend-static
         name: Frontend static checks
+        entry: npm --prefix frontend run lint
+        language: system
+        pass_filenames: false
+      - id: frontend-format
+        name: Frontend format check
+        entry: npm --prefix frontend run format:check
+        language: system
+        pass_filenames: false
+      - id: frontend-types
+        name: Frontend strict types
         entry: npm --prefix frontend run typecheck
         language: system
         pass_filenames: false

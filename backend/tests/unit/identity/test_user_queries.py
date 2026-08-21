@@ -13,7 +13,7 @@ def test_query_service_forwards_combined_filters_and_offsets_stably() -> None:
     service = UserQueryService(repository)
     result = service.list(UserFilters("worker", Role.HELPDESK, True), PAGE_SIZE, PAGE_SIZE)
     repository.paginate_users.assert_called_once_with(
-        "worker", Role.HELPDESK, True, (PAGE_SIZE, PAGE_SIZE)
+        UserFilters("worker", Role.HELPDESK, True), (PAGE_SIZE, PAGE_SIZE)
     )
     assert result.count == PAGE_SIZE + 1
     assert [item.id for item in result.results] == [PAGE_SIZE + 1]
