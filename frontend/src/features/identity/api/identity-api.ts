@@ -52,7 +52,8 @@ export async function listUsers(query: {
   q?: string;
   role?: string;
   is_active?: boolean;
-  page?: number;
+  offset?: number;
+  limit?: number;
 }) {
   return await unwrap(await apiClient.GET("/api/v1/users/", { params: { query } }));
 }

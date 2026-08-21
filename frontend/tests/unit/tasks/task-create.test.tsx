@@ -24,9 +24,7 @@ describe("Task create form", () => {
       />,
     );
     fillRequired();
-    fireEvent.change(screen.getByLabelText("Nhân viên Helpdesk đang hoạt động"), {
-      target: { value: "2" },
-    });
+    fireEvent.click(screen.getByRole("checkbox", { name: /Helpdesk A/ }));
     fireEvent.change(screen.getByLabelText(/Địa điểm dự kiến/), {
       target: { value: "UBND phường 1" },
     });

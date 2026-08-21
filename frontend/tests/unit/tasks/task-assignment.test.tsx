@@ -25,7 +25,7 @@ describe("Task assignment presentation", () => {
       />,
     );
     expect(screen.getByText("Bỏ Người đã nghỉ")).toBeInTheDocument();
-    expect(screen.getByLabelText("Nhân viên Helpdesk đang hoạt động")).toBeEmptyDOMElement();
+    expect(screen.getByText("Không có Helpdesk đang hoạt động.")).toBeInTheDocument();
     expect(JSON.stringify(task.assignees[0]?.user)).not.toContain("is_active");
   });
 
@@ -57,9 +57,7 @@ describe("Task assignment presentation", () => {
       />,
     );
     fireEvent.click(screen.getByLabelText("Bỏ An"));
-    fireEvent.change(screen.getByLabelText("Nhân viên Helpdesk đang hoạt động"), {
-      target: { value: "8" },
-    });
+    fireEvent.click(screen.getByRole("checkbox", { name: /Người mới/ }));
     fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
     await vi.waitFor(() =>
       expect(update).toHaveBeenCalledWith(expect.objectContaining({ assignee_ids: [8] })),

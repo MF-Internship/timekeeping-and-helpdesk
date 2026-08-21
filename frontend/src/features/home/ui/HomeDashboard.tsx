@@ -9,6 +9,7 @@ import { listTasks, type GroupedTaskList } from "@/features/tasks/api/task-api";
 import { listNotifications } from "@/features/notifications/api/notification-api";
 import { getAttendanceReport, getTaskReport } from "@/features/reports/api/report-api";
 import { getJobHealth } from "@/features/operations/api/job-health-api";
+import { formatMinutes } from "@/shared/formatters/duration";
 import { Card } from "@/shared/ui/card";
 import { ErrorState, SkeletonState } from "@/shared/ui/async-state";
 import { PageHeader, SectionHeader } from "@/shared/ui/typography";
@@ -30,7 +31,7 @@ export function HomeDashboard() {
             label="Chấm công"
             value={attendance.data.has_open_session ? "Đang trong ca" : "Chưa trong ca"}
             href="/attendance"
-            detail={`${attendance.data.total_duration_minutes} phút hợp lệ`}
+            detail={`${formatMinutes(attendance.data.total_duration_minutes)} phút hợp lệ`}
           />
         ) : null}
         {tasks.data ? (

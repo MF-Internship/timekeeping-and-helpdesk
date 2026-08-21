@@ -103,6 +103,46 @@
   display: inline-grid;
   place-items: center;
 }
+.themeLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+.themeOptions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-1);
+  padding: var(--space-1);
+}
+.themeOption {
+  display: grid;
+  grid-template-rows: auto auto;
+  justify-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  min-height: 3.75rem;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  outline: 0;
+}
+.themeOption[data-state="checked"],
+.themeOption:focus {
+  border-color: var(--color-brand-primary);
+  background: hsl(var(--accent));
+  color: var(--color-brand-primary);
+}
+.themeOption .menuIndicator {
+  position: absolute;
+  opacity: 0;
+}
 @media (max-width: 47.99rem) {
   .eyebrow {
     display: none;

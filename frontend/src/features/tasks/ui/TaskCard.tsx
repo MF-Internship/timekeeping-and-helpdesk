@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CalendarDays, MapPin, UsersRound } from "lucide-react";
 
 import { Button } from "@/shared/ui/button";
 import { Card } from "@/shared/ui/card";
@@ -27,7 +28,7 @@ export function TaskCard(props: {
   const busy = props.management.mutation.kind === "submitting";
   const completed = props.task.status === "COMPLETED";
   return (
-    <Card aria-label={props.task.title}>
+    <Card aria-label={props.task.title} className={styles.taskCard}>
       <TaskSummary task={props.task} />
       <Button variant="quiet" onClick={() => props.onDetail(props.task.id)}>
         Xem lịch sử
@@ -102,10 +103,12 @@ function TaskSummary({ task }: { task: TaskItem }) {
       </div>
       <p className={styles.description}>{task.description || "Không có mô tả."}</p>
       <dl className={styles.metadata}>
-        <div>
-          <dt>Ngày giao</dt>
+        <div className={styles.metadataItem}>
+          <dt>
+            <CalendarDays aria-hidden="true" /> Ngày giao
+          </dt>
           <dd>
-            Ngày giao: <time dateTime={task.assigned_date}>{task.assigned_date}</time>
+            <time dateTime={task.assigned_date}>{formatAssignedDate(task.assigned_date)}</time>
           </dd>
         </div>
         {task.overdue_days ? (
@@ -116,19 +119,31 @@ function TaskSummary({ task }: { task: TaskItem }) {
             </dd>
           </div>
         ) : null}
-        <div>
-          <dt>Người được giao</dt>
+        <div className={styles.metadataItem}>
+          <dt>
+            <UsersRound aria-hidden="true" /> Người được giao
+          </dt>
           <dd>{task.assignees.map(({ user }) => user.full_name).join(", ")}</dd>
         </div>
         {task.expected_location ? (
-          <div>
-            <dt>Vị trí dự kiến</dt>
+          <div className={styles.locationMeta}>
+            <dt>
+              <MapPin aria-hidden="true" /> Vị trí dự kiến
+            </dt>
             <dd>{task.expected_location}</dd>
           </div>
         ) : null}
       </dl>
     </header>
   );
+}
+
+function formatAssignedDate(value: string) {
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date(`${value}T00:00:00`));
 }
 const STATUS_META: Record<TaskItem["status"], { label: string; tone: BadgeTone }> = {
   TODO: { label: "Cần làm", tone: "neutral" },

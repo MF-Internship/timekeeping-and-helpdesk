@@ -73,11 +73,13 @@ describe("UserDirectory", () => {
       previous: null,
     });
     render(<UserDirectory />);
-    await waitFor(() => expect(controls.listUsers).toHaveBeenCalledWith({}));
+    await waitFor(() => expect(controls.listUsers).toHaveBeenCalledWith({ offset: 0, limit: 20 }));
     const nextButton = screen.getByRole("button", { name: "Trang sau" });
     await waitFor(() => expect(nextButton).toBeEnabled());
     fireEvent.click(nextButton);
-    await waitFor(() => expect(controls.listUsers).toHaveBeenLastCalledWith({ page: 2 }));
+    await waitFor(() =>
+      expect(controls.listUsers).toHaveBeenLastCalledWith({ offset: 20, limit: 20 }),
+    );
     fireEvent.change(screen.getByLabelText("Tìm kiếm"), { target: { value: "worker" } });
     fireEvent.change(screen.getAllByLabelText("Vai trò")[0], { target: { value: "HELPDESK" } });
     fireEvent.change(screen.getByLabelText("Trạng thái"), { target: { value: "false" } });
@@ -87,9 +89,22 @@ describe("UserDirectory", () => {
         q: "worker",
         role: "HELPDESK",
         is_active: false,
-        page: 1,
+        offset: 0,
+        limit: 20,
       }),
     );
+  });
+
+  it("shows the current page, total pages, and visible account range", async () => {
+    controls.listUsers.mockResolvedValue({
+      count: 45,
+      results: [worker],
+      next: "/api/v1/users/?offset=20",
+      previous: null,
+    });
+    render(<UserDirectory />);
+    expect(await screen.findByText("Trang 1", { exact: false })).toHaveTextContent("/ 3");
+    expect(screen.getByText("Hiển thị 1–20 trong 45 tài khoản")).toBeInTheDocument();
   });
 
   it("uses distinct mutations and hands generated reset plaintext only to the dialog", async () => {

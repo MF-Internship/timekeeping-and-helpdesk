@@ -3090,7 +3090,10 @@ export interface operations {
     parameters: {
       query?: {
         is_active?: boolean;
-        page?: number;
+        /** @description Số bản ghi, tối đa 100. */
+        limit?: number;
+        /** @description Vị trí bắt đầu, từ 0. */
+        offset?: number;
         q?: string;
         role?: string;
       };

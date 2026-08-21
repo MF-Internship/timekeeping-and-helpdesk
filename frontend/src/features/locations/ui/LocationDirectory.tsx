@@ -183,7 +183,7 @@ function LocationEditForm({ draft, busy, onChange, onCancel, onSubmit }: EditPro
             onChange={(event) => text("radius_m", event.target.value)}
           />
         </label>
-        <label className="checkbox">
+        <label className={styles.compactCheckbox}>
           <Input
             type="checkbox"
             checked={draft.is_active}

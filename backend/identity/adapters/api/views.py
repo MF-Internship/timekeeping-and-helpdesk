@@ -43,7 +43,7 @@ from identity.adapters.api.throttles import (
 )
 from identity.application.container import IdentityContainer
 from identity.application.dto import PasswordChangeRequest, ProfileUpdateRequest, UserCreateRequest
-from identity.application.queries import PAGE_SIZE, UserFilters, UserPage
+from identity.application.queries import MAX_PAGE_SIZE, PAGE_SIZE, UserFilters, UserPage
 from identity.domain.authorization import PermissionAction, Role
 
 REFRESH_COOKIE = "refresh_token"
@@ -104,39 +104,62 @@ def _target_id(raw_user_id: str) -> int:
     return user_id
 
 
-def _user_filters(request: Request) -> tuple[UserFilters, int]:
+def _user_filters(request: Request) -> tuple[UserFilters, int, int]:
     role_raw = request.query_params.get("role")
     active_raw = request.query_params.get("is_active")
+    if "page" in request.query_params:
+        raise IdentityAPIError(
+            VALIDATION_FAILED,
+            status_code=400,
+            details={"page": ["Hãy sử dụng offset và limit."]},
+        )
     try:
         role = None if role_raw is None else Role(role_raw)
         active = None if active_raw is None else {"true": True, "false": False}[active_raw.lower()]
-        page = int(request.query_params.get("page", "1"))
+        offset = int(request.query_params.get("offset", "0"))
+        limit = int(request.query_params.get("limit", str(PAGE_SIZE)))
     except (ValueError, KeyError) as error:
         field = (
-            "page" if request.query_params.get("page") else ("role" if role_raw else "is_active")
+            "offset"
+            if request.query_params.get("offset")
+            else (
+                "limit"
+                if request.query_params.get("limit")
+                else ("role" if role_raw else "is_active")
+            )
         )
         raise IdentityAPIError(
             VALIDATION_FAILED,
             status_code=400,
             details={field: ["Giá trị không hợp lệ."]},
         ) from error
-    return UserFilters(request.query_params.get("q"), role, active), page
+    if offset < 0 or limit < 1 or limit > MAX_PAGE_SIZE:
+        raise IdentityAPIError(
+            VALIDATION_FAILED,
+            status_code=400,
+            details={"pagination": ["Offset hoặc limit không hợp lệ."]},
+        )
+    return UserFilters(request.query_params.get("q"), role, active), offset, limit
 
 
 def _user_page_response(request: Request, result: UserPage) -> Response:
-    pages = (result.count + PAGE_SIZE - 1) // PAGE_SIZE
     payload = {
         "count": result.count,
-        "next": _page_link(request, result.page + 1) if result.page < pages else None,
-        "previous": _page_link(request, result.page - 1) if result.page > 1 else None,
+        "next": _offset_link(request, result.offset + result.limit)
+        if result.offset + result.limit < result.count
+        else None,
+        "previous": _offset_link(request, max(0, result.offset - result.limit))
+        if result.offset > 0
+        else None,
         "results": [admin_user(item) for item in result.results],
     }
     return _no_store(Response(payload))
 
 
-def _page_link(request: Request, page: int) -> str:
+def _offset_link(request: Request, offset: int) -> str:
     query = request.query_params.copy()
-    query["page"] = str(page)
+    query["offset"] = str(offset)
+    query["limit"] = query.get("limit", str(PAGE_SIZE))
     return f"{request.path}?{query.urlencode()}"
 
 
@@ -312,7 +335,8 @@ class UserListCreateView(IdentityView):
             OpenApiParameter("q", str, required=False),
             OpenApiParameter("role", str, required=False),
             OpenApiParameter("is_active", bool, required=False),
-            OpenApiParameter("page", int, required=False),
+            OpenApiParameter("offset", int, required=False, description="Vị trí bắt đầu, từ 0."),
+            OpenApiParameter("limit", int, required=False, description="Số bản ghi, tối đa 100."),
         ],
         responses={
             200: UserPageSerializer,
@@ -323,13 +347,13 @@ class UserListCreateView(IdentityView):
     )
     def get(self, request: Request) -> Response:
         try:
-            filters, page = _user_filters(request)
-            result = self.container().queries.list(filters, page)
+            filters, offset, limit = _user_filters(request)
+            result = self.container().queries.list(filters, offset, limit)
         except ValueError as error:
             raise IdentityAPIError(
                 VALIDATION_FAILED,
                 status_code=400,
-                details={"page": ["Giá trị không hợp lệ."]},
+                details={"pagination": ["Offset hoặc limit không hợp lệ."]},
             ) from error
         return _user_page_response(request, result)
 
