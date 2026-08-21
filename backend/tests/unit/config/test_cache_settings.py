@@ -19,6 +19,7 @@ def runtime_environment(**overrides: str) -> dict[str, str]:
     environment_name = overrides.get("APP_ENV", "development")
     values = {
         "APP_ENV": environment_name,
+        "DJANGO_ALLOWED_HOSTS": "api.example.invalid",
         "DATABASE_URL": "postgresql://runtime:password@db.invalid/app",
         "DJANGO_SECRET_KEY": "safe-test-value",
         "DJANGO_DEBUG": "false",

@@ -3,4 +3,7 @@ node_modules/
 dist/
 build/
 coverage/
+playwright-report/
+test-results/
 package-lock.json
+next-env.d.ts

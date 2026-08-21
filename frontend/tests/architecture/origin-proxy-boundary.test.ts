@@ -3,7 +3,7 @@ import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import nextConfig, { API_PROXY_SOURCE, API_PROXY_TRAILING_SOURCE } from "../../next.config";
-import { buildOriginHeaders, config } from "@/middleware";
+import { buildOriginHeaders, config } from "@/proxy";
 
 /**
  * Every browser-side feature module. The proxy is only a boundary if nothing

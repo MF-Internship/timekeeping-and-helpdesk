@@ -25,8 +25,10 @@ uv run --project backend pytest -m postgres backend/tests/integration/postgres
 uv run --project backend python scripts/generate_openapi.py --check
 uv run --project backend python scripts/check_openapi.py --all
 uv run --project backend python scripts/check_contract_drift.py
+uv run --project backend python backend/manage.py makemigrations --check --dry-run --settings=tests.settings
 uv run --project backend python scripts/migration_check.py check
 uv run --project backend python scripts/deployment_check.py isolation
+scripts/check_backend.sh
 scripts/check_openapi_compatibility.sh
 npm --prefix frontend run api:check
 npm --prefix frontend run format:check

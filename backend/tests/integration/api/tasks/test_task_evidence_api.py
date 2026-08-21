@@ -96,7 +96,5 @@ def test_invalid_coordinate_precision_returns_redacted_400_not_500() -> None:
 
     assert response.status_code == 400
     assert response.json()["error_code"] == "VALIDATION_FAILED"
-    assert response.json()["details"] == {
-        "fields": ["Giá trị đầu vào được bảo vệ không hợp lệ."]
-    }
+    assert response.json()["details"] == {"fields": ["Giá trị đầu vào được bảo vệ không hợp lệ."]}
     assert "latitude" not in str(response.json())

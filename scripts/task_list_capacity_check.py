@@ -78,7 +78,8 @@ def _seed_users(run_id: str) -> tuple[User, tuple[User, ...]]:
 def _seed_task_history(manager: User, users: tuple[User, ...], today: date) -> None:
     completed_at = timezone.now()
     tasks = tuple(
-        _task_for_group(index, manager, today, completed_at) for index in range(TASK_COUNT)
+        _task_for_group(index, manager, today, completed_at)
+        for index in range(TASK_COUNT)
     )
     created = tuple(Task.objects.bulk_create(tasks))
     TaskAssignee.objects.bulk_create(
@@ -92,7 +93,9 @@ def _seed_task_history(manager: User, users: tuple[User, ...], today: date) -> N
     )
 
 
-def _task_for_group(index: int, manager: User, today: date, completed_at: datetime) -> Task:
+def _task_for_group(
+    index: int, manager: User, today: date, completed_at: datetime
+) -> Task:
     group = index % 4
     assigned_dates = (
         today - timedelta(days=7),

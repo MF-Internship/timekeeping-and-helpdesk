@@ -109,3 +109,12 @@ The source-owned UI layer uses `@radix-ui/react-slot`, `class-variance-authority
 styling pipeline, and test runner. Private task evidence uses `django-storages`
 for the S3-compatible adapter; storage credentials and object keys remain
 server-owned.
+
+### Feature 015 UI modernization dependencies
+
+Focused accessible primitives use `@radix-ui/react-dialog`,
+`@radix-ui/react-dropdown-menu`, `@radix-ui/react-tabs`, and
+`@radix-ui/react-tooltip`. `next-themes` owns Light/Dark/System preference and
+hydration-safe application, while `recharts` renders only the approved
+categorical report visualizations. These packages remain presentation-only and
+do not own authorization, business state, formulas, or API transport.

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import cast
+from typing import Never, cast
 
 from django.db import IntegrityError
 from django.http import Http404
@@ -108,38 +108,37 @@ def _user_filters(request: Request) -> tuple[UserFilters, int, int]:
     role_raw = request.query_params.get("role")
     active_raw = request.query_params.get("is_active")
     if "page" in request.query_params:
-        raise IdentityAPIError(
-            VALIDATION_FAILED,
-            status_code=400,
-            details={"page": ["Hãy sử dụng offset và limit."]},
-        )
+        _raise_invalid_filter("page", "Hãy sử dụng offset và limit.")
     try:
         role = None if role_raw is None else Role(role_raw)
         active = None if active_raw is None else {"true": True, "false": False}[active_raw.lower()]
         offset = int(request.query_params.get("offset", "0"))
         limit = int(request.query_params.get("limit", str(PAGE_SIZE)))
     except (ValueError, KeyError) as error:
-        field = (
-            "offset"
-            if request.query_params.get("offset")
-            else (
-                "limit"
-                if request.query_params.get("limit")
-                else ("role" if role_raw else "is_active")
-            )
-        )
-        raise IdentityAPIError(
-            VALIDATION_FAILED,
-            status_code=400,
-            details={field: ["Giá trị không hợp lệ."]},
-        ) from error
+        field = _invalid_filter_field(request, role_raw)
+        _raise_invalid_filter(field, "Giá trị không hợp lệ.", cause=error)
     if offset < 0 or limit < 1 or limit > MAX_PAGE_SIZE:
-        raise IdentityAPIError(
-            VALIDATION_FAILED,
-            status_code=400,
-            details={"pagination": ["Offset hoặc limit không hợp lệ."]},
-        )
+        _raise_invalid_filter("pagination", "Offset hoặc limit không hợp lệ.")
     return UserFilters(request.query_params.get("q"), role, active), offset, limit
+
+
+def _invalid_filter_field(request: Request, role_raw: str | None) -> str:
+    if request.query_params.get("offset"):
+        return "offset"
+    if request.query_params.get("limit"):
+        return "limit"
+    return "role" if role_raw else "is_active"
+
+
+def _raise_invalid_filter(field: str, message: str, *, cause: Exception | None = None) -> Never:
+    error = IdentityAPIError(
+        VALIDATION_FAILED,
+        status_code=400,
+        details={field: [message]},
+    )
+    if cause is not None:
+        raise error from cause
+    raise error
 
 
 def _user_page_response(request: Request, result: UserPage) -> Response:

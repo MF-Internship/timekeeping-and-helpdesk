@@ -15,4 +15,3 @@ class ReportingPermission(BasePermission):
             raise IdentityAPIError(INVALID_TOKEN, status_code=401)
         view.check_permission(int(user.pk))
         return True
-

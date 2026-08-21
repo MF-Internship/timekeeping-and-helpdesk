@@ -14,8 +14,8 @@ from attendance.application.container import AttendanceContainer
 from attendance.application.dependencies import AttendanceDependencies
 from attendance.application.queries import AttendanceQueryService
 from attendance.application.reconciliation import ReconciliationDependencies, ReconciliationService
-from audit.adapters.persistence.recording import DjangoAuditRecorder
 from audit.adapters.persistence.outbox_relay import DjangoOutboxRelayRepository
+from audit.adapters.persistence.recording import DjangoAuditRecorder
 from audit.application.relay import OutboxRelayService
 from audit.domain.relay import RelayConfig
 from config.attendance_adapters import DjangoAttendanceAuthorization, DjangoAttendanceReferenceData
@@ -77,8 +77,8 @@ from notifications.adapters.security.subscription_cipher import FernetSubscripti
 from notifications.adapters.web_push import WebPushTransport
 from notifications.application.container import NotificationContainer, build_notification_container
 from notifications.application.dependencies import NotificationDependencies
-from operations.adapters.persistence.job_runs import DjangoJobRunRepository
 from operations.adapters.outbox import LoggingOutboxAlertSink, transport_from_name
+from operations.adapters.persistence.job_runs import DjangoJobRunRepository
 from operations.application.container import OperationsContainer
 from operations.application.dependencies import JobHealthDependencies
 from operations.application.job_health import JobHealthService

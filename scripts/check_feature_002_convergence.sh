@@ -7,24 +7,43 @@ cd "$repo_root"
 export ORIGIN_CREDENTIAL_HEADER="X-Origin-Credential"
 export ORIGIN_CREDENTIAL="test-origin-credential-at-least-32-chars"
 
-uv run --project backend pytest -q \
-  backend/tests/unit/identity/test_authentication_services.py \
-  backend/tests/unit/identity/test_self_service.py \
-  backend/tests/unit/identity/test_user_admin.py \
-  backend/tests/unit/identity/test_throttles.py \
-  backend/tests/contract/identity/test_api_contract.py
+case "$mode" in
+  --all|--fast)
+    run_backend=true
+    run_frontend=true
+    ;;
+  --backend)
+    run_backend=true
+    run_frontend=false
+    ;;
+  --frontend)
+    run_backend=false
+    run_frontend=true
+    ;;
+  *)
+    echo "usage: scripts/check_feature_002_convergence.sh [--fast|--all|--backend|--frontend]" >&2
+    exit 2
+    ;;
+esac
 
-npm --prefix frontend run test -- --run \
-  tests/unit/errors/api-error.test.ts \
-  tests/unit/messages.test.ts \
-  tests/unit/identity/auth-forms.test.tsx
-
-if [[ "$mode" == "--fast" ]]; then
-  exit 0
+if [[ "$run_backend" == true ]]; then
+  uv run --project backend pytest -q \
+    backend/tests/unit/identity/test_authentication_services.py \
+    backend/tests/unit/identity/test_self_service.py \
+    backend/tests/unit/identity/test_user_admin.py \
+    backend/tests/unit/identity/test_throttles.py \
+    backend/tests/contract/identity/test_api_contract.py
 fi
-if [[ "$mode" != "--all" ]]; then
-  echo "usage: scripts/check_feature_002_convergence.sh [--fast|--all]" >&2
-  exit 2
+
+if [[ "$run_frontend" == true ]]; then
+  npm --prefix frontend run test -- --run \
+    tests/unit/errors/api-error.test.ts \
+    tests/unit/messages.test.ts \
+    tests/unit/identity/auth-forms.test.tsx
+fi
+
+if [[ "$mode" == "--fast" || "$mode" == "--frontend" ]]; then
+  exit 0
 fi
 
 uv run --project backend pytest -q \

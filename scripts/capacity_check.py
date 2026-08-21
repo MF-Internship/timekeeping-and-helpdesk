@@ -148,14 +148,11 @@ class HttpSampleResource:
             self._parsed.port,
             timeout=self.timeout_seconds,
         )
-        path = self._parsed.path or "/"
-        if self._parsed.query:
-            path = f"{path}?{self._parsed.query}"
         started = time.perf_counter()
         try:
             connection.request(
                 "GET",
-                path,
+                self._request_path(),
                 headers={
                     "Accept": "application/json",
                     "Authorization": f"Bearer {bearer_token}",
@@ -168,6 +165,10 @@ class HttpSampleResource:
             return (time.perf_counter() - started) * 1000
         finally:
             connection.close()
+
+    def _request_path(self) -> str:
+        path = self._parsed.path or "/"
+        return f"{path}?{self._parsed.query}" if self._parsed.query else path
 
     def close(self) -> None:
         return None

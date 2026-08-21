@@ -19,7 +19,14 @@ export type DraftSaveResult = { kind: "saved" } | { kind: "quota" | "unavailable
 
 const PREFIX = "task-evidence-draft:";
 const MARKER_PREFIX = "task-evidence-draft-marker:";
-const RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+const RETENTION_DAYS = 7;
+const HOURS_PER_DAY = 24;
+const MINUTES_PER_HOUR = 60;
+const SECONDS_PER_MINUTE = 60;
+const MILLISECONDS_PER_SECOND = 1000;
+const MAX_DRAFT_PHOTOS = 5;
+const RETENTION_MS =
+  RETENTION_DAYS * HOURS_PER_DAY * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * MILLISECONDS_PER_SECOND;
 
 function key(accountId: number, taskId: number) {
   return `${PREFIX}${accountId}:${taskId}`;
@@ -113,7 +120,7 @@ function removeMatching(storage: Storage, prefix: string) {
 function validPhotos(value: unknown): value is EvidenceDraftPhoto[] {
   return (
     Array.isArray(value) &&
-    value.length <= 5 &&
+    value.length <= MAX_DRAFT_PHOTOS &&
     value.every(
       (photo) =>
         typeof photo === "object" &&

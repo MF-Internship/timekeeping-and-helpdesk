@@ -20,4 +20,3 @@ describe("report API", () => {
     });
   });
 });
-

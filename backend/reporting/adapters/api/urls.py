@@ -28,4 +28,3 @@ def reporting_urlpatterns(
         ),
         path("reports/tasks/export/", TaskExportView.as_view(), name="task-report-export"),
     ]
-
