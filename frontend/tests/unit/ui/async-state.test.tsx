@@ -28,6 +28,7 @@ describe("AsyncState", () => {
       />,
     );
     expect(screen.getByRole("alert")).toHaveTextContent("Dữ liệu không hợp lệ.");
+    fireEvent.click(screen.getByText("Thông tin hỗ trợ"));
     expect(screen.getByText(/00000000-0000-4000-8000-000000000000/)).toBeVisible();
   });
 

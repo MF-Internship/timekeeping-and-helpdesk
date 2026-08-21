@@ -15,6 +15,7 @@ import { buildOriginHeaders, config } from "@/middleware";
 const CLIENT_MODULES = [
   "src/features/attendance",
   "src/features/guidance",
+  "src/features/home",
   "src/features/identity",
   "src/features/locations",
   "src/features/notifications",

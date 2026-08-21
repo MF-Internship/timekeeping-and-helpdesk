@@ -6,11 +6,12 @@ import type { ReactNode } from "react";
 import { useAuth } from "@/features/identity/model/AuthProvider";
 
 import { AppHeader } from "./AppHeader";
-import { employeeNavigation } from "./employee-navigation";
+import { applicationNavigation } from "./navigation";
 import { PrimaryNavigation } from "./PrimaryNavigation";
 import styles from "./AppShell.module.css";
 
 const PAGE_TITLES: Record<string, string> = {
+  "/": "Trang chủ",
   "/notifications": "Thông báo",
   "/tasks": "Quản lý công việc",
   "/attendance": "Chấm công",
@@ -20,11 +21,13 @@ const PAGE_TITLES: Record<string, string> = {
   "/config": "Cấu hình vận hành",
   "/operations/job-health": "Sức khỏe đối soát",
   "/change-password": "Đổi mật khẩu",
+  "/account": "Tài khoản",
+  "/reports": "Báo cáo",
 };
 export function AppShell({ title, children }: { title?: string; children: ReactNode }) {
   const pathname = usePathname();
   const auth = useAuth();
-  const items = employeeNavigation(auth.hasCapability);
+  const items = applicationNavigation(auth.hasCapability);
   return (
     <div className={styles.shell}>
       <AppHeader

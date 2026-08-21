@@ -1,26 +1,76 @@
-.intro {
+.intro,
+.sectionHeader {
   display: grid;
   gap: var(--space-2);
   min-width: 0;
-  margin-bottom: var(--space-5);
+  margin: 0 0 var(--space-5);
 }
 .intro p,
-.intro h2 {
+.intro h2,
+.sectionHeader p,
+.sectionHeader h3 {
   margin: 0;
 }
 .eyebrow {
   color: var(--color-brand-primary);
   font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
-.title {
-  font-size: clamp(1.45rem, 3vw, 2rem);
+.pageTitle {
+  font-size: 1.75rem;
   line-height: 1.2;
-  letter-spacing: -0.02em;
+  font-weight: 750;
+  letter-spacing: 0;
+}
+.sectionTitle {
+  font-size: 1.125rem;
+  line-height: 1.35;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.cardTitle {
+  font-size: 1rem;
+  line-height: 1.35;
+  font-weight: 700;
+  letter-spacing: 0;
 }
 .description {
   color: var(--color-text-secondary);
-  line-height: 1.6;
+  line-height: 1.55;
+}
+.body {
+  color: var(--color-text-primary);
+  line-height: 1.55;
+}
+.label {
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+.caption {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+.metric {
+  color: var(--color-text-primary);
+  font-size: 1.75rem;
+  font-weight: 750;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.warning {
+  color: var(--color-critical);
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+@media (max-width: 30rem) {
+  .pageTitle {
+    font-size: 1.5rem;
+  }
+  .metric {
+    font-size: 1.5rem;
+  }
 }

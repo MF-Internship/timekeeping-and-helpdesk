@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { AppHeader } from "@/shared/ui/shell/AppHeader";
@@ -6,27 +6,34 @@ import { AppHeader } from "@/shared/ui/shell/AppHeader";
 const logout = vi.fn();
 vi.mock("@/features/identity/model/AuthProvider", () => ({
   useAuth: () => ({
-    state: { kind: "authenticated", account: { full_name: "Nguyễn Văn An", username: "an" } },
+    state: {
+      kind: "authenticated",
+      account: {
+        id: 1,
+        full_name: "Nguyễn Văn An",
+        username: "an",
+        role: "HELPDESK",
+        capabilities: [],
+        phone: null,
+        email: null,
+        is_active: true,
+        must_change_password: false,
+      },
+    },
     logout,
   }),
 }));
 
 describe("AppHeader", () => {
-  it("shows title, approved brand, identity, initials, and existing account actions", () => {
+  it("shows the current page, approved brand, theme control, and compact account trigger", () => {
     render(<AppHeader title="Chấm công" />);
     expect(screen.getByRole("heading", { name: "Chấm công", level: 1 })).toBeVisible();
     expect(screen.getByRole("img", { name: "MobiFone" })).toBeVisible();
     expect(screen.getByText("VA")).toHaveAttribute("aria-hidden", "true");
-    expect(screen.getByRole("link", { name: "Tài khoản của Nguyễn Văn An" })).toHaveAttribute(
-      "href",
-      "/change-password",
-    );
-    expect(screen.getByRole("link", { name: "Đổi mật khẩu" })).toHaveAttribute(
-      "href",
-      "/change-password",
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Đăng xuất" }));
-    expect(logout).toHaveBeenCalledOnce();
+    expect(screen.getByRole("combobox", { name: "Giao diện" })).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Mở menu tài khoản của Nguyễn Văn An" }),
+    ).toHaveAttribute("aria-haspopup", "menu");
   });
 
   it("supports an explicit labelled back action", () => {

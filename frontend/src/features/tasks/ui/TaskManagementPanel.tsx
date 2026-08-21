@@ -49,7 +49,6 @@ export function TaskManagementPanel() {
   return (
     <section className={styles.panel}>
       <PageIntro
-        eyebrow="Feature 007"
         title={UI_MESSAGES.tasks.title}
         description="Theo dõi tiến độ, cập nhật trạng thái và nộp minh chứng hoàn thành tại hiện trường."
       />

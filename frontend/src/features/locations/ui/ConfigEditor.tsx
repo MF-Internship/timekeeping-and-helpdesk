@@ -14,6 +14,7 @@ import {
 import { warningText } from "@/features/locations/model/location-editor";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/form";
+import styles from "./Administration.module.css";
 
 const WEEKDAYS = ["Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật"];
 const METERS = [
@@ -32,24 +33,46 @@ const GRACES = [
 function ConfigSummary({ config }: { config: ConfigValue }) {
   const days = config.working_weekdays.map((day) => WEEKDAYS[day]).join(", ");
   return (
-    <div className="summary-card">
-      <p>Múi giờ: {config.timezone}</p>
-      <p>Ngày làm việc: {days}</p>
-      <p>
-        Bán kính mặc định/tối đa: {config.default_radius_m}/{config.max_radius_m} m
-      </p>
-      <p>
-        Ca làm: {config.shift_start}–{config.shift_end}
-      </p>
-      <p>Độ chính xác chấm công: {config.max_attendance_accuracy_m} m</p>
-      <p>
-        Ngưỡng GPS Task tốt/thấp: {config.task_gps_good_accuracy_m}/{config.task_gps_low_accuracy_m}{" "}
-        m
-      </p>
-      <p>
-        Đi muộn/về sớm/checkout muộn: {config.late_grace_minutes}/
-        {config.early_checkout_grace_minutes}/{config.late_checkout_grace_minutes} phút
-      </p>
+    <div className={styles.summary} aria-label="Tóm tắt cấu hình">
+      <div className={styles.summaryItem}>
+        <span>Ca làm việc</span>
+        <strong>
+          {config.shift_start} - {config.shift_end}
+        </strong>
+        <span>{days}</span>
+      </div>
+      <div className={styles.summaryItem}>
+        <span>Chấm công</span>
+        <strong>{config.max_attendance_accuracy_m} m</strong>
+        <span>Độ chính xác GPS tối đa</span>
+      </div>
+      <div className={styles.summaryItem}>
+        <span>Vùng địa điểm</span>
+        <strong>
+          {config.default_radius_m} - {config.max_radius_m} m
+        </strong>
+        <span>Bán kính mặc định và tối đa</span>
+      </div>
+      <div className={styles.summaryItem}>
+        <span>Múi giờ</span>
+        <strong>{config.timezone}</strong>
+        <span>Áp dụng toàn hệ thống</span>
+      </div>
+      <div className={styles.summaryItem}>
+        <span>GPS công việc</span>
+        <strong>
+          {config.task_gps_good_accuracy_m}/{config.task_gps_low_accuracy_m} m
+        </strong>
+        <span>Ngưỡng chất lượng tốt và thấp</span>
+      </div>
+      <div className={styles.summaryItem}>
+        <span>Khoảng linh hoạt</span>
+        <strong>
+          {config.late_grace_minutes}/{config.early_checkout_grace_minutes}/
+          {config.late_checkout_grace_minutes} phút
+        </strong>
+        <span>Đi muộn, về sớm và Check Out muộn</span>
+      </div>
     </div>
   );
 }
@@ -135,28 +158,38 @@ function ConfigForm({ draft, errors, busy, onChange, onSubmit, onReset }: FormPr
         : [...draft.working_weekdays, day].sort(),
     });
   return (
-    <form className="editor-card" onSubmit={onSubmit}>
-      <h2>Chỉnh sửa cấu hình</h2>
-      <fieldset>
-        <legend>Ngày làm việc</legend>
-        <div className="weekday-grid">
-          {WEEKDAYS.map((label, day) => (
-            <label className="checkbox" key={label}>
-              <Input
-                type="checkbox"
-                checked={draft.working_weekdays.includes(day)}
-                onChange={() => toggleDay(day)}
-              />
-              {label}
-            </label>
-          ))}
-        </div>
-        {errors.working_weekdays && <small role="alert">{errors.working_weekdays}</small>}
-      </fieldset>
-      <div className="form-grid">
-        <MeterFields draft={draft} errors={errors} onText={text} />
-        <ShiftFields draft={draft} errors={errors} onText={text} />
-        <GraceFields draft={draft} errors={errors} onText={text} />
+    <form className={styles.editor} onSubmit={onSubmit}>
+      <h2>Thiết lập vận hành</h2>
+      <div className={styles.formSections}>
+        <fieldset>
+          <legend>Ngày làm việc</legend>
+          <div className="weekday-grid">
+            {WEEKDAYS.map((label, day) => (
+              <label className="checkbox" key={label}>
+                <Input
+                  type="checkbox"
+                  checked={draft.working_weekdays.includes(day)}
+                  onChange={() => toggleDay(day)}
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+          {errors.working_weekdays && <small role="alert">{errors.working_weekdays}</small>}
+        </fieldset>
+        <fieldset>
+          <legend>GPS và vị trí</legend>
+          <div className={styles.fieldGrid}>
+            <MeterFields draft={draft} errors={errors} onText={text} />
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Ca làm việc</legend>
+          <div className={styles.fieldGrid}>
+            <ShiftFields draft={draft} errors={errors} onText={text} />
+            <GraceFields draft={draft} errors={errors} onText={text} />
+          </div>
+        </fieldset>
       </div>
       {errors.non_field_errors && <p role="alert">{errors.non_field_errors}</p>}
       <div className="actions">
@@ -179,9 +212,13 @@ type ContentProps = FormProps & {
 
 function ConfigContent(props: ContentProps) {
   return (
-    <section>
+    <section className={styles.surface}>
       <ConfigSummary config={props.config} />
-      {props.notice && <p role={props.notice.alert ? "alert" : "status"}>{props.notice.text}</p>}
+      {props.notice && (
+        <p className={styles.notice} role={props.notice.alert ? "alert" : "status"}>
+          {props.notice.text}
+        </p>
+      )}
       {props.canManage && <ConfigForm {...props} />}
     </section>
   );

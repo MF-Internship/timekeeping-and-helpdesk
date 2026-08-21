@@ -35,6 +35,26 @@ describe("semantic design tokens", () => {
     }
   });
 
+  it("defines light and dark shadcn semantic and chart tokens", () => {
+    const source = readFileSync(TOKENS, "utf8");
+    expect(source).toContain(".dark");
+    for (const token of [
+      "background",
+      "foreground",
+      "card",
+      "muted",
+      "primary",
+      "destructive",
+      "success",
+      "warning",
+      "chart-1",
+      "chart-5",
+      "radius",
+    ]) {
+      expect(source).toContain(`--${token}:`);
+    }
+  });
+
   it("keeps raw hexadecimal colors out of component styles", () => {
     const offenders = ROOTS.flatMap(styles).filter((file) =>
       /#[0-9a-f]{3,8}\b/i.test(readFileSync(file, "utf8")),

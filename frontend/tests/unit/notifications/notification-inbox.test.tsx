@@ -34,7 +34,7 @@ import { NotificationInbox } from "@/features/notifications/ui/NotificationInbox
 describe("notification inbox", () => {
   it("shows server unread state and never marks read when opening", () => {
     render(<NotificationInbox />);
-    expect(screen.getByText("1 chưa đọc")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /chưa đọc 1/i })).toBeInTheDocument();
     const open = screen.getByRole("link", { name: "Mở đích đến an toàn" });
     open.addEventListener("click", (event) => event.preventDefault());
     fireEvent.click(open);

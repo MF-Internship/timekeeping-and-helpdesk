@@ -11,6 +11,9 @@ const state = vi.hoisted(() => ({
 }));
 
 vi.mock("@/features/reports/model/report-state", () => ({ useReports: () => state }));
+vi.mock("@/features/identity/model/AuthProvider", () => ({
+  useAuth: () => ({ hasCapability: () => true }),
+}));
 
 import { ReportsPanel } from "@/features/reports/ui/ReportsPanel";
 
