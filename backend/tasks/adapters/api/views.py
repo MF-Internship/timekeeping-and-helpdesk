@@ -147,8 +147,10 @@ class TaskListCreateView(TaskView):
         serializer.is_valid(raise_exception=True)
         values = serializer.validated_data
         command = CreateTaskCommand(
-            actor_id=_actor_id(request), title=values["title"],
-            description=values.get("description", ""), assigned_date=values["assigned_date"],
+            actor_id=_actor_id(request),
+            title=values["title"],
+            description=values.get("description", ""),
+            assigned_date=values["assigned_date"],
             location_id=values.get("location_id"),
             assignee_ids=tuple(values.get("assignee_ids", ())),
             expected_location=values.get("expected_location", ""),
@@ -197,9 +199,12 @@ class TaskDetailView(TaskView):
         serializer.is_valid(raise_exception=True)
         values = serializer.validated_data
         command = UpdateTaskCommand(
-            actor_id=_actor_id(request), task_id=_task_id(task_id),
-            title=values.get("title"), description=values.get("description"),
-            location_id=values.get("location_id"), replace_location="location_id" in values,
+            actor_id=_actor_id(request),
+            task_id=_task_id(task_id),
+            title=values.get("title"),
+            description=values.get("description"),
+            location_id=values.get("location_id"),
+            replace_location="location_id" in values,
             assignee_ids=(tuple(values["assignee_ids"]) if "assignee_ids" in values else None),
             expected_location=values.get("expected_location"),
             replace_expected_location="expected_location" in values,

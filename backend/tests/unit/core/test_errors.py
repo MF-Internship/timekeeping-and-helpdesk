@@ -93,7 +93,5 @@ def test_protected_validation_details_are_redacted_before_envelope_validation() 
         "VALIDATION_FAILED", "00000000-0000-4000-8000-000000000000", details
     )
 
-    assert payload["details"] == {
-        "fields": ["Giá trị đầu vào được bảo vệ không hợp lệ."]
-    }
+    assert payload["details"] == {"fields": ["Giá trị đầu vào được bảo vệ không hợp lệ."]}
     assert "latitude" not in str(payload)

@@ -19,6 +19,7 @@ def valid_environment(**overrides: str) -> dict[str, str]:
     environment = overrides.get("APP_ENV", "development")
     values = {
         "APP_ENV": environment,
+        "DJANGO_ALLOWED_HOSTS": "api.example.invalid",
         "DATABASE_URL": "postgresql://runtime:password@db.invalid/app",
         "DJANGO_SECRET_KEY": "safe-test-value",
         "DJANGO_DEBUG": "false",
@@ -54,6 +55,13 @@ def test_loads_typed_development_settings() -> None:
 def test_rejects_unknown_or_empty_environment_name(name: str) -> None:
     with pytest.raises(ConfigurationError, match="APP_ENV"):
         load_runtime_settings(valid_environment(APP_ENV=name))
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("value", ["", "UNRESOLVED", "*", "https://api.example.invalid"])
+def test_non_development_rejects_unresolved_or_unsafe_allowed_hosts(value: str) -> None:
+    with pytest.raises(ConfigurationError, match="DJANGO_ALLOWED_HOSTS"):
+        load_runtime_settings(valid_environment(APP_ENV="production", DJANGO_ALLOWED_HOSTS=value))
 
 
 @pytest.mark.unit

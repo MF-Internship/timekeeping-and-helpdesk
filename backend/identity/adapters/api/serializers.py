@@ -38,7 +38,7 @@ class EmptySerializer(StrictInputSerializer):
 
 class RuntimeRoleField(serializers.CharField):
     def to_internal_value(self, data: Any) -> str:
-        value = cast(str, super().to_internal_value(data))
+        value = super().to_internal_value(data)
         try:
             Role(value)
         except ValueError as error:

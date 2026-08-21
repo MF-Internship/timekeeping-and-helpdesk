@@ -94,6 +94,68 @@ Expected:
 - no payload, URL, token, credential, or GPS-sensitive value appears in logs/provider previews.
 Status: PENDING
 
+## Feature 016 Production Release Prerequisites
+
+## REL-016-01
+
+- **Feature**: 016
+- **Reason**: A real production deployment requires approved hosting and provisioned secrets; CI validation cannot supply or prove them.
+- **Environment**: Approved production hosting environment
+- **Prerequisites**: Hosting account, production database/cache, secret store, service identities, and approved release authorization
+- **Steps**: Provision secrets outside source control; deploy the approved release artifact; run the production smoke and isolation checks without printing credentials.
+- **Expected result**: The application starts fail-closed, uses only production services, exposes no secret, and passes the approved smoke checklist.
+- **Status**: PENDING
+
+## REL-016-02
+
+- **Feature**: 016
+- **Reason**: DNS, TLS, ingress, and cloud network policy require the real production network boundary.
+- **Environment**: Production DNS, certificate, load balancer/ingress, and firewall configuration
+- **Prerequisites**: Approved domain, certificate lifecycle, ingress allow-list, egress policy, and operator access
+- **Steps**: Resolve production DNS; validate the full certificate chain and renewal; verify HTTPS redirects, allowed hosts, proxy headers, and network allow/deny policy.
+- **Expected result**: Only approved TLS endpoints and network paths are reachable; insecure or unapproved origins fail closed.
+- **Status**: PENDING
+
+## REL-016-03
+
+- **Feature**: 016
+- **Reason**: Backup integrity and disaster recovery require production-like data, storage, and operator evidence.
+- **Environment**: Isolated recovery environment using an approved encrypted backup
+- **Prerequisites**: Backup schedule, retention policy, recovery credentials, isolated restore database, and recovery runbook
+- **Steps**: Restore a selected backup; run `verify_restore`; capture sanitized recovery time and recovery point evidence; review it with the recovery owner.
+- **Expected result**: Restore verification passes within approved RTO/RPO and no production workload or secret is exposed.
+- **Status**: PENDING
+
+## REL-016-04
+
+- **Feature**: 016
+- **Reason**: Capacity and sustained concurrency evidence depends on production-shaped infrastructure and workload.
+- **Environment**: Isolated production-shaped performance environment
+- **Prerequisites**: Approved dataset, workload model, capacity thresholds, monitoring, and remediation owner
+- **Steps**: Execute the capacity and concurrency runbook at target load; record latency, error rate, saturation, and database contention without sensitive payloads.
+- **Expected result**: Approved thresholds pass, or readiness remains failed with an assigned remediation plan.
+- **Status**: PENDING
+
+## REL-016-05
+
+- **Feature**: 016
+- **Reason**: Real Web Push delivery and physical-device behavior cannot be proven with CI fixtures.
+- **Environment**: Staging with approved push credentials plus supported Android/iOS devices
+- **Prerequisites**: VAPID/provider credentials, HTTPS staging origin, test accounts, and physical devices
+- **Steps**: Exercise opt-in, delivery, deduplication, revocation, denied permission, background receipt, and responsive smoke paths on supported browsers.
+- **Expected result**: Push delivery and device workflows behave as specified without leaking tokens or sensitive notification content.
+- **Status**: PENDING
+
+## REL-016-06
+
+- **Feature**: 016
+- **Reason**: A manual staging smoke and release approval require deployed external services and accountable operators.
+- **Environment**: Release-candidate staging environment
+- **Prerequisites**: Candidate artifact, seeded test identities, external service credentials, monitoring, and release approver
+- **Steps**: Execute the documented end-to-end attendance, task, notification, reporting, rollback, and operator health checks; record sanitized evidence and approval.
+- **Expected result**: All required smoke paths pass and rollback remains available before production promotion.
+- **Status**: PENDING
+
 ## Feature 015 Manual Verification
 
 ## UI-015-01

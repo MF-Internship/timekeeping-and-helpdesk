@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import Counter
 from datetime import date
 
-from django.db.models import QuerySet, Sum
+from django.db.models import Model, QuerySet, Sum
 from django.utils import timezone
 
 from attendance.domain.attempts import FAILURE_OUTCOMES, AttendanceAttemptOutcome
@@ -34,12 +34,7 @@ class DjangoReportingRepository:
             users_no_check_in_today=_no_check_in_today(user_ids),
             users_checked_out_today=_checked_out_today(user_ids),
             punch_count=attendances.count(),
-            total_valid_worked_minutes=float(
-                sessions.filter(closed_by_job=False).aggregate(value=Sum("duration_minutes"))[
-                    "value"
-                ]
-                or 0
-            ),
+            total_valid_worked_minutes=_total_valid_minutes(sessions),
             system_closed_missing_checkout_sessions=sessions.filter(closed_by_job=True).count(),
             anomaly_counts=_counter(
                 AttendanceAnomaly.objects.filter(attendance__in=attendances), "reason"
@@ -90,6 +85,11 @@ def _visible_user_ids(filters: ReportFilters, scope_all: bool) -> tuple[int, ...
     return tuple(queryset.values_list("id", flat=True))
 
 
+def _total_valid_minutes(sessions: QuerySet[AttendanceSession]) -> float:
+    total = sessions.filter(closed_by_job=False).aggregate(value=Sum("duration_minutes"))["value"]
+    return float(total or 0)
+
+
 def _today() -> date:
     return timezone.localdate()
 
@@ -123,11 +123,13 @@ def _checked_out_today(user_ids: tuple[int, ...]) -> int:
     )
 
 
-def _counter(queryset: QuerySet, field: str) -> dict[str, int]:
+def _counter[ModelT: Model](queryset: QuerySet[ModelT], field: str) -> dict[str, int]:
     return dict(Counter(queryset.values_list(field, flat=True)))
 
 
-def _all_counts(queryset: QuerySet, field: str, values: list[str]) -> dict[str, int]:
+def _all_counts[ModelT: Model](
+    queryset: QuerySet[ModelT], field: str, values: list[str]
+) -> dict[str, int]:
     counts = _counter(queryset, field)
     return {value: counts.get(value, 0) for value in values}
 

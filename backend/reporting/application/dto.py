@@ -49,4 +49,3 @@ class TaskReport:
     gps_quality_counts: dict[str, int]
     actual_completer_counts: dict[str, int]
     assigned_task_closed_count: int
-

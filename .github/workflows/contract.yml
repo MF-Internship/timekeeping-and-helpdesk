@@ -1,5 +1,8 @@
 name: Contract
 
+permissions:
+  contents: read
+
 on:
   pull_request:
   push:
@@ -26,13 +29,13 @@ jobs:
       POSTGRES_TEST_DATABASE_URL: postgresql://runtime_test:runtime_test_password@127.0.0.1:5432/timekeeping_test
       APP_ENV: development
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v10.0.1
         with:
           python-version: "3.12"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version: "22"
           cache: npm
@@ -49,6 +52,7 @@ jobs:
       - run: npm --prefix frontend run typecheck
       - run: uv run --project backend python scripts/check_contract_drift.py
       - run: scripts/check_openapi_compatibility.sh
+      - run: uv run --project backend python backend/manage.py makemigrations --check --dry-run --settings=tests.settings
       - run: uv run --project backend python scripts/migration_check.py check
       - run: uv run --project backend pytest backend/tests/integration/postgres/test_cache_migration.py
       - run: uv run --project backend python scripts/deployment_check.py isolation

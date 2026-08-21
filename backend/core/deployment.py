@@ -25,6 +25,7 @@ class ConfigurationError(ValueError):
 @dataclass(frozen=True, slots=True)
 class RuntimeSettings:
     environment: EnvironmentName
+    allowed_hosts: tuple[str, ...]
     database_url: str
     secret_key: str
     debug: bool
@@ -53,6 +54,7 @@ def load_runtime_settings(values: Mapping[str, str]) -> RuntimeSettings:
     web_push = _web_push_values(values, environment)
     return RuntimeSettings(
         environment=environment,
+        allowed_hosts=_allowed_hosts(values, environment),
         database_url=database_url,
         secret_key=secret_key,
         debug=_boolean(values, "DJANGO_DEBUG"),
@@ -220,6 +222,20 @@ def _environment(values: Mapping[str, str]) -> EnvironmentName:
         return EnvironmentName(raw)
     except ValueError as error:
         raise ConfigurationError("APP_ENV") from error
+
+
+def _allowed_hosts(values: Mapping[str, str], environment: EnvironmentName) -> tuple[str, ...]:
+    if environment is EnvironmentName.DEVELOPMENT:
+        raw = values.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,testserver")
+    else:
+        raw = _required(values, "DJANGO_ALLOWED_HOSTS")
+    hosts = tuple(item.strip() for item in raw.split(",") if item.strip())
+    if not hosts or any(
+        host == "*" or "://" in host or "/" in host or any(char.isspace() for char in host)
+        for host in hosts
+    ):
+        raise ConfigurationError("DJANGO_ALLOWED_HOSTS")
+    return hosts
 
 
 def _required(values: Mapping[str, str], key: str) -> str:

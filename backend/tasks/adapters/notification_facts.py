@@ -32,11 +32,7 @@ class DjangoTaskNotificationFacts:
         return self._candidates(assigned_date__lt=local_now.date())
 
     def revalidate(self, task_id: int, recipient_id: int, event_type: str) -> bool:
-        task = (
-            Task.objects.select_for_update()
-            .filter(pk=task_id, deleted_at__isnull=True)
-            .first()
-        )
+        task = Task.objects.select_for_update().filter(pk=task_id, deleted_at__isnull=True).first()
         if task is None:
             return False
         eligible = _eligible_assignees(task_id).filter(user_id=recipient_id).exists()
@@ -46,8 +42,7 @@ class DjangoTaskNotificationFacts:
             return task.status != TaskStatus.COMPLETED.value
         if event_type == "MULTI_ASSIGNEE_TASK_COMPLETED":
             return (
-                task.status == TaskStatus.COMPLETED.value
-                and task.completed_by_id != recipient_id  # type: ignore[attr-defined]
+                task.status == TaskStatus.COMPLETED.value and task.completed_by_id != recipient_id  # type: ignore[attr-defined]
             )
         return event_type == "TASK_ASSIGNED"
 

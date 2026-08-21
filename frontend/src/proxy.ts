@@ -13,7 +13,7 @@ export function buildOriginHeaders(
   return headers;
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const headerName = process.env.ORIGIN_CREDENTIAL_HEADER ?? "X-Origin-Credential";
   const credential = process.env.ORIGIN_CREDENTIAL;
   if (credential === undefined || credential.length < MINIMUM_ORIGIN_CREDENTIAL_LENGTH) {

@@ -3,7 +3,8 @@ import type { GuidancePosition, NearbyEntry } from "../../model/position-types";
 
 export const VIEWPORT = 320;
 export const PADDING = 28;
-export const CENTRE = VIEWPORT / 2;
+const HALVES_PER_WHOLE = 2;
+export const CENTRE = VIEWPORT / HALVES_PER_WHOLE;
 const DRAWABLE_HALF = CENTRE - PADDING;
 const DEGREES_PER_HALF_TURN = 180;
 const METRES_PER_DEGREE = (Math.PI * EARTH_RADIUS_M) / DEGREES_PER_HALF_TURN;

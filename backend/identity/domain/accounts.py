@@ -38,3 +38,10 @@ class NewAccount:
     email: str | None
     role: Role
     password_hash: str
+
+
+@dataclass(frozen=True, slots=True)
+class UserFilters:
+    query: str | None = None
+    role: Role | None = None
+    is_active: bool | None = None

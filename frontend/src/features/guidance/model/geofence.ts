@@ -25,6 +25,8 @@ export type GeofenceCoordinates = {
 };
 
 const DEGREES_PER_HALF_TURN = 180;
+const HALF_DIVISOR = 2;
+const SQUARE_EXPONENT = 2;
 
 function toRadians(degrees: number): number {
   return (degrees * Math.PI) / DEGREES_PER_HALF_TURN;
@@ -41,8 +43,9 @@ export function haversineDistanceM(
   const deltaLat = lat2 - lat1;
   const deltaLon = lon2 - lon1;
   const value =
-    Math.sin(deltaLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLon / 2) ** 2;
-  return EARTH_RADIUS_M * 2 * Math.asin(Math.min(1, Math.sqrt(value)));
+    Math.sin(deltaLat / HALF_DIVISOR) ** SQUARE_EXPONENT +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLon / HALF_DIVISOR) ** SQUARE_EXPONENT;
+  return EARTH_RADIUS_M * HALF_DIVISOR * Math.asin(Math.min(1, Math.sqrt(value)));
 }
 
 export function classifyGeofence(distanceM: number, radiusM: number): GeofenceStatus {

@@ -5,6 +5,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 version="1.26.1"
 os_name="$(uname -s)"
 architecture="$(uname -m)"
+binary_name="oasdiff"
 
 case "$os_name/$architecture" in
   Darwin/*)
@@ -19,6 +20,11 @@ case "$os_name/$architecture" in
     archive="oasdiff_${version}_linux_arm64.tar.gz"
     checksum="423ef13ac4197b1fca948ccd6839dbaa8a666841b59466542f0332a7e95a1d66"
     ;;
+  MINGW*/x86_64|MSYS*/x86_64|CYGWIN*/x86_64)
+    archive="oasdiff_${version}_windows_amd64.tar.gz"
+    checksum="fa662785bce15c9720eccacb693ca6af4f2b98dd51dbda8db6ae009dfae1825a"
+    binary_name="oasdiff.exe"
+    ;;
   *)
     echo "OASDIFF-PLATFORM: scripts/install_oasdiff.sh" >&2
     exit 1
@@ -26,20 +32,24 @@ case "$os_name/$architecture" in
 esac
 
 install_dir="${OASDIFF_INSTALL_DIR:-$repo_root/.cache/tools/oasdiff-$version}"
-binary="$install_dir/oasdiff"
+binary="$install_dir/$binary_name"
 cached_archive="$install_dir/$archive"
 
 archive_is_verified() {
   local candidate="$1"
   local actual_checksum
   [[ -f "$candidate" ]] || return 1
-  actual_checksum="$(shasum -a 256 "$candidate" | awk '{print $1}')"
+  if command -v shasum >/dev/null 2>&1; then
+    actual_checksum="$(shasum -a 256 "$candidate" | awk '{print $1}')"
+  else
+    actual_checksum="$(sha256sum "$candidate" | awk '{print $1}')"
+  fi
   [[ "$actual_checksum" == "$checksum" ]]
 }
 
 binary_matches_archive() {
   [[ -x "$binary" ]] || return 1
-  tar -xOf "$cached_archive" oasdiff | cmp -s - "$binary"
+  tar -xOf "$cached_archive" "$binary_name" | cmp -s - "$binary"
 }
 
 if archive_is_verified "$cached_archive" && binary_matches_archive; then
@@ -62,8 +72,8 @@ if ! archive_is_verified "$cached_archive"; then
 fi
 
 mkdir -p "$install_dir"
-tar -xzf "$verified_archive" -C "$temporary_dir" oasdiff
-install -m 0755 "$temporary_dir/oasdiff" "$binary"
+tar -xzf "$verified_archive" -C "$temporary_dir" "$binary_name"
+install -m 0755 "$temporary_dir/$binary_name" "$binary"
 if [[ "$verified_archive" != "$cached_archive" ]]; then
   install -m 0644 "$verified_archive" "$cached_archive"
 fi

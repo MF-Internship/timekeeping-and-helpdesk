@@ -23,7 +23,13 @@ const configuration = [
       "max-depth": ["error", 3],
       complexity: ["error", 8],
       "@typescript-eslint/no-explicit-any": "error",
-      "no-magic-numbers": ["warn", { ignore: [0, 1], ignoreArrayIndexes: true }],
+    },
+  },
+  {
+    files: ["src/**/*.ts"],
+    ignores: ["src/**/*.test.ts"],
+    rules: {
+      "no-magic-numbers": ["error", { ignore: [0, 1], ignoreArrayIndexes: true }],
     },
   },
   {
